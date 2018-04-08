@@ -1,0 +1,63 @@
+//===========================================
+[SectionA]  // 方括号里叫做一个section
+a = aa		// 这里的每一行等号左边是一个option,右边是它的value
+b = bb		
+c = cc
+
+[SectionB]
+optionint = 1
+optionfloat = 1.1
+optionstring = string
+//===========================================ConfigPhaser读取配置文件
+//===========================================ConfigPhaser读取配置文件
+//===========================================ConfigPhaser读取配置文件
+	with open(filename, 'r') as fr:
+	cfg = ConfigParser.ConfigParser()
+	cfg.readfp(fr)
+//==============读取所有的sections:
+	secs = cfg.sections()
+			//['SectionA','SectionB']
+//==============读取某一个section里面的所有options
+	ops0 = cfg.options(secs[0]);
+			//['a','b','c']
+//==============获取值列表
+	ops1 = cfg.items(secs[1])
+			//[('optionint','1'),
+			//('optionfloat','1.1'),
+			//('optionstring','string')]	
+//==============获取单个值
+	cfg.getint(secs[1],'optionint');	//1
+	cfg.getfloat(secs[1],'optionfloat');//1.1	
+	cfg.get(secs[1],'optionstring');	//string
+	//==========================================
+	//getfloat 和 getint 是在get的基础之上又封装了一层
+	
+//===========================================ConfigPhaser添加、删除配置
+//===========================================ConfigPhaser添加、删除配置
+//===========================================ConfigPhaser添加、删除配置
+//==============添加section
+cfg.add_section('SectionC')			//添加section
+cfg.set('SectionC','ex','example')	//添加option及value
+//==============删除配置
+cfg.remove_option('SectionC','ex')
+cfg.remove_section('SectionC','ex')
+
+//通过以下代码把配置写回文件中去
+with open(filename,'w') as fw:
+cfg.write(fw)
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+			
+			
