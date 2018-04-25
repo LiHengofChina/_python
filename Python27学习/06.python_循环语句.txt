@@ -1,0 +1,69 @@
+//==================================== While 循环语句
+//==================================== While 循环语句
+//======示例1
+numbers = [12,37,5,42,8,3]
+even = []
+odd = []
+while len(numbers)>0:
+	number = numbers.pop()
+	if(number % 2 == 0):
+		even.append(number)
+	else:
+		odd.append(number)
+//======示例2
+count = 0
+while (count < 9):
+				print 'The count is:',count
+				count = count +1
+
+print "Good bye!"				
+	
+//======示例3	continue
+i = 1
+while i < 10:
+	i += 1
+	if i%2 > 0:
+		continue
+	print i
+	
+//======示例4	break
+y = 1
+while 1:
+	print y
+	y += 1
+	if y >10:
+		break
+	
+//======示例5	无限循环	
+var = 1
+while var == 1 :
+	num = raw_input("Enter anumber :")
+	print "you entered: ",num
+
+print "Good bye !"	
+	
+//==================================== While 循环语句	else 
+//==================================== While 循环语句	else 
+
+count = 0
+while count < 5:
+	print count,"is less than 5"
+	count = count + 1
+else:
+	print count," is not less than 5"
+
+	
+//==================================== 简单语句组
+//==================================== 简单语句组
+
+flag = 1
+while (flag): print '''Given flag is really true!'''
+print "Good bye!"
+
+
+
+
+	
+
+	
+		
