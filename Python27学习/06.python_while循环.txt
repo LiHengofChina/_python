@@ -1,15 +1,27 @@
 //==================================== While 循环语句
 //==================================== While 循环语句
 //======示例1
-numbers = [12,37,5,42,8,3]
+list = [12,23,34,5,4,5,4]
 even = []
 odd = []
-while len(numbers)>0:
-	number = numbers.pop()
-	if(number % 2 == 0):
+while len(list)>0:
+	number = list.pop()
+	if( number % 2 ==0):
 		even.append(number)
 	else:
 		odd.append(number)
+
+print list
+print even
+print odd		
+
+
+
+
+
+
+
+
 //======示例2
 count = 0
 while (count < 9):
