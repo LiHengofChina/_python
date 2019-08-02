@@ -36,12 +36,25 @@ char.lower() in [name.lower() for name in name_list]
 //=========================
  遍历列表current——usrs,对于其中的每个用户名都检查是否被使用，且不区分大小写。
 
-current_usrs = ['alice','Bob','carolina','admin','eve']
-new_usrs = ['Alice','bob'，'sevischi','bruce','hellman']　　
 
-for usr in new_usrs:
-      if usr.lower() in [current_usr.lower() for current_usr in current_usrs] :   #关键就是要学会使用列表解析
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-           print(usr + " was been used.")
+
+class LIHENG(object):
+
+
+    @staticmethod
+    def test(value):
+           current_usrs = ['alice','Bob','carolina','admin','eve']
+           new_usrs = ['Alice','bob','sevischi','bruce','hellman']
+           for usr in new_usrs:
+             if usr.lower() in [current_usr.lower() for current_usr in current_usrs] :
+                print(usr + " was been used.")
+
+if __name__ == '__main__':
+    li = LIHENG()
+    result = li.test('Hello')
+
 
 明白了思想，程序都是简单的。
