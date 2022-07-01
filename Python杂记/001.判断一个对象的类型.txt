@@ -1,0 +1,11 @@
+
+liheng = result[0]
+
+type(liheng)
+
+
+通过 type 判断一个东西是字符串，还是list
+
+<class: str>
+<class: list>
+
