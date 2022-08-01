@@ -1,0 +1,7 @@
+
+格式化format中
+"{0}".format(a);
+
+ python 中双转义符号： {{
+ format中，当字符串本身带有 { ，要加双写  "'options':[{{'key':'{0}','value':'{1}'}}],".format(a,b)
+

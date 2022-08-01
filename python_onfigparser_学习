@@ -1,0 +1,125 @@
+https://blog.csdn.net/geerniya/article/details/80083152
+
+
+python3 
+//====================
+onfigparser 是 Pyhton 标准库中用来解析配置文件的模块，并且内置方法和字典非常接近。
+
+Python2.x 中名为 ConfigParser，3.x 已更名小写，并加入了一些新功能。 
+
+//====================
+import configparser as ConfigParser
+
+
+
+//====================示例
+[DEFAULT]
+ServerAliveInterval = 45
+Compression = yes
+CompressionLevel = 9
+ForwardX11 = yes
+
+[bitbucket.org]
+User = Tom
+
+[topsecret.com]
+Port: 50022
+ForwardX11: no
+
+“[ ]”包含的为 section，section 
+下面为类似于 key - value 的配置内容； 
+configparser 默认支持 ‘=’ ‘：’ 两种分隔。
+
+//====================使用
+使用 configparser 首先需要初始化实例，并读取配置文件：
+
+>>> import configparser
+>>> config = configparser.ConfigParser()    # 注意大小写
+>>> config.read("config.ini")   # 配置文件的路径
+["config.ini"]
+
+
+
+//====================使用2
+或者可以直接读字典
+
+>>> parser = configparser.ConfigParser()
+>>> parser.read_dict({'section1': {'key1': 'value1',
+...                                'key2': 'value2',
+...                                'key3': 'value3'},
+...                   'section2': {'keyA': 'valueA',
+...                                'keyB': 'valueB',
+...                                'keyC': 'valueC'},
+...                   'section3': {'foo': 'x',
+...                                'bar': 'y',
+...                                'baz': 'z'}
+... })
+
+
+//====================获取所有 sections
+>>> config.sections()
+['bitbucket.org', 'topsecret.com']    # 注意会过滤掉[DEFAULT]
+
+
+//====================获取指定 section 的 keys & values
+>>> config.items('topsecret.com')
+>>>> [('port', '50022'), ('forwardx11', 'no')]    # 注意items()返回的字符串会全变成小写
+
+
+//====================获取指定 section 的 keys
+>>> config.options('topsecret.com')
+['Port', 'ForwardX11']
+
+
+>>> for option in config['topsecret.com']:
+...     print(option)
+Port
+ForwardX11
+
+//====================获取指定 key 的 value
+>>> config['bitbucket.org']['User']
+'Tom'
+
+
+>>> config.get('bitbucket.org', 'User')
+'Tom'
+>>> config.getint('topsecret.com', 'Port')
+50022
+
+//====================检查
+>>> 'DEFAULT' in config
+True
+>>> 'test' in config['section_test']
+False
+>>> 'Tom' in config['bitbucket.org']['User']
+True
+>>> config.has_section('bitbucket.org')
+True
+>>> config.has_option('section_test', 'test')
+False
+
+//====================添加
+>>> config.add_section('Section_1')
+>>> config.set('Section_1', 'key_1', 'value_1')    # 注意键值是用set()方法
+>>> config.write(open('config.ini', 'w'))    # 一定要写入才生效
+
+//====================删除
+>>> config.remove_option('Section_1', 'key_1')
+True
+>>> config.remove_section('Section_1')
+True
+>>> config.clear()  # 清空除[DEFAULT]之外所有内容
+>>> config.write(open('config.ini', 'w'))
+
+
+
+//====================自定义加载
+
+
+
+
+
+
+
+
+

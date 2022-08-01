@@ -1,0 +1,60 @@
+//=========================短小的测试工具
+//=========================短小的测试工具
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
+class LIHENG(object):
+
+
+    @staticmethod
+    def test(value):
+ 
+        return value
+
+
+if __name__ == '__main__':
+    li = LIHENG()
+    result = li.test('Hello')
+    print result
+
+
+
+//=========================
+//=========================
+判断一个字符串在不在一个列表中，列有中字符串大小不一
+如：列表
+		name_list = ["ABC","Def","jhk"]
+
+	   char = "def"
+
+可用
+char.lower() in [name.lower() for name in name_list]
+
+
+//=========================
+//=========================
+ 遍历列表current——usrs,对于其中的每个用户名都检查是否被使用，且不区分大小写。
+
+
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
+class LIHENG(object):
+
+
+    @staticmethod
+    def test(value):
+           current_usrs = ['alice','Bob','carolina','admin','eve']
+           new_usrs = ['Alice','bob','sevischi','bruce','hellman']
+           for usr in new_usrs:
+             if usr.lower() in [current_usr.lower() for current_usr in current_usrs] :
+                print(usr + " was been used.")
+
+if __name__ == '__main__':
+    li = LIHENG()
+    result = li.test('Hello')
+
+
+明白了思想，程序都是简单的。
