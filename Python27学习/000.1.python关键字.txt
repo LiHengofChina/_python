@@ -1,0 +1,14 @@
+ 
+
+====================================Python
+====================================Python
+====================================Python
+
+
+
+1).Python 的关键字只包含小写字母
+and	exec not assert	finally	or break for pass class
+from print continue	global raise def if	return del import
+try elif in	while else is with except lambda yield
+
+ 
