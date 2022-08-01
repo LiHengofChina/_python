@@ -4,4 +4,7 @@
 
 	1). \n 实现换行 
 	
-	
+	//=================================== input
+ 
+	Python3.x 中 input() 函数接受一个标准输入数据，返回为 string 类型。
+	Python2.x 中 input() 相等于 eval(raw_input(prompt)) ，用来获取控制台的输入。
