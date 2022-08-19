@@ -1,0 +1,13 @@
+
+循环过滤数组元素
+
+#将 array 中 "大于5的元素" 放入 "新的数组"
+less = [i for i in array if i > 5]
+print less
+
+
+
+
+#将 array（脚标1到最后）中 "大于5的元素" 放入 "新的数组"
+less = [i for i in array[1:] if i > 5]
+print less
