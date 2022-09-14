@@ -1,0 +1,18 @@
+
+
+
+	在 Python 中，可使用函数 deque 来创建一个双端队列。
+
+	from collections import deque
+
+	search_queue = deque()  ←------------创建一个队列
+
+	person = search_queue.popleft()  ←------就取出其中的第一个人
+	
+	
+	
+
+
+
+
+
