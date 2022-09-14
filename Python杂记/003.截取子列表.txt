@@ -13,3 +13,6 @@ if __name__ == "__main__":
 
 
 
+//======================= 判断某个值不在列表中
+
+ if person not in searched: 

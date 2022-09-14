@@ -7,7 +7,7 @@
 
 	search_queue = deque()  ←------------创建一个队列
 
-	person = search_queue.popleft()  ←------就取出其中的第一个人
+	person = search_queue.popleft()  ←------取出其中的第一个人
 	
 	
 	
