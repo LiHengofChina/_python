@@ -1,0 +1,24 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+import os
+import sys
+
+class LiHeng():
+    def __init__(self,sys): # 类里面的函数，必须有 self，如果写在外面则不需要
+        self.liheng = sys.argv[1]
+
+    def task_schedule(self,c):
+        if (self.liheng == "LIHENG" or self.liheng == "liheng") :
+            print("LIHENG")
+        elif ( self.liheng == "XIAOWANG" and self.liheng == "xiaowang" ):
+            print("XIAOWANG")                
+        else:
+            print("ERROR!")
+
+if __name__ == "__main__":    #模拟的主函数
+
+    c = LiHeng(sys)  #先new对象 
+    c.task_schedule(c) #然后调用
+
+ 
