@@ -1,0 +1,11 @@
+import os
+
+#无返回的命令
+
+os.system("ls -al")
+
+
+#需要返回的命令
+self.liheg = os.popen( 'cat /LIHENG').read().strip()
+
+
