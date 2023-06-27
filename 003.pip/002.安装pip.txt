@@ -1,0 +1,13 @@
+
+
+
+（1） 将 https://bootstrap.pypa.io/get-pip.py 的内容保存到一个文件
+
+（2） python get-pip.py
+
+（3） pip install --upgrade numpy		//pip show numpy
+
+
+	  pip install --upgrade scikit-learn
+
+
