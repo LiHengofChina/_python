@@ -1,13 +1,26 @@
 
 
 
-（1） 将 https://bootstrap.pypa.io/get-pip.py 的内容保存到一个文件
 
-（2） python get-pip.py
+（1）python 安装之后，自带 pip 工具
 
-（3） pip install --upgrade numpy		//pip show numpy
+（2）分别查看它们的版本
+		python -V
+		python -m pip --version
 
 
-	  pip install --upgrade scikit-learn
+（3）要使用pip模块，有两种方式
+
+	（1）将脚本 路径配置到环境变量中
+	（2）使用python命令的全路径 
+		 如：C:\Python3.11\python.exe -m pip install --upgrade numpy
+
+
+
+（4） pip install --upgrade numpy		
+
+（5）pip show numpy
+
+
 
 

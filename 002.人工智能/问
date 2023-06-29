@@ -1,0 +1,16 @@
+
+//==================================
+//==================================
+
+（1）报错
+	<frozen importlib._bootstrap>:241: Warning: Numpy built with MINGW-W64 on Windows 64 bits is experimental, and only available for 
+	testing. You are advised not to use it for production. 
+	CRASHES ARE TO BE EXPECTED - PLEASE REPORT THEM TO NUMP1Y DEVELOPERS
+	这个警告信息是关于在Windows 64位系统上使用MINGW-W64编译的Numpy的实验性支持。
+	警告提醒你不要在生产环境中使用它，
+	并且可能会导致崩溃。
+
+
+	解决办法：
+	重新安装python 3.11，要删除mys系统（C++的那个）
+
