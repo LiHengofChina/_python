@@ -1,0 +1,7 @@
+
+//导入警告模块
+
+import warnings
+
+warnings.filterwarnings('ignore')
+
