@@ -1,0 +1,59 @@
+
+
+
+调用API是为了集成服务，			//集成服务要花钱
+
+开发插件是为了提供给大家使用。	//开发插件，可能要赚钱
+
+
+
+//=================================================== 插件
+//=================================================== 插件
+
+
+（0）向所有 “订阅者” 推出
+
+
+（1）用户始终可以通过明确要求模型使用插件来推动模型使用插件，
+	 例如 "使用 Expedia 来计划我的纽约之旅"。
+
+
+（2）插件介绍
+	 https://platform.openai.com/docs/plugins/introduction
+
+
+（3）注册成为插件开发者
+	 https://openai.com/waitlist/plugins
+
+
+（4）插件技术问题
+	https://community.openai.com/
+
+
+（5）如何访问/启用代码解释器插件？
+	由 OpenAI 制作的  "代码解释器插件" 目前处于 Alpha 阶段，
+
+	它将显示在“ Beta features ”设置下。
+
+	//如何在“Beta 功能”区域启用插件？
+	Setting ===> Beta features ===> Plugins
+
+//=================================================== API （API 有自己的定价）
+//=================================================== API （API 有自己的定价）
+
+
+（1）"开发人员" 现在可以通过我们的 API 将 ChatGPT 集成到 "他们的应用程序和产品" 中。
+
+	要了解更多信息，请查看此处的文档。
+
+	"开发人员" ：https://openai.com/blog/introducing-chatgpt-and-whisper-apis
+	"更多信息" ：https://platform.openai.com/docs/api-reference/chat/create
+
+
+（2）InstructGPT https://openai.com/research/instruction-following
+
+（3）介绍ChatGPT
+	 Introducing ChatGPT https://openai.com/blog/chatgpt
+
+（4）OpenAI API : https://help.openai.com/en/collections/3675931-openai-api
+（4）ChatGpt有它自己的定价 https://openai.com/pricing

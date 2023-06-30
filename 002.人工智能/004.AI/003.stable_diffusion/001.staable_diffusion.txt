@@ -1,0 +1,21 @@
+
+
+https://aihuahuasheji.com/%E9%9B%B6%E5%9F%BA%E7%A1%80stable-diffusion%E5%AE%89%E8%A3%85%E5%85%A8%E6%94%BB%E7%95%A5/
+
+stable_diffusion 比 midjourney 更高级
+
+
+（1）下载地址：
+
+	  https://i1etb6xynr.feishu.cn/wiki/Rd9GwrHnSiJGCIkaBHLcikegnXd
+
+	  https://pan.quark.cn/s/266d81850221#/list/share
+
+
+（2）使用git 安装 
+	git clone git@github.com:AUTOMATIC1111/stable-diffusion-webui.git
+
+
+（3）启动
+
+

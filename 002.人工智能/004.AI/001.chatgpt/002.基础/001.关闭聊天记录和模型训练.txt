@@ -1,0 +1,18 @@
+https://help.openai.com/en/articles/7792795-how-do-i-turn-off-chat-history-and-model-training
+
+
+
+Settings 
+	====> Data controls
+	====> “聊天记录和培训”
+
+
+
+
+//======================================== Chat History & Training
+//======================================== Chat History & Training
+
+（）新对话将不会用于训练和改进我们的模型
+（）新对话也不会出现在历史侧边栏中。
+
+

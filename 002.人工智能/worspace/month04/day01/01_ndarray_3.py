@@ -29,3 +29,12 @@ print(arr)      #三维数组，叫法，5页4行9列
 print("==" * 20)
 one = np.ones(shape=(3, 2), dtype='int32')
 print(one) #生成值全是1的数组，和zero的区别就是值全是1
+
+
+
+
+#创建值全部为0.2的数组
+print("==" * 20)
+lis = [1, 2, 3, 4, 5, 6]
+liheng = np.ones(10) / 5
+print(liheng)

@@ -1,0 +1,12 @@
+
+
+//=================================================== ChatGPT Plus
+//=================================================== ChatGPT Plus
+
+（1）ChatGPT Plus 是 ChatGPT 的订阅计划。也就是要给钱
+	 ChatGPT Plus 订阅仅涵盖在 chat.openai.com 上的使用，每月收费 20 美元。
+（2）ChatGPT Plus 与 ChatGPT API？
+		API 有自己的定价，
+		
+
+
