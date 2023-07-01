@@ -29,8 +29,8 @@
 
 
 复数型	// 				1+1j ，1-1j，可以进行加、减、乘、除运算
-						complex64
-						complex128
+						complex64	//8字节
+						complex128	//16字节 默认
 
 
 字符串					str_,每个字符用32位Unicode编码表示
