@@ -1,0 +1,22 @@
+
+
+axes  返回 行/列标签(index)列表 //索引有2个维度
+		//和axis有点像
+columns		//返回列标签
+index		//返回行标签
+
+dtypes		//返回每列的元素类型， 因为列与列可以不同，返回 Series
+
+empty		//空判断
+ndim		//查看维度，默认2
+
+size 		//元素个数，如果NaN也算一个元素
+
+values		//返回ndarray 数据
+head(n)		//返回前n行, n默认是5
+tail(n)		//返回最后n行, n默认是5
+
+
+
+
+

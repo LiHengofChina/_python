@@ -18,7 +18,9 @@
 
 
 （4） pip install --upgrade numpy		
+（4） pip install --upgrade pandas
 
+（5）pip show pandas
 （5）pip show numpy
 
 

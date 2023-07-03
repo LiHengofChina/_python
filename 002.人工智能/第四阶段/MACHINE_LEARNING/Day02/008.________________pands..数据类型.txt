@@ -1,0 +1,16 @@
+
+pands 是为了数据分析创建的
+
+	//=============== pands里面的数据类型可以分为两种，
+	数值型:整数、float
+	类别型：字符串
+
+	如：print(df.dtypes)  
+		
+		Name object 	#指字符串
+		Age	 float64	#数值型
+		dtype: object   #指整体的Series是字符串类型
+
+
+
+

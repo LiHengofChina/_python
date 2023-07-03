@@ -1,0 +1,35 @@
+
+series 系列;串联;连续;
+
+//================================ Series（可以自己设置索引的）一维数组
+//================================ Series（可以自己设置索引的）一维数组
+Series 可以理解为一个一维数据，只是index名称可以自己改动，
+类似于定长的，有序的字典，有 Index 和 value 。
+
+
+import pandas as pd
+import numpy as np
+
+
+#创建一个空的“系列”
+s = pd.Series()
+
+
+#从ndarray创建一个Series()
+data = np.array(['张三','李四','王五','赵六'])
+s = pd.Series(data)
+s = pd.Series(data,index=['100','101','102','103'])
+
+
+#从字典创建一个Series
+data = {'100' : '张三', '101' : '李四','102' : '王五'}
+s = pd.Series(data)
+
+
+# 从标题创建一个Series
+s = pd.Series(5, index=[0, 1, 2, 3])
+
+
+
+
+
