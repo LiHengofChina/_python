@@ -19,9 +19,13 @@
 
 （4） pip install --upgrade numpy		
 （4） pip install --upgrade pandas
+（4） pip install --upgrade xlrd==1.2.0
+（4） pip install --upgrade openpyxl
 
 （5）pip show pandas
 （5）pip show numpy
+（5）pip show xlrd
+（5）pip show openpyxl
 
 
 

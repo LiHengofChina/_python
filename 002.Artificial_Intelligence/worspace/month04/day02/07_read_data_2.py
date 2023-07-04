@@ -1,10 +1,10 @@
 '''
 读取数据 CSV
+然后写到一个文件
 '''
 
-
-
 import pandas as pd
+import os
 
 data = pd.read_csv('../data_test/aapl.csv',
                    sep=',',
@@ -15,9 +15,8 @@ data = pd.read_csv('../data_test/aapl.csv',
 print(data)
 
 
-
-data = pd.read_csv('../data_test/保健品问卷数据/保健品字段介绍.csv',
-                   header=None,
-                   encoding='gbk'
-                   )
-print(data)
+#写数据到一个文件
+output_dir = './tmp'
+if not os.path.exists(output_dir):
+    os.mkdir(output_dir)
+data.to_csv('./tmp/new_data.csv')

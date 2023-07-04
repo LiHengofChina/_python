@@ -14,7 +14,7 @@ print(df)
 #删除 1 2行，
 print("==" * 20)
 # df = df.drop([0, 1], axis=0)
-df.drop([0, 1], inplace=True, axis=0)
+df.drop([0, 1], inplace=True, axis=0) # 默认axis=0，垂直轴向，
 print(df)
 
 
