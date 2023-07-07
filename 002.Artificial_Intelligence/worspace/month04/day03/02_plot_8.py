@@ -1,7 +1,7 @@
 
 '''
     基本的绘图：
-            设置刻度
+            LaTex表达式
 '''
 
 import numpy as np
@@ -19,12 +19,16 @@ plt.plot(x, cosx, linestyle='-.',linewidth=6,color='red',alpha=0.8)
 
 # 设置刻度
 plt.xticks([-np.pi, -np.pi / 2, 0, np.pi / 2, np.pi]
-           ,['-π','-π/2','0','π/2','π'] #x文本（可 选）
-           ,fontsize=25
+           , [r'$-\pi$', r'$-\frac{\pi}{2}$',
+              '0',
+              r'$\frac{\pi}{2}$', r'$-\pi$']
+           , fontsize=25
            )
 plt.yticks([-1, -1 / 2, 0, 1 / 2, 1]
-           ,['-1','-1/2','0','1/2','1'] #y文本（可 选）
-           ,fontsize=14
+           , ['-1', r'$-\frac{1}{2}$',
+              '0',
+              r'$\frac{1}{2}$', '1']
+           , fontsize=25
            )
 
 
