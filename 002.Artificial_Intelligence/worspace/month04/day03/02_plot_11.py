@@ -62,6 +62,11 @@ plt.scatter([0, np.pi / 2, -np.pi / 2],
             facecolor='red',
             zorder=3
             )
+plt.grid(linestyle=':')
+
+
+
+
 
 
 plt.show()  # 显示图片，阻塞方法
