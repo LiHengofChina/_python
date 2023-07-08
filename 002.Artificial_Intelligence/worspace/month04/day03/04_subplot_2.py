@@ -9,7 +9,10 @@ import matplotlib.pyplot as plt
 
 # （1）3行3列，第5个位置
 plt.subplot(3, 3, 5)
-plt.text(0.5, 0.5, 5, fontsize=24, ha='center', va='center')
+plt.text(0.5,  #在子窗口中的x坐标，
+         0.5,  #在子窗口中的y坐标，
+         5,    #内容
+         fontsize=24, ha='center', va='center')
 #去掉刻度显示
 plt.xticks([])
 plt.yticks([])

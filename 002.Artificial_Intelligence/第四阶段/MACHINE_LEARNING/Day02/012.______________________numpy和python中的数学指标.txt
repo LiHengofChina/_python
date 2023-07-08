@@ -198,7 +198,7 @@ m = df.mean(axis=0)		#pandas中Dataframe的接口
 	print(fracture.std())
 
 	# numpy的接口中        #样本标准差
-	print(np.std(fracture, ddof=1))  # ddof 表示贝塞尔校正系数， ddof=1 表示分母减1，  ddof=2 表示分母减2
+	print(np.std(fracture, ddof=1))  # ddof 表示 "贝塞尔校正系数" ， ddof=1 表示分母减1，  ddof=2 表示分母减2
 
 
 	//============================================================================================ 其它指标，一边学习一边讲
