@@ -1,5 +1,5 @@
 '''
-scatter
+scatter 散点图
 '''
 
 import numpy as np
@@ -17,7 +17,15 @@ plt.scatter(height, weight,
             # color=height,
             c=height, #以height列表作为颜色
             # cmap='cool', #显示颜色映射
-            cmap='jet' #显示颜色映射
+            cmap='bone', #显示颜色映射
+            # cmap='spring', #显示颜色映射
+            # cmap='autumn', #显示颜色映射
+            # cmap='copper', #显示颜色映射
+            # cmap='gray', #显示颜色映射
+            # cmap='coolwarm', #显示颜色映射
+            # cmap='hot', #显示颜色映射
+            # cmap='viridis', #显示颜色映射
+            # cmap='jet' #显示颜色映射
             )
             #让身高根据数据产生变化
 plt.colorbar()

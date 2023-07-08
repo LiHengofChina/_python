@@ -37,3 +37,6 @@
 
 （16）for i in range(1, 10):
 
+（17）range长度的时候，拿到的是索引
+	for i in range(len(x)):
+
