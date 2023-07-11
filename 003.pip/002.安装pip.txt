@@ -22,6 +22,10 @@
 （4） pip install --upgrade xlrd==1.2.0
 （4） pip install --upgrade openpyxl
 （4） pip install --upgrade matplotlib
+
+（4） pip install --upgrade sklearn
+（4） pip install --upgrade scikit-learn
+
 （4）   cv2
 		pip install --upgrade opencv-python			 //提供了完整的 OpenCV 功能 包含图形用户界面（GUI）的支持
 		pip install --upgrade opencv-python-headless //无 GUI 支持的 OpenCV Python 绑定包
@@ -32,6 +36,10 @@
 （5）pip show xlrd
 （5）pip show openpyxl
 （5）pip show matplotlib
+
+（5）pip show sklearn						//pip uninstall sklearn
+（5）pip show scikit-learn
+
 （5）pip show opencv-python					//pip uninstall opencv-python
      pip show opencv-python-headless		//pip uninstall opencv-python-headless
 
