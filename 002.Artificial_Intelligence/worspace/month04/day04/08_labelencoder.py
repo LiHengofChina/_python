@@ -20,3 +20,4 @@ print(lb_samples)
 print(lb_encoder.inverse_transform(lb_samples)) #逆向转换
 
 
+
