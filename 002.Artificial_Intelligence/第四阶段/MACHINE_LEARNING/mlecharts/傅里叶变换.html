@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>傅里叶变换</title>
+		<script type="text/javascript" src="_js/echarts.min.js"></script>
+		<script type="text/javascript" src="_js/echarts-gl.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.14.2/math.min.js"></script>
+		<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+	</head>
+	<body>
+		<div class='container-fluid'>
+			<div id="chart" class="chart-container" style="float:left; width:900px; height:500px;"></div>
+			<div id="param" class="param-container" style="float:left; margin-left: 20px;">
+				<h3>目标函数</h3>
+				<h4>$$ y = \sum_{i=1}^{n}sin(\omega_ix + \phi_i) + C $$</h4>
+				<h3>参数设置</h3>
+				<div class="form-inline">
+					<div class="form-group">
+						<label for="param_i">i:</label>
+						<input type="number" class="form-control" id="param_i" min="1" value='1' step='1'>
+					</div>
+					<br/><br/>
+				</div>
+			</div>
+		</div>
+		<script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+		
+		<script>
+		$(document).ready(function(){
+			// 初始化图表
+			var myChart = echarts.init(document.getElementById('chart'));
+			myChart.setOption(create_option());
+			
+			// 为表单控件添加监听   当参数更新后，更新图像
+			$("input[id^='param_']").on('input propertychange', function(){
+				var option = myChart.getOption();
+				option.series = create_seriesdata();
+				myChart.setOption(option);
+			})
+		})
+		
+		function generateData(n) {
+			var data = [];
+			// Parametric curve
+			for (var t = 0; t < math.PI * 4; t += 0.01) {
+				var x = t;
+				var y = (2*n-1) / 2 * math.PI;
+				var z = 1 / (2*n-1) * math.sin((2*n-1)*x);
+				data.push([x, y, z]);
+			}
+			return data;
+		}
+		
+		function create_seriesdata(){
+			i = parseFloat($('#param_i').val())
+			var seriesdata = [{
+				type: 'line3D',
+				data: []
+			}]
+			for (n=0; n<i; n++){
+				seriesdata.push({
+					type: 'line3D',
+					data: generateData(n+1)
+				})
+			}
+			// // 添加一个叠加曲线
+			seriesdata[0] = {
+				type: 'line3D',
+				data: (function(){
+					d = []
+					for (var t = 0; t < math.PI * 4; t += 0.01) {
+						d.push([t, -10, 0]);
+					}
+					for (i=0; i<d.length; i++){
+						for (k=1; k<seriesdata.length; k++){
+							d[i][2] += seriesdata[k].data[i][2]
+						}
+					}
+					return d
+				})()
+			}
+			return seriesdata;
+		}
+
+		// 创建绘图所需option对象
+		function create_option(){
+			option = {
+			    tooltip: {},
+			    backgroundColor: '#fff',
+			    xAxis3D: {
+			        type: 'value',
+					name: 'time',
+					min: -3, 
+					max: 15
+			    },
+			    yAxis3D: {
+			        type: 'value',
+					name: 'frequency',
+					min: 'dataMin', 
+					max: 'dataMax'
+			    },
+			    zAxis3D: {
+			        type: 'value',
+					name: 'pow'
+			    },
+			    grid3D: {
+					viewControl:{projection:'orthographic'},
+			        boxWidth: 100,
+			        boxHeight: 70,
+			        boxDepth: 150
+			    },
+			    series: create_seriesdata()
+			};
+			return option
+		}
+		
+		</script>
+	</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>岭回归</title>
+		<script type="text/javascript" src="_js/echarts.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.14.2/math.min.js"></script>
+		<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+	</head>
+	<body>
+		<div class='container-fluid'>
+			<div id="chart" class="chart-container" style="float:left; width:900px; height:500px;"></div>
+			<div id="param" class="param-container" style="float:left; margin-left: 20px;">
+				<h3>目标函数</h3>
+				<h4>$$ y = kx + b $$</h4>
+				<h3>参数设置</h3>
+				<div class="form-inline">
+					<div class="form-group">
+						<label for="param_C">C:</label>
+						<input type="number" class="form-control" id="param_C" value='0' min=0 step='0.1'>
+					</div>
+					<br/><br/>
+				</div>
+				<h3>损失函数</h3>
+				<h4>\[ loss = \frac{1}{2}\sum_{i=1}^{n}(\hat{y_i} - y_i)^2 + \lambda \sum{\omega}_i^2 \] = <span id='mseloss'>...</span> + <span id='normloss'>...</span> = <span id='totalloss'>...</span> </h4>
+				
+			</div>
+		</div>
+		<script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+		
+		<script>
+		points =   [[0.5, 5.0],
+					[0.6, 5.5],
+					[0.8, 6.0],
+					[1.1, 6.8],
+					[1.4, 7.0],
+					[2.5, 18.0],
+					[1.8, 7.2]]
+		current_k = 0
+		current_b = 0
+		
+		$(document).ready(function(){
+			// 初始化图表
+			var myChart = echarts.init(document.getElementById('chart'));
+			myChart.setOption(create_option());
+			
+			// 为表单控件添加监听   当参数更新后，更新图像
+			$("input[id^='param_']").on('input propertychange', function(){
+				var option = myChart.getOption();
+				option.series[0].data = generateData();
+				myChart.setOption(option);
+				lambC = parseFloat($('#param_C').val())
+				//更新损失函数结果
+				mseloss = 0
+				normloss = 0
+				for (i=0; i<points.length; i++){
+					x = points[i][0]
+					y = points[i][1]
+					pred_y = current_k * x + current_b
+					mseloss += math.pow(pred_y - y, 2) / 2
+					normloss += lambC * (math.pow(current_k, 2) + math.pow(current_b, 2))
+				}
+				$('#mseloss').text(math.round(mseloss, 3))
+				$('#normloss').text(math.round(normloss, 3))
+				$('#totalloss').text(math.round(mseloss + normloss, 3))
+			})
+		})
+		
+		function generateData() {
+			times = 1000	// 定义梯度下降次数
+			lrate = 0.01	// 记录每次梯度下降参数变化率
+			lambC = parseFloat($('#param_C').val())
+			w0 = 1
+			w1 = 1
+			for (i = 1; i <= times; i++){
+				d0 = 0
+				d1 = 0
+				for (k = 0; k < points.length; k++){
+					train_x = points[k][0]
+					train_y = points[k][1]
+					d0 += (w0 + w1 * train_x) - train_y + lambC * w0
+					d1 += ((w0 + w1 * train_x) - train_y) * train_x + lambC * w1
+				}
+				w0 = w0 - lrate * d0
+				w1 = w1 - lrate * d1
+			}
+		    var data = [];
+		    current_k = w1
+		    current_b = w0
+		    for (let x = -15; x <= 15; x += 0.1) {
+		        data.push([x, current_k * x + current_b]);
+		    }
+		    return data;
+		}
+		
+		// 创建绘图所需option对象
+		function create_option(){
+			option = {
+			    animation: false,
+			    grid: {
+			        top: 40,
+			        left: 50,
+			        right: 40,
+			        bottom: 50
+			    },
+			    xAxis: {
+			        name: 'x',
+					min: -1,
+					max: 3,
+			        minorTick: {
+			            show: false
+			        },
+			        splitLine: {
+			            lineStyle: {
+			                color: '#eee'
+			            }
+			        },
+			        minorSplitLine: {
+			            show: true,
+			            lineStyle: {
+			                color: '#eee'
+			            }
+			        }
+			    },
+			    yAxis: {
+			        name: 'y',
+			        min: -3,
+			        max: 20,
+			        minorTick: {
+			            show: true
+			        },
+			        splitLine: {
+			            lineStyle: {
+			                color: '#eee'
+			            }
+			        },
+			        minorSplitLine: {
+			            show: true,
+			            lineStyle: {
+			                color: '#eee'
+			            }
+			        }
+			    },
+			    dataZoom: [{
+			        show: true,
+			        type: 'inside',
+			        filterMode: 'none',
+			        xAxisIndex: [0],
+			        startValue: -20,
+			        endValue: 20
+			    }, {
+			        show: true,
+			        type: 'inside',
+			        filterMode: 'none',
+			        yAxisIndex: [0],
+			        startValue: -20,
+			        endValue: 20
+			    }],
+			    series: [
+			        {
+			            type: 'line',
+			            showSymbol: false,
+			            clip: true,
+			            data: generateData()
+			        },
+					{
+						symbolSize: 20,
+						data:  points,
+						type: 'scatter'
+					}
+			    ]
+			};
+			return option
+		}
+		
+		</script>
+	</body>
+</html>

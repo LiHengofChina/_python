@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>梯度下降（2）</title>
+		<script type="text/javascript" src="_js/echarts.min.js"></script>
+		<script type="text/javascript" src="_js/echarts-gl.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.14.2/math.min.js"></script>
+		<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+	</head>
+	<body>
+		<div class='container-fluid'>
+			<div id="chart" class="chart-container" style="float:left; width:900px; height:500px;"></div>
+			<div id="param" class="param-container" style="float:left; margin-left: 20px; ">
+				<h3>目标函数(<a target="_blank" href='直线方程.html'>示例</a>)</h3>
+				<h4>$$ y = \omega_0 + \omega_1x  $$</h4>
+				<h3>损失函数</h3>
+				<h4>$$ loss = \frac{1}{2}\sum_{i=1}^{n}(\omega_0 + \omega_1x_i - y_i)^2  $$</h4>
+				<h3>梯度</h3>
+				<h4>\[ \left [ \frac{\partial{loss}}{\partial{w_0}}, \frac{\partial{loss}}{\partial{w_1}} \right ] \] = [<span id='dw0'>-20.9</span>, <span id='dw1'>-19.06</span>]</h4>
+				<h3>参数设置</h3>
+				<div class="form-inline">
+					<div class="form-group">
+						<label for="param_w0">\[w_0:\]</label>
+						<input type="number" class="form-control" id="param_w0" value='1' step='0.05'>
+					</div>
+					<br/><br/>
+					<div class="form-group">
+						<label for="param_w1">\[w_1:\]</label>
+						<input type="number" class="form-control" id="param_w1" value='1' step='0.05'>
+					</div>
+					<br/><br/>
+				</div>
+			</div>
+		</div>
+		<script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+		
+		<script>
+		$(document).ready(function(){
+			points =   [[0.5, 5.0],
+						[0.6, 5.5],
+						[0.8, 6.0],
+						[1.1, 6.8],
+						[1.4, 7.0]]
+			
+			// 初始化图表
+			var myChart = echarts.init(document.getElementById('chart'));
+			myChart.setOption(create_option());
+			
+			// 为表单控件添加监听   当参数更新后，更新图像
+			$("input[id^='param_']").on('input propertychange', function(){
+				var option = myChart.getOption();
+				// 更新关注点 [w0, w1, loss]
+				w0 = parseFloat($('#param_w0').val())
+				w1 = parseFloat($('#param_w1').val())
+				loss = lossFunc(w0, w1)
+				option.series[1].data[0][0] = w0
+				option.series[1].data[0][1] = w1
+				option.series[1].data[0][2] = loss
+				// 更新关注点 w0方向上的切线
+				line_w0_k = 0
+				for (i=0; i<points.length; i++){
+					px = points[i][0]
+					py = points[i][1]
+					line_w0_k += w0 + w1 * px - py
+				}
+				line_w0_b = loss - line_w0_k * w0
+				option.series[2].data[0] = [-1, w1, line_w0_b - line_w0_k]
+				option.series[2].data[1] = [9, w1, 9 * line_w0_k + line_w0_b]
+				// 更新关注点 w1方向上的切线
+				line_w1_k = 0
+				for (i=0; i<points.length; i++){
+					px = points[i][0]
+					py = points[i][1]
+					line_w1_k += px * (w0 + w1 * px - py)
+				}
+				line_w1_b = loss - line_w1_k * w1
+				option.series[3].data[0] = [w0, 0, line_w1_b]
+				option.series[3].data[1] = [w0, 3.6, 3.6 * line_w1_k + line_w1_b]
+				// 更新梯度
+				$('#dw0').text(math.round(line_w0_k, 2))
+				$('#dw1').text(math.round(line_w1_k, 2))
+				myChart.setOption(option);
+			})
+		})
+		
+		function lossFunc (x, y) {
+			loss = 0
+			for (i=0; i<points.length; i++){
+				px = points[i][0]
+				py = points[i][1]
+				loss += math.pow((x + y*px - py), 2) / 2
+			}
+		    return loss
+		}
+		
+		// 创建绘图所需option对象
+		function create_option(){
+			option = {
+			    tooltip: {},
+			    backgroundColor: '#fff',
+			    xAxis3D: {
+			        type: 'value',
+					name: 'w0', 
+					splitNumber: 10,
+					min: -1,
+					max: 9
+			    },
+			    yAxis3D: {
+			        type: 'value',
+					name: 'w1', 
+					splitNumber: 10,
+					min: 0,
+					max: 3.6
+			    },
+			    zAxis3D: {
+			        type: 'value',
+					name: 'loss',
+					min: -1
+			    },
+			    grid3D: {
+			        boxHeight: 60,
+					viewControl: {
+						projection: 'orthographic'
+					}
+			    },
+			    series: [{
+			        type: 'surface',
+			        equation: {
+			            x: {
+			                step: 0.1,
+			                min: -1,
+			                max: 9,
+			            },
+			            y: {
+			                step: 0.1,
+			                min: 0,
+			                max: 3.5,
+			            },
+			            z: lossFunc
+			        },
+					itemStyle: {color: '#eee'}
+			    }, {
+					type: 'scatter3D',
+					symbolSize: 15,
+					itemStyle: {color: '#f00'},
+					data: [[1, 1, 44.175]]
+				}, {
+					type: 'line3D',
+					data: [[-1, 1, 85.975], [19, 1, -332.025]],
+					lineStyle:{width: 2, color: '#f00'}
+				}, {
+					type: 'line3D',
+					data: [[1, 0, 63,235], [1, 3.5, -3.475]],
+					lineStyle:{width: 2, color: '#f00'}
+				},]
+			}
+			return option
+		}
+		
+		</script>
+	</body>
+</html>

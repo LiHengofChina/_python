@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>直线方程</title>
+		<script type="text/javascript" src="_js/echarts.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.14.2/math.min.js"></script>
+		<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+	</head>
+	<body>
+		<div class='container-fluid'>
+			<div id="chart" class="chart-container" style="float:left; width:900px; height:500px;"></div>
+			<div id="param" class="param-container" style="float:left; margin-left: 20px;">
+				<h3>目标函数</h3>
+				<h4>$$ \hat{y} = \omega_1 x + \omega _0 $$</h4>
+				<h3>参数设置</h3>
+				<div class="form-inline">
+					<div class="form-group">
+						<label for="param_k">$$ \omega_1(斜率): $$</label>
+						<input type="number" class="form-control" id="param_k" value='1' step='0.05'>
+					</div>
+					<br/><br/>
+					<div class="form-group">
+						<label for="param_b">$$ \omega_0(截距): $$</label>
+						<input type="number" class="form-control" id="param_b" value='2.15' step='0.05'>
+					</div>
+					<br/><br/>
+				</div>
+				<h3>损失函数</h3>
+				<h4>\[ loss = \frac{1}{2}\sum_{i=1}^{n}(\hat{y_i} - y_i)^2 \] = <span id='lossval'>9.82865</span> </h4>
+				
+			</div>
+		</div>
+		<script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+		
+		<script>
+		$(document).ready(function(){
+			// 初始化图表
+			var myChart = echarts.init(document.getElementById('chart'));
+			myChart.setOption(create_option());
+			
+			// 为表单控件添加监听   当参数更新后，更新图像
+			$("input[id^='param_']").on('input propertychange', function(){
+				var option = myChart.getOption();
+				option.series[0].data = generateData();
+				myChart.setOption(option);
+				//更新损失函数结果
+				loss = 0
+				for (i=0; i<points.length; i++){
+					x = points[i][0]
+					y = points[i][1]
+					k = parseFloat($('#param_k').val())
+					b = parseFloat($('#param_b').val())
+					pred_y = k * x + b
+					loss += math.pow(pred_y - y, 2) / 2
+				}
+				$('#lossval').text(loss)
+			})
+		})
+		
+		function generateData() {
+		    var data = [];
+		    k = parseFloat($('#param_k').val())
+		    b = parseFloat($('#param_b').val())
+		    for (let x = -15; x <= 15; x += 0.1) {
+		        data.push([x, k * x + b]);
+		    }
+		    return data;
+		}
+		points =   [[0.5, 5.0],
+					[0.6, 5.5],
+					[0.8, 6.0],
+					[1.1, 6.8],
+					[1.4, 7.0]]
+		// 创建绘图所需option对象
+		function create_option(){
+			option = {
+			    animation: false,
+			    grid: {
+			        top: 40,
+			        left: 50,
+			        right: 40,
+			        bottom: 50
+			    },
+			    xAxis: {
+			        name: 'x',
+					min: -1,
+					max: 2,
+			        minorTick: {
+			            show: false
+			        },
+			        splitLine: {
+			            lineStyle: {
+			                color: '#eee'
+			            }
+			        },
+			        minorSplitLine: {
+			            show: true,
+			            lineStyle: {
+			                color: '#eee'
+			            }
+			        }
+			    },
+			    yAxis: {
+			        name: 'y',
+			        min: -1,
+			        max: 8,
+			        minorTick: {
+			            show: true
+			        },
+			        splitLine: {
+			            lineStyle: {
+			                color: '#eee'
+			            }
+			        },
+			        minorSplitLine: {
+			            show: true,
+			            lineStyle: {
+			                color: '#eee'
+			            }
+			        }
+			    },
+			    dataZoom: [{
+			        show: true,
+			        type: 'inside',
+			        filterMode: 'none',
+			        xAxisIndex: [0],
+			        startValue: -20,
+			        endValue: 20
+			    }, {
+			        show: true,
+			        type: 'inside',
+			        filterMode: 'none',
+			        yAxisIndex: [0],
+			        startValue: -20,
+			        endValue: 20
+			    }],
+			    series: [
+			        {
+			            type: 'line',
+			            showSymbol: false,
+			            clip: true,
+			            data: generateData()
+			        },
+					{
+						symbolSize: 20,
+						data:  points,
+						type: 'scatter'
+					}
+			    ]
+			};
+			return option
+		}
+		
+		</script>
+	</body>
+</html>

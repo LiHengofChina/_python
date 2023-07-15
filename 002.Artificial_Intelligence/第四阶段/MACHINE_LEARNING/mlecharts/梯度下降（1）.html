@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>梯度下降（1）</title>
+		<script type="text/javascript" src="_js/echarts.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.14.2/math.min.js"></script>
+		<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+	</head>
+	<body>
+		<div class='container-fluid'>
+			<div id="chart" class="chart-container" style="float:left; width:900px; height:500px;"></div>
+			<div id="param" class="param-container" style="float:left; margin-left: 20px;">
+				<h3>目标函数</h3>
+				<h4>$$ f(x) = \frac{1}{2}x^2 - 5x + 15 $$</h4>
+				<h4>$$ f'(x) = x - 5 \quad\quad\quad\quad $$</h4>
+				<h3>参数设置</h3>
+				<div class="form-inline">
+					<div class="form-group">
+						<label for="param_x">$$ x : $$</label>
+						<input type="number" class="form-control" id="param_x" value='12' step='0.1'>
+					</div>
+				</div>
+				<div class="form-inline">
+					<div class="form-group">
+						<label for="param_a">$$ \alpha : $$</label>
+						<input type="number" class="form-control" id="param_a" value='0.1' step='0.05'>
+					</div>
+				</div>
+				<h3>参数更新公式</h3>
+				<h4>$$ x = x - \alpha*f'(x) $$</h4>
+				<h4> = <span id='wxn_1'>12</span> - <span id='wa'>0.1</span> * <span id='wdx'>7</span> = <span id='wr'>11.3</span> </h4>
+				
+				
+			</div>
+		</div>
+		<script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+		
+		<script>
+		$(document).ready(function(){
+			// 初始化图表
+			var myChart = echarts.init(document.getElementById('chart'));
+			myChart.setOption(create_option());
+			
+			// 为表单控件添加监听   当参数更新后，更新图像
+			$("input[id^='param_']").on('input propertychange', function(){
+				var option = myChart.getOption();
+				// 更新切点位置
+				x = parseFloat($('#param_x').val())
+				y = math.pow(x, 2) / 2 - 5 * x + 15
+				option.series[1].data = [[x, y]];
+				// 更新切线位置
+				k = x - 5  // 切线斜率  过[x, y]点
+				b = y - k * x
+				//将 -15 与 15 带入直线方程，求得切线数据点
+				py1 = -15 * k + b
+				py2 = 15 * k + b
+				option.series[2].data = [[-15, py1], [15, py2]];
+				myChart.setOption(option);
+				// 更新梯度下降公式内容
+				a = parseFloat($('#param_a').val())
+				$('#wxn_1').html(x)
+				$('#wa').html(a)
+				$('#wdx').html((x-5).toFixed(2))
+				$('#wr').html((x-a*(x-5)).toFixed(2))
+				
+			})
+		})
+		
+		function generateData() {
+		    var data = [];
+		    for (let x = -15; x <= 15; x += 0.1) {
+		        data.push([x, 0.5 * math.pow(x, 2) - 5 * x + 15]);
+		    }
+		    return data;
+		}
+		
+		// 创建绘图所需option对象
+		function create_option(){
+			option = {
+			    animation: false,
+			    grid: {
+			        top: 40,
+			        left: 50,
+			        right: 40,
+			        bottom: 50
+			    },
+			    xAxis: {
+			        name: 'x',
+					min: -15,
+					max: 15,
+			        minorTick: {
+			            show: false
+			        },
+			        splitLine: {
+			            lineStyle: {
+			                color: '#eee'
+			            }
+			        },
+			        minorSplitLine: {
+			            show: true,
+			            lineStyle: {
+			                color: '#eee'
+			            }
+			        }
+			    },
+			    yAxis: {
+			        name: 'y',
+			        min: -10,
+			        max: 30,
+			        minorTick: {
+			            show: true
+			        },
+			        splitLine: {
+			            lineStyle: {
+			                color: '#eee'
+			            }
+			        },
+			        minorSplitLine: {
+			            show: true,
+			            lineStyle: {
+			                color: '#eee'
+			            }
+			        }
+			    },
+			    dataZoom: [{
+			        show: true,
+			        type: 'inside',
+			        filterMode: 'none',
+			        xAxisIndex: [0],
+			        startValue: -20,
+			        endValue: 20
+			    }, {
+			        show: true,
+			        type: 'inside',
+			        filterMode: 'none',
+			        yAxisIndex: [0],
+			        startValue: -20,
+			        endValue: 20
+			    }],
+			    series: [
+			        {
+			            type: 'line',
+			            showSymbol: false,
+			            clip: true,
+			            data: generateData()
+			        },{
+						symbolSize: 20,
+						data: [[12, 27]],
+						type: 'scatter'
+					},{
+						type: 'line',
+						showSymbol: false,
+						clip: true,
+						data: [[0, -57], [15, 48]]
+					}
+			    ]
+			};
+			return option
+		}
+		
+		</script>
+	</body>
+</html>
