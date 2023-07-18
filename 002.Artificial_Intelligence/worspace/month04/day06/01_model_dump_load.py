@@ -1,12 +1,8 @@
 '''
+    保存模型 在训练完成模型之后保存 "模型"
 
-    通过sklearn接口来实现  "线性回归"
-    实际工作中，我们使用sklearn的线性回归接口，就可以了
+    加载模型，执行预测
 
-    划分 "训练集" 和 "测试集"
-
-    用 "训练集" 训练模型
-    用 "测试集" 评估模型
 '''
 
 import pandas as pd
@@ -15,7 +11,7 @@ import sklearn.preprocessing as sp
 import sklearn.linear_model as lm  # 线性模型
 import sklearn.metrics as sm       # 评估模块
 
-import matplotlib.pyplot as plt
+import pickle  #保存模型
 
 
 # （1）. 整理输入和输出
@@ -26,8 +22,6 @@ res = sp.scale(data)
 train_x = data.iloc[:, :-1]
 train_y = data.iloc[:, -1]
 
-
-
 # （2）构建模型
 model = lm.LinearRegression()
 
@@ -37,22 +31,17 @@ model.fit(train_x, train_y)
 print('coef_：',model.coef_) #权重，所有权重，返回列表，几组x就有几组权重
 print('intercept_：',model.intercept_) #偏置
 
-
-# （4）测试模型
-# pred_y = model.predict(train_x)
-# plt.plot(train_x, pred_y, color='orangered') #画出回归线 # 注意：这个是图线，下面是画点
-# plt.scatter(train_x,train_y) #用散点图，画出样本数据
-# plt.tight_layout()
-# plt.show()
-
+#================================================================
 #从全部数据中，抽取一部分数据，作为测试集（假设测试集没参加过训练）
 test_x = train_x.iloc[::4] #测试集的输入，开始位置和结束位置省略，步长为4
 test_y = train_y[::4]      #测试集的输出，开始位置和结束位置省略，步长为4
         # test_y 是真实值，
+
+
 pred_tets_y = model.predict(test_x)
 # 将test_x带到模型中得到的是预测值
 
-#===================
+#================================================================
 #评估指标
 
 print('平均绝对误差-MAE：', sm.mean_absolute_error(test_y, pred_tets_y))
@@ -72,14 +61,32 @@ print('中位数绝对偏差-MAD：', sm.median_absolute_error(test_y, pred_tets
 print('r2_score：', sm.r2_score(test_y, pred_tets_y))
                                 # 第一个参数是真实值，第二个是预测值
                                 # 趋向于1，模型越好；趋向于0，模型越差.
-# 0.96，这里得分比较高，因为我们的测试数据参加了训练。
-# 这个模型能不能用，主要看 MAE
-# 分再高也可能有误差，分可以用来比较两个模型的好坏
+
+#=================================================================#在最后保存模型
+
+# wb 表示 以 "二进制写入模式" 打开文件
+with open('model.pickle','wb') as f :
+    pickle.dump(model,f)
+    # 把 model 对象保存到f中去
+    # 注意是 dump ， 不是 dumps没有s
+    #  后缀名可以是任意的，但一般是 .pickle 或 .pkl
+    # 注意：保存的是一个二进制文件。
+print('save succss')
+
+#======================================#加载模型
+with open('model.pickle','rb') as f:
+    new_model = pickle.load(f)
+
+# 这种写法支警告
+# new_test_x = pd.DataFrame([
+#     [1.1],
+#     [2.2]
+# ])
+new_test_x = pd.DataFrame({'YearsExperience': [1.1, 2.2]})
+
+print(type(new_test_x))
+res = new_model.predict(new_test_x) # 预测，打印预测结果
+print(res)
 
 
 
-# 画出图形
-# plt.plot(test_x, pred_tets_y, color='orangered') #画出回归线
-# plt.scatter(test_x,test_y) #用散点图，画出样本数据
-# plt.tight_layout()
-# plt.show()
