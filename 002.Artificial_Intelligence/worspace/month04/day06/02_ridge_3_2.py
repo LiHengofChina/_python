@@ -40,7 +40,7 @@ scores = []
 for i in params:
     ridge = lm.Ridge(alpha=i)
     ridge.fit(x, y)                         #训练
-    ridge_test_y = ridge.predict(test_x)    #拿"测试集数据"进行预测
+    ridge_test_y = ridge.predict(test_x)    #拿 "测试集数据" 进行预测
     scores.append(sm.r2_score(test_y, ridge_test_y))
 
 # print(scores)

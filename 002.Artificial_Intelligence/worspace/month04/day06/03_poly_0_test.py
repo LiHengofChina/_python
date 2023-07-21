@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 
 data = pd.read_csv('../data_test/Salary_Data.csv',
                    sep=',')
+# data = pd.read_csv('../data_test/Salary_Data2.csv',
+#                    sep=',')
 
 #准备数据
 x = data.iloc[:,:-1] # 除最后一列外所有数据，所以是2维
