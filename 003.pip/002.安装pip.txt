@@ -13,35 +13,58 @@
 
 	（1）将脚本 路径配置到环境变量中
 	（2）使用python命令的全路径 
-		 如：C:\Python3.11\python.exe -m pip install --upgrade numpy
+			如：C:\Python3.11\python.exe -m pip install --upgrade numpy
+
+
+//========================================	安装升级 pip
+python -m pip install --upgrade pip
+
+//========================================
+pip install --upgrade numpy		
+pip show numpy
+
+
+//========================================
+pip install --upgrade pandas
+pip show pandas
+
+
+//========================================
+pip install --upgrade xlrd==1.2.0
+pip show xlrd
+
+
+//========================================
+pip install --upgrade openpyxl
+pip show openpyxl
+
+
+//========================================
+pip install --upgrade matplotlib
+pip show matplotlib
 
 
 
-（4） pip install --upgrade numpy		
-（4） pip install --upgrade pandas
-（4） pip install --upgrade xlrd==1.2.0
-（4） pip install --upgrade openpyxl
-（4） pip install --upgrade matplotlib
 
-（4） pip install --upgrade sklearn
-（4） pip install --upgrade scikit-learn
-
-（4）   cv2
-		pip install --upgrade opencv-python			 //提供了完整的 OpenCV 功能 包含图形用户界面（GUI）的支持
-		pip install --upgrade opencv-python-headless //无 GUI 支持的 OpenCV Python 绑定包
+//========================================//提供了完整的 OpenCV 功能 包含图形用户界面（GUI）的支持
+pip install --upgrade opencv-python			 
+pip show opencv-python					
+pip uninstall opencv-python
 
 
-（5）pip show pandas
-（5）pip show numpy
-（5）pip show xlrd
-（5）pip show openpyxl
-（5）pip show matplotlib
+//========================================//无 GUI 支持的 OpenCV Python 绑定包
+pip install --upgrade opencv-python-headless 
+pip show opencv-python-headless		
+pip uninstall opencv-python-headless
 
-（5）pip show sklearn						//pip uninstall sklearn
-（5）pip show scikit-learn
 
-（5）pip show opencv-python					//pip uninstall opencv-python
-     pip show opencv-python-headless		//pip uninstall opencv-python-headless
+
+//========================================
+pip install --upgrade scikit-learn
+//安装指定版本
+pip install --upgrade scikit-learn==1.1.1 -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip show scikit-learn
+pip uninstall scikit-learn
 
 
 

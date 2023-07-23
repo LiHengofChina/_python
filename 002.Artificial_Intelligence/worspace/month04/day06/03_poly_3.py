@@ -24,6 +24,9 @@ y = data.iloc[:, -1]
 
 params = np.arange(1,100,1)
 
+
+
+
 scores = []
 for i in params:
     model = pl.make_pipeline(sp.PolynomialFeatures(i), lm.LinearRegression())
