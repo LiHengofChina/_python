@@ -28,7 +28,7 @@ params = np.arange(1,100,1)
 
 
 scores = []
-for i in params:
+for i in params:            #数据管线
     model = pl.make_pipeline(sp.PolynomialFeatures(i), lm.LinearRegression())
     model.fit(x, y)
     pred_y = model.predict(x)

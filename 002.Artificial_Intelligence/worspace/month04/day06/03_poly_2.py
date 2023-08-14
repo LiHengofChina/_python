@@ -16,7 +16,7 @@ data = pd.read_csv('../data_test/Salary_Data.csv', sep=',')
 x = data.iloc[:, :-1]
 y = data.iloc[:, -1]
 
-#创建模型           #PolynomialFeatures(3)扩展到3次
+#创建模型           #PolynomialFeatures(3)扩展到3次 #数据管线
 model = pl.make_pipeline(sp.PolynomialFeatures(3), lm.LinearRegression())
                 # 类似于linux的 "管道符号"， 将上一个命令的输出作为下一个命令的输入
 
