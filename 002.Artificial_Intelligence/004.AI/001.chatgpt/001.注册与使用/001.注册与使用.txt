@@ -28,7 +28,7 @@ toDask是一个远程控制软件
 
 	（2）注册GPT
 		https://chat.openai.com/chat
-		
+
 		//账号1
 		//13688007165@139.com
 		//liheng520
