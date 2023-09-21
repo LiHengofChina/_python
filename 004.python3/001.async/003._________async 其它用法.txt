@@ -1,0 +1,33 @@
+
+//=================================== 异步上下文管理器 (async with)：
+//=================================== 异步上下文管理器 (async with)：
+在异步编程中，
+你可能需要异步方式执行上下文管理器的进入和退出方法。
+例如，在处理异步文件IO或异步数据库连接时。
+为此，可以使用 async with 语句。
+
+async with some_async_context_manager() as resource:
+    await resource.do_something()
+
+//=================================== 异步迭代器 (async for)：
+//=================================== 异步迭代器 (async for)：
+
+当你有一个 "异步生成值" 的 "迭代器"
+（例如，从 "异步数据库查询" 或 "异步API调用中读取数据"）时，
+你可以使用 async for 进行异步迭代。
+
+async for item in some_async_iterator():
+    await process(item)
+
+//=================================== 定义异步生成器：
+//=================================== 定义异步生成器：
+
+你可以使用 async def 定义一个异步生成器，
+该生成器可以使用 yield 语句产生多个值，
+并且在产生每个值之间可以执行异步操作。
+
+async def async_generator():
+    for i in range(3):
+        await asyncio.sleep(1)
+        yield i
+
