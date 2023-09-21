@@ -1,0 +1,76 @@
+
+//===================================================
+//===================================================
+
+在Python中，尤其是在ROS环境中使用Python，
+你可以采取模块和类的方法来组织你的代码，使其有条理且可维护。
+以下是一些常见的约定和实践：
+
+//==================================
+（1）
+	模块组织：Python的模块就是一个.py文件，它可以包含函数、类和变量。
+	你可以有modbus.py这样的模块，其中包含你的业务逻辑。
+
+（2） 包组织
+
+	Python的包是一个目录，
+	其中包含一个特殊的 __init__.py 文件（这个文件可以是空的），
+	并可以包含其他模块和子包。
+	例如，你可以有一个名为 my_robot 的包，
+		其中包含 "modbus.py模块" 和 其他 "相关模块"。
+
+（3）类的定义和实例化：
+	和C++类似，你可以在Python中定义和实例化类。
+ 
+	//例如，在modbus.py中：
+		
+		class ModBus:
+		def __init__(self, param):
+			self.param = param
+
+		def some_method(self):
+			# Do something
+
+
+	//调用这个包
+	from my_robot import modbus
+	modbus_instance = modbus.ModBus("some_param")
+
+（4）导入其他模块
+	使用 import 关键字，你可以导入其他模块或特定的函数和类。
+	例如，from some_module import SomeClass。
+
+（5） ROS节点组织
+	在ROS的Python节点中，你通常会有一个主函数（例如main()），
+	其中会初始化ROS节点，
+	并可能创建类的实例和运行某些函数。例如：
+
+	if __name__ == "__main__":
+		rospy.init_node('my_node_name')
+		my_instance = SomeClass()
+		rospy.spin()
+
+（6） 
+	目录结构：与C++相似，
+	你的Python代码可以放在ROS包的scripts目录中（用于可执行脚本）
+	或src/package_name目录中（用于模块和类的定义）。
+	
+总之，尽管Python和C++在语法和组织上有所不同，但在ROS环境中，
+你可以采取类似的策略来组织和结构化你的代码。
+
+//======================================================= 总结一下
+//======================================================= 总结一下
+
+（1）创建文件夹：my_robot
+（2）创建文件：__init__.py
+（3）创建模块：modbus.py
+		//class ModBus
+（4）使用模块
+
+		from my_robot import modbus
+				//my_robot指包名
+				//modbus是文件名
+		modbus_instance = modbus.ModBus("some_param")
+				//创建一个名叫 modbus_instance的实例，
+				//ModBus是实例类型。
+

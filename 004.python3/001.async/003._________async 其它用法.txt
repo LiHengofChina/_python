@@ -8,6 +8,19 @@
 
 async with some_async_context_manager() as resource:
     await resource.do_something()
+			/** 注意： 
+					这里的等待，是 "事件循环" 中等待。
+					而不是线程的等待，
+					示例代码：
+					print(f"11111")
+					async with some_async_context_manager() as resource:
+						print(f"2222")
+
+					print(f"2222") 会等到上面的async with...执行完成才会执行
+					等待过程中，"事件循环" 中的其它 "协程" 可以执行。
+
+			*/
+
 
 //=================================== 异步迭代器 (async for)：
 //=================================== 异步迭代器 (async for)：
