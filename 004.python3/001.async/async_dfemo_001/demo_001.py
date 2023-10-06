@@ -1,7 +1,9 @@
 
 
 import asyncio
-
+"""
+串行运行
+"""
 
 async def another_coroutine():
     print("Inside another coroutine")
@@ -10,7 +12,7 @@ async def another_coroutine():
 
 async def test_001(name):
     print("Start")
-    await another_coroutine()
+    await another_coroutine() #使用了await
     print("End") #需要 another_coroutine 执行完成，才执行这一行
 
 

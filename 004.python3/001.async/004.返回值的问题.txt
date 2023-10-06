@@ -1,0 +1,52 @@
+async def another_coroutine():
+    print("aaaaaaaa")
+    for i in range(10):
+        print("aaaaaaa: " + str(i))
+        await asyncio.sleep(1)
+    print("aaaaaaaa")
+
+
+//============================================================= async def 函数的类型
+//============================================================= async def 函数的类型
+
+如 x = another_coroutine()，您实际上是获取了一个协程对象（coroutine object），
+其类型是 <class 'coroutine'>
+// coroutine 意思是：协同程序，读作: 克尔 ru ting
+
+//============================================================= 执行异步函数返回的结果类型
+//============================================================= 执行异步函数返回的结果类型
+
+
+要使这个协程开始执行，您可以将其提交给 "事件循环"。
+在asyncio中 ，常用 asyncio.create_task() 或 asyncio.ensure_future() 来执行协程并 "返回一个Task对象"，
+该对象是Future的子类。Task对象代表了异步操作的状态和结果。
+
+
+    y = asyncio.create_task(x) 
+	// 返回 _asyncio.Task 类型
+	// _asyncio.Task 是 _asyncio.Future  的子类
+
+	task是一个_asyncio.Task类型的对象。这个Task对象代表了一个正在运行（或将要运行）的异步操作。
+	它有一些方法和属性，允许您查询任务的状态、取消任务、获取结果等。
+
+//============================================================= 函数本身 的结果
+//============================================================= 函数本身 的结果
+async def another_coroutine():
+    print("aaaaaaaa")
+    return 5
+
+
+task = asyncio.create_task(another_coroutine())  
+result = await task
+
+这里的await会暂停当前协程的执行，直到task任务完成。
+一旦task完成，await会获取task的结果，
+这就是another_coroutine函数的返回值。所以result会存储这个返回值。
+
+
+//========================== 简而言之：
+//========================== 简而言之：
+task是一个代表异步操作的对象。
+result是这个异步操作的结果，即another_coroutine的返回值。
+
+

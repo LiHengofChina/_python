@@ -10,12 +10,17 @@ Python中的async和await关键字是在Python 3.5中引入的
 
 //========================================= async 函数:
 //========================================= async 函数:
+
 （1）使用async关键字定义的函数称为"异步函数"。
-（2）异步函数不返回常规的值，而是返回一个asyncio.Future对象。
-/**
-	async def my_async_function():
-		return "Hello from async function!"
-*/
+（2）异步函数不返回 "常规的值" ，而是返回一个 _asyncio.Future 对象。
+						//是说 "异步函数" 它执行之后返回 _asyncio.Future ,
+						// _asyncio.Future 有一个子类是 _asyncio.Task
+	/**
+		async def my_async_function():
+			return "Hello from async function!"
+	*/
+
+
 //========================================= await 关键字:
 //========================================= await 关键字:
 
@@ -26,12 +31,12 @@ Python中的async和await关键字是在Python 3.5中引入的
 （2）当你在异步函数中使用await时，该函数会暂停，
 	 允许其他任务执行，直到await的操作完成。
 
-/**
-	async def fetch_data():
-		# ... some asynchronous operations ...
-		data = await some_async_api_call()
-		return data
-*/
+	/**
+		async def fetch_data():
+			# ... some asynchronous operations ...
+			data = await some_async_api_call()
+			return data
+	*/
 //========================================= 执行async函数:
 //========================================= 执行async函数:
 （1）不能像普通函数那样直接调用async函数。

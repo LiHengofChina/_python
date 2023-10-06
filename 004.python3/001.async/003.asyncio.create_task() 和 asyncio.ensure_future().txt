@@ -1,0 +1,35 @@
+
+//============================================================= asyncio.create_task() 和 asyncio.ensure_future() 有什么区别
+//============================================================= asyncio.create_task() 和 asyncio.ensure_future() 有什么区别
+
+asyncio.create_task()和asyncio.ensure_future()都是用于启动协程的函数，
+但它们之间存在一些差异。以下是这两个函数的主要区别：
+
+（1）版本和用途:
+	 asyncio.create_task(): 这是Python 3.7 及更高版本中引入的新方法。
+	 它专为创建任务而设计，使得API更为直观和易于使用。
+
+	 asyncio.ensure_future(): 这是更早版本的asyncio中的方法，它的目的是确保有一个Future对象。
+	 如果你给它一个协程，它会为该协程创建一个Task（Future的一个子类）并开始执行它。如果给它一个Future或Task，它会简单地返回它。
+
+（2）返回类型:
+	 无论何时调用，asyncio.create_task()都会返回一个Task对象。
+	 asyncio.ensure_future()可能会返回一个Future或Task对象，具体取决于其参数。
+
+（3）用法偏好:
+	 在新代码中，当你确切知道你正在处理的是一个协程，
+	 并希望为其创建一个任务时，建议使用asyncio.create_task()。
+	 asyncio.ensure_future()在某些情况下可能更为灵活，因为它可以处理Future、Task和协程对象。
+	 但在大多数情况下，如果你知道你正在处理的对象类型，create_task()可能会更直观。
+
+（4）语义区别:
+	 asyncio.create_task()明确表示你要为给定的协程创建一个新的任务。
+	 asyncio.ensure_future()的语义更为宽泛，它确保有一个未来的对象，
+	 无论是通过创建新的任务还是通过直接返回一个现有的未来或任务对象。
+	 总的来说，尽管这两个函数在大多数常见用例中可以互换使用，但asyncio.create_task()在新代码中更受推荐，
+	 因为它提供了更清晰和直观的API。
+	 但是，如果你正在处理可能是Future、Task或协程的对象，那么asyncio.ensure_future()可能更为合适。
+
+
+
+
