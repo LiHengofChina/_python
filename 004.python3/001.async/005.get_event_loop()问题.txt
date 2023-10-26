@@ -1,0 +1,43 @@
+
+
+（1）
+	在您的主入口中，
+	您使用了asyncio.run(thickness_instance.thickness_service_loop())。
+	asyncio.run()是一个辅助函数，
+	用于执行异步协程并返回结果。
+	它会创建一个新的事件循环，运行给定的协程，然后关闭事件循环。
+
+
+（2）
+	然而，在您的Thickness类中，您有这样的代码：
+	self.loop = asyncio.get_event_loop()
+
+（3）
+	这会获取当前线程的事件循环，但如果在那个时候还没有事件循环，
+	它会创建一个新的。
+	所以，如果在实例化Thickness类时没有活跃的事件循环，
+	asyncio.get_event_loop()会创建一个。
+
+（4）这就会导致错误：
+
+	Tas<Task pending name='Task-1' coro=<Thickness .thicknes service loop() running at /home/wote cb) 
+	at /usr/ib/python3 .8/asyncirkspace work/recognition item/src/recognition item/sripts/modules/thickness.py:181> 
+	cb=[ run until complo/base events.py:184]> got Future <Future pending cb[_chain future.<locals>. 
+	call check cancel() at /usrlib/python3.8/asyncio/futures.py:360]> attached to a different loop
+
+
+	意思是说：
+	错误信息表明了一个常见的asyncio错误，
+	即：Future或Task与预期的事件循环不匹配。
+	这通常发生在异步任务或Future对象被创建于一个事件循环，
+	但在另一个不同的事件循环中尝试访问或等待它时。
+	
+	//有多个事件循环，在另一个事件循环中尝试访问或等待它。
+
+（5）在所有的地方使用局部获取事件循环对象 
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(self.executor, lambda: self.register_server_client.call(request))
+
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.data_consumer())
+
