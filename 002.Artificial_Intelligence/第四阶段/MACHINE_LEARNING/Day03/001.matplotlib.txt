@@ -37,7 +37,7 @@
 	//======================================= 为什么选择 matplotlib
 	//======================================= 为什么选择 matplotlib
 	因为它是一个底层的绘图库
-	pandas  和 seaborn 其实是苦于 matplotlib 封装的
+	pandas  和 seaborn 其实是基于 matplotlib 封装的
 
 	pandas  和 seaborn 画图要比 matplotlib 更简单些。
 
@@ -67,5 +67,5 @@
 	//======================================== 导入 matplotlib 库的 pyplot模块
 	import matplotlib.pyplot as plt
 
-	
+
 
