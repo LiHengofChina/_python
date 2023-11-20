@@ -13,14 +13,17 @@ y = np.array([5.0, 5.5, 6.0, 6.8, 7.1])
 w1 = 1
 w0 = 1
 
+learning_rate = 0.1
 
+# 比较平缓
 learning_rate = 0.01
-        #比较平缓
+
+
 
 # learning_rate = 0.2
         # 这时会出现波动
 
-# learning_rate = 0.1
+
 
 # epoch = 200
 # epoch = 500
@@ -59,20 +62,20 @@ plt.scatter(x,y) #画出样本数据
 
 plt.figure('LR',facecolor='lightgray')
 
-# 3行1列，第一副子图。
+################################# 3行1列，第一副子图。
 plt.subplot(3,1,1)
 plt.plot(epoches,w1s,color= 'dodgerblue',
          label = 'w1')
 plt.legend()
 
-# 3行2列，第二副子图。
+################################# 3行1列，第二副子图。
 plt.subplot(3,1,2)
 plt.plot(epoches,w0s,color= 'dodgerblue',
          label = 'w0')
 plt.legend()
 
 
-# 3行2列，第二副子图。
+################################# 3行1列，第三副子图。
 plt.subplot(3,1,3)
 plt.plot(epoches,losses,color= 'orangered',
          label = 'loss')

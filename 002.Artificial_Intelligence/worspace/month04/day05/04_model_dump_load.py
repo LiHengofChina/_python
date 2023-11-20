@@ -65,7 +65,7 @@ print('r2_score：', sm.r2_score(test_y, pred_tets_y))
 #=================================================================#在最后保存模型
 
 # wb 表示 以 "二进制写入模式" 打开文件
-with open('model.pickle','wb') as f :
+with open('../day06/model.pickle', 'wb') as f :
     pickle.dump(model,f)
     # 把 model 对象保存到f中去
     # 注意是 dump ， 不是 dumps没有s
@@ -74,7 +74,7 @@ with open('model.pickle','wb') as f :
 print('save succss')
 
 #======================================#加载模型
-with open('model.pickle','rb') as f:
+with open('../day06/model.pickle', 'rb') as f:
     new_model = pickle.load(f)
 
 # 这种写法支警告
