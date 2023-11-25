@@ -2,12 +2,11 @@
 '''
     使用 "线性回归" 对 Salary_Data2.csv进行建模
     建立模型、执行预测、得到回归线
-
 '''
-import pandas
+
 import pandas as pd
 import matplotlib.pyplot as plt
-import sklearn.linear_model as lm
+import sklearn.linear_model as lm #线性模型模块
 
 
 data = pd.read_csv('../data_test/Salary_Data2.csv', sep=',')

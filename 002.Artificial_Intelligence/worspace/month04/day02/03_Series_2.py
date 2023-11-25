@@ -10,8 +10,11 @@ s01 = pd.Series([100, 90, 80, 70])
 print(s01[0])
 # print(s01[-1]) #没有反向索引
 
+print("##" * 20)
 s01 = pd.Series([100, 90, 80, 70], index=['zs', 'ls', 'ww', 'zl'])
 print(s01[0])
+
+print("##" * 20)
 print(s01[-1])  # 但是当你设置了index，之后就可以拿到了，这是因为此时它拿的是index中的-1索引
 
 

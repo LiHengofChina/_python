@@ -14,7 +14,7 @@ data = pd.read_csv('../data_test/aapl.csv',
                    usecols=['date','open', 'high', 'low', 'close'])
 print(data)
 
-
+print("====" * 20)
 
 data = pd.read_csv('../data_test/保健品问卷数据/保健品字段介绍.csv',
                    header=None,

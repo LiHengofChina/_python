@@ -17,12 +17,12 @@ import pandas as pd
 
 
 ##========================================== 从文件读取数据
-# boston = pd.read_csv('../day06/04_boston_data.csv', sep=',', header=None)
-# # boston = sd.load_boston()
+boston = pd.read_csv('../day06/04_boston_data.csv', sep=',', header=None)
+# boston = sd.load_boston()
 
-boston = pd.read_csv('../day07/tmp/training_data.csv',
-                     sep=',',
-                     header=None)
+# boston = pd.read_csv('../day07/tmp/training_data.csv',
+#                      sep=',',
+#                      header=None)
 
 x = boston.iloc[:, :-1] # x = boston.data
 y = boston.iloc[:, -1]  # y = boston.target

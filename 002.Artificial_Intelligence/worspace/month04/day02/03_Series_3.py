@@ -13,6 +13,7 @@ import pandas as pd
 s01 = pd.Series([100, 90, 80, 70], index=['zs', 'ls', 'ww', 'zl'])
 print(s01.values)
 print(type(s01.values))  #它是一个 ndarrsy
+print(type(s01))
 print(s01.index)
 print(s01.dtype)
 print(s01.size)

@@ -12,6 +12,11 @@ raw_sample = np.array([[3.0,-100.0,2000.0],
                        [0.0,400.0,3000.0],
                        [1.0,-400.0,2000.0]])
 
+print(raw_sample)
+
+print("===" * 30)
+
 #使用 sklearn 框架来实现
 res = sp.scale(raw_sample)
+
 print(res)

@@ -28,7 +28,7 @@ print(liheng)
 print(liheng.dtype)  # datetime64[s] [s]表示精确要秒  [Y]年[M]月[D]日   [h]时[m]分[s]秒
 
 
-
+print("==" * 20)
 # datetime64 ---> 转int转成数值类型
 xiaoxiao = liheng.astype('int32')
 print(xiaoxiao)

@@ -2,7 +2,7 @@
 数组的基本创建
 '''
 import numpy as np
-import math
+
 
 
 ary = np.arange(0, 10, 3)

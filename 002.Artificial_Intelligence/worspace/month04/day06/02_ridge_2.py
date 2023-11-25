@@ -25,11 +25,14 @@ model = lm.LinearRegression()
 # 构建模型  “岭回归模型”
 # ridge = lm.Ridge(alpha=120, max_iter=1000)
 ridge = lm.Ridge(alpha=98, max_iter=1000)
-        # alpha指 "正则化系数"，默认值是1
+        #(1) alpha指 "正则化系数"，默认值是1
         # "正则化系数" 设置多大，这个需要自己评估，它也是超参数。
+        # alpha为0时，它就是线性回归。
 
-        # solver 指的是使用 "闭式解（最小2乘法）"，还是 "迭代求解（梯度下降法）"
+        #(2) solver 指的是使用 "闭式解（最小2乘法）"，还是 "迭代求解（梯度下降法）"
         # solver 意思是使用自动，能用什么用什么
+
+        #(3)max_iter 一般使用默认
 
 # 训练模型
 model.fit(train_x,train_y)

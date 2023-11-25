@@ -44,17 +44,23 @@ train_y = res[:, -1] #只要最后一列
 
 # （2）构建模型
 model = lm.LinearRegression()
-                    # 两个可选参数： fit_intercept=True ，是否训练偏置，normalize=False，是否归一化处理
-                    # y= w1x1 + w2x2 + ... + wnxn + w0
-                    # 这个线性模型，不管有几个 "自变量" 它都可以接收。
+                    # 两个可选参数：
+                    # （1）fit_intercept=True ，是否训练偏置。
+                    # （2）normalize=False，是否归一化处理。
+                    #  y= w1x1 + w2x2 + ... + wnxn + w0
+                    # lm.LinearRegression()生成的这个线性模型，不管有几个 "自变量" 它都可以接收。
                     # 此时，只有模型，并没有参数
 
+                    #相当于创建： y = w1x1 + w2x2 + w3x3 + ... + wnxn + w0
 
-# （3）用已知输入、输出数据集训练回归器
+
+# （3）用已知输入、输出数据集训练回归器，
 model.fit(train_x, train_y) #把 "数据" 交给 "模型" 进行 "训练"
 					        #此时能得到w1是多少，w0是多少......等等等
     						#此时 "模型参数" 就在 model 上面
         					#此时，就能拿模型，进行新的参数进行预测
+
+                            #相当于：求解模型最优参数
 
 #训练之后，可以打印出权重 和 偏置
 print('coef_：',model.coef_) #权重，所有权重，返回列表，几组x就有几组权重

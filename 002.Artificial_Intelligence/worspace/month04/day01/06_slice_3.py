@@ -1,8 +1,9 @@
 import numpy as np
 
 ary = np.arange(1, 51).reshape(10, 5)
-
 print(ary)
+
+
 print("==" * 20)
 
 # 拿到所有行，不要最后一列（要求二维）

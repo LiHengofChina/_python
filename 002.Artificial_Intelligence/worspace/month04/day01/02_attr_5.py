@@ -8,7 +8,9 @@ import numpy as np
 
 #创建布尔类型的元素
 ary = np.zeros(shape=(3, 3), dtype='bool')
+print(ary)
 ary = np.zeros(shape=(3, 3), dtype='bool_')
+print(ary)
 ary = np.zeros(shape=(3, 3), dtype='?')
 print(ary)
 
