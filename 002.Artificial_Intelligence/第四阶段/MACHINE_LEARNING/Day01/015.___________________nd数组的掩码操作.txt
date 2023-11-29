@@ -12,7 +12,6 @@ a = np.arange(1, 10)
 
 # 创建一个列表（或数组）
 mask = [True, False, True, False, True, False, True, False, True]
-
 # 用数组索引一个 "列表"，正常情况是一个索引值，一个切片
 print[a[mask]]
 

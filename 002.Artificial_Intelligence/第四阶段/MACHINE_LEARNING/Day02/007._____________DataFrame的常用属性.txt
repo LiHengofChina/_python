@@ -1,5 +1,7 @@
 
 
+DataFrame- 常用属性
+
 axes  返回 行/列标签(index)列表 //索引有2个维度
 		//和axis有点像
 columns		//返回列标签

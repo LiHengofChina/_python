@@ -7,7 +7,6 @@ dS = [S1,S2,...，Sn]
 		样本中的 "每个值" 都是  "真傎与误差" 的和。
 
 m = np.mean(array)  	#np的接口
-
 m = array.mean()		#pandas中Series的接口
 m = df.mean(axis=0)		#pandas中Dataframe的接口
 
