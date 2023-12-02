@@ -56,7 +56,8 @@ model_dic = {
     '多项式回归': pl.make_pipeline(sp.PolynomialFeatures(2),
                                    lm.Ridge(alpha=292)
                                   ),
-    '单颗决策树': st.DecisionTreeRegressor(max_depth=8)   #回归器：如果不添加参数，就会过拟合，训练是1，测试可能0.64.
+    '单颗决策树': st.DecisionTreeRegressor(max_depth=8)
+                    #回归器：如果不添加参数，就会过拟合，训练是1，测试可能0.64.
                     # 就算是 决策树 ，效果也不是很好，因为它是弱模型，预测结果不会很好
 
 
