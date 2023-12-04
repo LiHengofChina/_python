@@ -1,0 +1,26 @@
+
+
+python.exe -m pip install --upgrade pip
+
+
+//========================== numpy
+pip install numpy
+
+
+//========================== matplotlib
+pip install matplotlib
+
+
+//========================== pandas
+pip install pandas
+
+
+//==========================  sklearn
+pip install scikit-learn
+
+//========================== opencv
+
+pip install opencv-python
+
+
+
