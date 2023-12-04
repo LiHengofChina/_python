@@ -10,8 +10,8 @@
 import cv2
 
 #（1）加載圖片
-lena = cv2.imread('../data/lena.jpg', 0 )
-lily = cv2.imread('../data/lily_square.png',0 )
+lena = cv2.imread('../data/lena.jpg', 0)
+lily = cv2.imread('../data/lily_square.png', 0)
 cv2.imshow('lena',lena)
 cv2.imshow('lily',lily)
 

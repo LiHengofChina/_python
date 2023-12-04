@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 
 #（1）加載圖片
-img = cv2.imread('../data/pers.png', 0 )
+img = cv2.imread('../data/pers.png', 0)
 cv2.imshow('img',img)
 
 #获取高、宽
