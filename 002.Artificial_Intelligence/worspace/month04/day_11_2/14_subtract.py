@@ -6,25 +6,17 @@
 import cv2
 import numpy as np
 
-#（1）加載圖片
-img = cv2.imread('../data/pers.png', 0)
-cv2.imshow('img',img)
 
-#获取高、宽
-h,w = img.shape[:2]
+img3 = cv2.imread('../data/3.png', 0)
+img4 = cv2.imread('../data/4.png', 0)
+cv2.imshow('img3',img3)
+cv2.imshow('img4',img4)
 
-#生成“变换之前的坐标点”，"变换之后"的坐标点。 TODO暂时直接拿到点
-src = np.float32([[58, 2], [167, 9], [8, 196], [126, 196]]) # 输入图像四个顶点坐标
-dst = np.float32([[16, 2], [167, 8], [8, 196], [169, 60]]) # 输出图像四个顶点坐标
+dst3_4 = cv2.subtract(img3, img4)
+cv2.imshow('dst3_4',dst3_4)
 
-#生成透视变换的矩阵
-M = cv2.getPerspectiveTransform(src,dst)
-
-#执行 透视变换
-res = cv2.warpPerspective(img,
-                    M,
-                    dsize=(w,h))
-cv2.imshow('res',res)
+dst4_3 = cv2.subtract(img4, img3 )
+cv2.imshow('dst4_3',dst4_3)
 
 cv2.waitKey()            # 等待用户敲击按键。
 cv2.destroyAllWindows()  # 销毁所有窗口
