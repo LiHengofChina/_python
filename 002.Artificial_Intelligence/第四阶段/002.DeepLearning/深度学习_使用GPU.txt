@@ -1,0 +1,33 @@
+
+（1）安装GPU支持的深度学习库： 
+		确保你安装了支持GPU加速的深度学习库，
+		例如TensorFlow或PyTorch。这些库通常有GPU版本，
+		通过CUDA或cuDNN等工具与GPU进行通信。
+
+（2）检查GPU安装： 确保你的机器上有可用的GPU，
+		并且显卡驱动程序已经正确安装。
+		你可以使用工具如NVIDIA的nvidia-smi
+		（需要安装NVIDIA驱动）来检查GPU的状态。
+
+（3）安装深度学习库的GPU版本：
+		对于TensorFlow：安装GPU版本的TensorFlow，
+		可以通过 pip install tensorflow-gpu 来安装。
+		对于PyTorch：根据官方指南安装GPU版本的PyTorch。
+
+（4）设定深度学习框架使用GPU： 在代码中，
+		确保深度学习库正确配置为使用GPU。
+		例如，在TensorFlow中，你可以使用tf.config.experimental.list_physical_devices('GPU')来检查GPU是否可用，通过tf.config.experimental.set_memory_growth来动态分配GPU内存。
+
+
+（5）使用合适的模型：
+		 一些深度学习模型比其他模型更适合在GPU上进行训练。
+		 深层的卷积神经网络（CNN）通常能够更好地利用GPU的并行计算能力。
+
+（6）数据批处理： 使用GPU时，
+		尽量使用批处理（batch processing）。
+		GPU能够同时处理多个样本，这有助于提高训练速度。
+
+（7）训练过程中监控GPU使用情况： 
+		使用工具如nvidia-smi或深度学习库提供的GPU监控功能，
+		监视GPU的使用情况，确保模型正在正确地使用GPU资源。
+
