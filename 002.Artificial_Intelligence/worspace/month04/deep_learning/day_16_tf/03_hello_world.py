@@ -1,4 +1,7 @@
 
+'''
+    第一个tensorflow程序
+'''
 import tensorflow as tf
 
 
