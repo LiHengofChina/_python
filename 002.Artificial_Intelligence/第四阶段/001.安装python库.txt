@@ -47,5 +47,3 @@ TensorFlow version: 1.15.0
 
 
 
-python -m pip install tensorflow==1.14.0
-
