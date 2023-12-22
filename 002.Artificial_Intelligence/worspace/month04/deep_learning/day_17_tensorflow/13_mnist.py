@@ -12,7 +12,7 @@ import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
 #加载数据
-mnist = input_data.read_data_sets('../MNIST_data/',      # 加载文件路径
+mnist = input_data.read_data_sets('../MNIST_data/',  # 加载文件路径
                                   one_hot=True)          # 以独热编码的方式表示
 
 
