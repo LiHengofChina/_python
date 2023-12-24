@@ -88,12 +88,12 @@ import matplotlib.pyplot as plt
 def train_mapper(sample):
     img, label = sample
     #根据路径读取图像数据
-    paddle.dataset.image.load_image(img,
+    img = paddle.dataset.image.load_image(img,
                                     is_color=True #加载为彩色图像，默认为True
                                     )
 
     #国类卷积神经网络需要的图像大小是固定的，处理图像
-    img = paddle.dataset.image.simple_transform(img=img,          # 要处理哪张图像
+    img = paddle.dataset.image.simple_transform(im=img,          # 要处理哪张图像
                                           resize_size=128,  # 缩放大小
                                           crop_size=128,    # 裁剪大小
                                           is_train=True,    # 训练模式-随机裁剪，测试模式-中心裁剪
@@ -124,12 +124,12 @@ def train_r(train_list):
 def test_mapper(sample):
     img, label = sample
     #根据路径读取图像数据
-    paddle.dataset.image.load_image(img,
+    img = paddle.dataset.image.load_image(img,
                                     is_color=True #加载为彩色图像，默认为True
                                     )
 
     #国类卷积神经网络需要的图像大小是固定的，处理图像
-    img = paddle.dataset.image.simple_transform(img=img,          # 要处理哪张图像
+    img = paddle.dataset.image.simple_transform(im=img,  # 要处理哪张图像
                                           resize_size=128,  # 缩放大小
                                           crop_size=128,    # 裁剪大小
                                           is_train=False,    # 训练模式-随机裁剪，测试模式-中心裁剪
@@ -283,7 +283,7 @@ feeder = fluid.DataFeeder(feed_list=[image, label],
 costs = []
 accs = []
 iters = []
-for pass_id in range(10):
+for pass_id in range(35):
 
     ###################训练
     train_costs = []
@@ -303,6 +303,11 @@ for pass_id in range(10):
     costs.append(train_avg_cost)
     accs.append(train_avg_acc)
     iters.append(pass_id)
+
+    print('轮数:{},cost:{},acc:{}'.format(pass_id,
+                                          train_avg_cost,
+                                          train_avg_acc,
+                                          ))
 
     ###################测试（每一轮训练完之后，马上测试）
     test_accs = []
