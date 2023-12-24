@@ -8,7 +8,7 @@ paddlepaddle：
 import  os
 ###############################数据预处理
 #把类别转换成字典，也可以使用：'标签编码'
-name_dict = {'apple': 0,
+name_dict = {'apple': 0,  #注意，要按字母顺序
              'banana': 1,
              'grape': 2,
              'orange': 3,
@@ -339,7 +339,14 @@ plt.savefig('train.png')
 plt.show()
 
 
-###############################加载模型 预测
+
+
+
+
+
+
+
+
 
 
 
