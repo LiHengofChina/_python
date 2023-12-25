@@ -1,0 +1,7 @@
+
+import multiprocessing
+
+multiprocessing.cpu_count()
+			//它显示的是
+
+
