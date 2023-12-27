@@ -14,7 +14,10 @@ paddlepaddle 可以不在本地执行，在AI Studio上面执行。
 （1）登陆/注册地址：
 	 https://aistudio.baidu.com/aistudio/index
 
-	 ml11273200
+	 liheng_13688007165
+	 liheng520
+	 //=============
+	 13688007165/liheng_liheng
 	 liheng520
 
 
