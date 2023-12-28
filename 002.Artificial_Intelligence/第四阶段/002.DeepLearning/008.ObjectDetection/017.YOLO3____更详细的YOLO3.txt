@@ -1,0 +1,11 @@
+
+一个关于YOLO3的更详细的案例介绍
+
+
+
+paddlepaddle的官网关于YOLO3的介绍
+
+https://www.paddlepaddle.org.cn/tutorials/projectdetail/1507609
+
+
+
