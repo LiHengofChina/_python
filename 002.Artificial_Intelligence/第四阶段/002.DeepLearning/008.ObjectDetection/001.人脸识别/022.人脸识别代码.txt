@@ -1,0 +1,26 @@
+
+
+
+
+//======================================= FaceNet
+//======================================= FaceNet
+
+（1）代码目录
+	E:\_python\002.Artificial_Intelligence\worspace\month04\deep_learning\day_24\facenet_distance
+
+
+（2）修改参数
+	image_name1 = 'test_img/lx.png'  # change to your image name
+	image_name2 = 'test_img/xy.png'  # change to your image name
+
+（3）运行
+
+	get_embedding_distance.py
+	
+
+（4）打印值小于 1.05 认为是同一个人，否则不是，	
+		//只能用于验证理论，不能用于实际项目，因为精度不是很高
+		
+
+
+	
