@@ -1,5 +1,5 @@
-'''
 
+'''
 将car.txt中的字符串通过 "标签编码" 的形式转成数值类型
 
 列说明：
@@ -13,15 +13,15 @@
 
 查看数据，只转是字符串的列，
 不是每一列都需要转。
-
 '''
+
 import pandas as pd
 import sklearn.preprocessing as sp
 
 
 
 #（1）加载数据
-data = pd.read_csv('../../data_test/car.txt',
+data = pd.read_csv('../data_test/car.txt',
                    sep=',',
                    header=None,
                    names=['a', 'b', 'c', 'd', 'e', 'f', 'g']

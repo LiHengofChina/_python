@@ -15,7 +15,8 @@ raw_samples = np.array([[1, 3, 2],
 #创建编码器
 # one_hot_encoder = sp.OneHotEncoder()
 one_hot_encoder = sp.OneHotEncoder(
-    sparse=False,  # 是否采用"稀疏格式"
+    # sparse=False,  # 是否采用"稀疏格式"
+    sparse=True,  # 是否采用"稀疏格式"
     dtype="int32",
     categories="auto"  # 自动编码
 )
