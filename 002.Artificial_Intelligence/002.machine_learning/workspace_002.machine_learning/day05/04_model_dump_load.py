@@ -65,7 +65,7 @@ print('r2_score：', sm.r2_score(test_y, pred_tets_y))
 #=================================================================#在最后保存模型
 
 # wb 表示 以 "二进制写入模式" 打开文件
-with open('../day06/model.pickle', 'wb') as f :
+with open('../day05/model.pickle', 'wb') as f :
     pickle.dump(model,f)
     # 把 model 对象保存到f中去
     # 注意是 dump ， 不是 dumps没有s

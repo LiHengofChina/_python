@@ -2,6 +2,9 @@
  "多项式回归模型" 实现原理
 
  就是在 "数据里面"增加高次项， 再去求 "解参数的过程"
+
+ -----------自己实现
+
 '''
 import pandas as pd
 import sklearn.linear_model as lm

@@ -1,7 +1,10 @@
 
 '''
-    使用 "线性回归" 对 Salary_Data2.csv进行建模
+    使用 "线性回归" 对 Salary_Data2.csv 进行建模
     建立模型、执行预测、得到回归线
+
+    Salary_Data2.csv 有特殊数据，
+
 '''
 
 import pandas as pd

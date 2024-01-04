@@ -29,10 +29,17 @@ learning_rate = 0.01
 # epoch = 500
 epoch = 300
 
-# 收集数据，这3个值都是y值
+'''
+收集数据，w1、w0、loss，
+分别是权重、偏置、损失值。
+
+用三幅子图把它们分别画出来。
+
+重点观察 "损失值" 的下降曲线
+
+'''
 w1s, w0s, losses = [], [], []
-# 这个是x的值
-epoches = []
+epoches = []# 这个是x的值
 
 for i in range(epoch):
 
