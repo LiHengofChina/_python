@@ -52,6 +52,7 @@ for i in range(epoch):
     #沿着负梯度下降(损失函数)，不断更新 "权重" 和  "偏置"
     w1 = w1 - learning_rate * d1
     w0 = w0 - learning_rate * d0
+    # print('w1:{},w0:{}'.format(w1, w0))
 
 
 #到这里就完成了，更新200轮，就完成 了
