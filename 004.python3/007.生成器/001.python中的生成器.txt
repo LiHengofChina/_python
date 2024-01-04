@@ -1,0 +1,56 @@
+
+在Python中，生成器（Generator）是一种 "特殊类型的迭代器" ，
+它允许你 "按需生成一系列值" ，
+而不是一次性生成并存储整个序列。生成器使用 yield 语句来产生值，而不是 return。
+
+
+
+（1） 生成器函数： 生成器通常是通过定义一个特殊的函数来创建的，这个函数包含 yield 语句。
+	每次调用生成器的 next() 方法时，它将执行生成器函数，
+	直到遇到 yield 语句，然后返回 yield 后面的值，同时暂停状态。
+
+	 def my_generator():
+	 	yield 1
+	 	yield 2
+	 	yield 3
+	 
+	 gen = my_generator()
+	 print(next(gen))  # 输出 1
+	 print(next(gen))  # 输出 2
+	 print(next(gen))  # 输出 3
+
+
+（2）按需生成： 生成器允许你在需要时生成值，
+	 而不是一次性生成整个序列。
+	 这对于处理大量数据或无限序列特别有用，因为它节省了内存。
+	 
+
+		def fibonacci():   # 斐波那契数列是一个经典的数学数列，后续的数字就是前两个数字的和
+			a, b = 0, 1
+			while True:  # 生成器是无限的，但只有在调用 next() 时才会生成下一个值。
+				yield a
+				a, b = b, a + b
+
+		fib_gen = fibonacci()
+		print(next(fib_gen))  # 输出 0 每次调用 next() 都会使生成器执行一次
+		print(next(fib_gen))  # 输出 1
+		print(next(fib_gen))  # 输出 1
+
+
+
+（3） for 循环中的生成器： 生成器对象可以直接用在 for 循环中，它会自动迭代生成器的值。
+
+	 for value in my_generator():
+		 print(value)
+
+（4）生成器表达式： 类似于列表推导，Python 还支持生成器表达式，但它生成的是生成器对象而不是列表。
+
+	 gen_exp = (x for x in range(5))
+	 for value in gen_exp:
+		 print(value)
+
+
+总体而言，生成器是一种高效而灵活的方式来处理迭代，
+特别是在需要处理大量数据或无限序列时。
+由于它按需生成值，因此在某些情况下比使用列表更为高效。
+
