@@ -10,7 +10,7 @@ import sklearn.linear_model as lm    # 线性模型
 import matplotlib.pyplot as plt
 
 
-data = pd.read_csv('../../data_test/Salary_Data.csv', sep=',')
+data = pd.read_csv('../data_test/Salary_Data.csv', sep=',')
 
 #整理输入
 x = data.iloc[:, :-1]

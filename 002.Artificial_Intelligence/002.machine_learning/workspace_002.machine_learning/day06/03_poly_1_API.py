@@ -13,7 +13,7 @@ import pandas as pd
 import sklearn.preprocessing as sp
 
 
-data = pd.read_csv('../../data_test/Salary_Data.csv', sep=',')
+data = pd.read_csv('../data_test/Salary_Data.csv', sep=',')
 
 x = data.iloc[:,:-1]
 

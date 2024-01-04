@@ -8,7 +8,7 @@ import sklearn.linear_model as lm
 
 import matplotlib.pyplot as plt
 
-data = pd.read_csv('../../data_test/Salary_Data.csv',
+data = pd.read_csv('../data_test/Salary_Data.csv',
                    sep=',')
 # data = pd.read_csv('../data_test/Salary_Data2.csv',
 #                    sep=',')

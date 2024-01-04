@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import sklearn.linear_model as lm #线性模型模块
 
 
-data = pd.read_csv('../../data_test/Salary_Data2.csv', sep=',')
+data = pd.read_csv('../data_test/Salary_Data2.csv', sep=',')
 print(data.head())
 
 

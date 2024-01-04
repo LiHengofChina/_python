@@ -15,7 +15,7 @@ import sklearn.metrics as sm         # 评估模块
 
 import  numpy as np
 
-data = pd.read_csv('../../data_test/Salary_Data.csv', sep=',')
+data = pd.read_csv('../data_test/Salary_Data.csv', sep=',')
 
 #整理输入
 x = data.iloc[:, :-1]

@@ -9,7 +9,7 @@ import sklearn.linear_model as lm
 import  numpy as np
 import sklearn.metrics as sm       # 评估模块
 
-data = pd.read_csv('../../data_test/Salary_Data2.csv', sep=',')
+data = pd.read_csv('../data_test/Salary_Data2.csv', sep=',')
 
 # 准备输入和输出数据
 x = data.iloc[:, :-1]

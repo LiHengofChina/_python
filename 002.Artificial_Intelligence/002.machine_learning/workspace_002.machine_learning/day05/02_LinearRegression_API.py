@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
             scatter
 '''
 # （1）. 整理输入和输出
-data = pd.read_csv('../../data_test/Salary_Data.csv',
+data = pd.read_csv('../data_test/Salary_Data.csv',
                    sep=',')
 # print(data['YearsExperience'])
 # print(data['Salary'])

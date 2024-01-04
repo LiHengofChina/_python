@@ -15,7 +15,7 @@ import pickle  #保存模型
 
 
 # （1）. 整理输入和输出
-data = pd.read_csv('../../data_test/Salary_Data.csv',
+data = pd.read_csv('../data_test/Salary_Data.csv',
                    sep=',')
 
 res = sp.scale(data)
