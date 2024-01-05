@@ -36,10 +36,6 @@ train_x,test_x,train_y,test_y = ms.train_test_split(x,y,
                                                     random_state=7 #样本的随机种子
                                                     );
 
-##========================================== （1）先创建一个 单棵决策树
-sub_model = st.DecisionTreeRegressor(max_depth=6,
-                                 random_state = 7  # #模型的随机种子
-                                 );
 
 
 model = se.GradientBoostingRegressor(

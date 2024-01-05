@@ -56,10 +56,10 @@ y = data.iloc[:, -1]
 train_x,test_x,train_y,test_y = ms.train_test_split(x,y,
                         test_size=0.2,
                         random_state= 7)
-# print(train_x.shape)
-# print(test_x.shape)
-# print(train_y.shape)
-# print(test_y.shape)
+print(train_x.shape)
+print(test_x.shape)
+print(train_y.shape)
+print(test_y.shape)
 
 
 ##==========================================  # （3）根据 "训练集" 训练模型
