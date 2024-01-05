@@ -1,5 +1,5 @@
 '''
-        平移
+        仿射变换-平移
 
         注意：
             h ,w = img.shape[0:2]  #通过shape：高度在前面，宽度在后面
@@ -33,7 +33,7 @@ def translate(img, x, y):
 
 
 if __name__ == "__main__":
-    im = cv2.imread('../../data/lena.jpg')
+    im = cv2.imread('../data/lena.jpg')
     cv2.imshow('imread', im)
 
     shifted = translate(im,50,30)#右移50、下移30

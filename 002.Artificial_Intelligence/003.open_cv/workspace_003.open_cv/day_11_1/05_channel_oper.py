@@ -9,7 +9,7 @@
 
 import cv2
 
-im = cv2.imread('../../data/opencv2.png')
+im = cv2.imread('../data/opencv2.png')
 print(im.shape)
 cv2.imshow('imread', im)
 

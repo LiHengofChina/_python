@@ -16,7 +16,7 @@ import cv2
 from matplotlib import pyplot as plt
 # import matplotlib.pyplot as plt
 
-im = cv2.imread('../../data/sunrise.jpg', 0)
+im = cv2.imread('../data/sunrise.jpg', 0)
                             # 0表示灰度田图像 和自己转灰度图像是没有区别的
 print(im.shape)
 cv2.imshow('imread', im)

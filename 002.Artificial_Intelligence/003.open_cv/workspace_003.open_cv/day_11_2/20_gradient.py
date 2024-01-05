@@ -4,7 +4,7 @@
 import cv2
 import numpy as np
 
-img = cv2.imread('../../data/6.png', 0)
+img = cv2.imread('../data/6.png', 0)
 cv2.imshow('img',img)
 
 kernel = np.ones(shape=(2,2),dtype=np.uint8)

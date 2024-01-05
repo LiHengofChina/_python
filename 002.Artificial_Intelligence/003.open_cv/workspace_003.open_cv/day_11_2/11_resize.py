@@ -10,7 +10,7 @@
 import cv2
 
 
-img = cv2.imread('../../data/lena.jpg')
+img = cv2.imread('../data/lena.jpg')
 cv2.imshow('imread', img)
 h, w = img.shape[:2] #切片
 

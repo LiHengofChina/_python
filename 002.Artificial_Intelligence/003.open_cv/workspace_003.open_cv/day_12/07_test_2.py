@@ -9,7 +9,7 @@ import numpy as np
 import math
 
 # （1）加載圖片
-img = cv2.imread('../../data/CPU3.png')
+img = cv2.imread('../data/CPU3.png')
 # cv2.imshow('img',img)
 
 # （2）灰度化处理

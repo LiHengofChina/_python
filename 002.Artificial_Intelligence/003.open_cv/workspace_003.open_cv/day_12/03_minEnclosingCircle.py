@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 
 #（1）读取图像
-img = cv2.imread('../../data/cloud.png')
+img = cv2.imread('../data/cloud.png')
 # cv2.imshow('img',img)
 
 #（2）彩色转灰度：灰度化处理

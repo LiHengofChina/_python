@@ -1,6 +1,6 @@
 '''
 
-图像的矫正：
+案例：图像的矫正：
     透视变换
 '''
 
@@ -9,7 +9,7 @@ import numpy as np
 import math
 
 #（1）加載圖片
-img = cv2.imread('../../data/paper.jpg')
+img = cv2.imread('../data/paper.jpg')
 # cv2.imshow('img',img)
 
 #（2）灰度化

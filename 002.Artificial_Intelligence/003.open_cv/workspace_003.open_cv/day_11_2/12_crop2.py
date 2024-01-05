@@ -28,7 +28,7 @@ def center_crop(img,cw,ch):
 
 
 if __name__ == "__main__":
-    im = cv2.imread('../../data/banana_1.png')
+    im = cv2.imread('../data/banana_1.png')
     cv2.imshow('imread', im)
 
 

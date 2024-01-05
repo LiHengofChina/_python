@@ -23,7 +23,7 @@
 
 '''
 import cv2
-im = cv2.imread('../../data/Linus.png')
+im = cv2.imread('../data/Linus.png')
                 #路径中不能有中文
 
 print(type(im)) #<class 'numpy.ndarray'>
@@ -42,7 +42,8 @@ cv2.imshow('TestImg', #名字不能重复
 
 
 #保存图像：
-cv2.imwrite("../../data/Linus_new.png", im)
+
+cv2.imwrite("./Linus_new.png", im)
 
 
 # cv2.waitKey() #等待用户敲击按键。

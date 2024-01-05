@@ -6,7 +6,7 @@
 import cv2
 import numpy as np
 
-img = cv2.imread('../../data/lily.png', 0)
+img = cv2.imread('../data/lily.png', 0)
 cv2.imshow('img',img)
 
 #（1）Sobel

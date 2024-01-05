@@ -10,7 +10,7 @@ import cv2
 from matplotlib import pyplot as plt
 # import matplotlib.pyplot as plt
 
-im = cv2.imread('../../data/lena.jpg', 0)
+im = cv2.imread('../data/lena.jpg', 0)
 cv2.imshow('imread', im)
 
 #（1）二值化

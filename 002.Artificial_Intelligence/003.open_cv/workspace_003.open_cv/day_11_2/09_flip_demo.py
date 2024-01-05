@@ -8,7 +8,7 @@ import cv2
 # import matplotlib.pyplot as plt
 
 
-im = cv2.imread('../../data/lena.jpg')
+im = cv2.imread('../data/lena.jpg')
 cv2.imshow('imread', im)
 
 

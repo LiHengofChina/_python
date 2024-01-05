@@ -13,7 +13,7 @@ import cv2
 from matplotlib import pyplot as plt
 # import matplotlib.pyplot as plt
 
-im = cv2.imread('../../data/sunrise.jpg')
+im = cv2.imread('../data/sunrise.jpg')
                             # 不加0，读取出来才是3通道的
 print(im.shape)
 cv2.imshow('imread', im)

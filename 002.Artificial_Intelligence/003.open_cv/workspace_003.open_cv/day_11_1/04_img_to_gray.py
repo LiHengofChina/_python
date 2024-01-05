@@ -12,7 +12,7 @@
 '''
 import cv2
 
-im = cv2.imread('../../data/Linus.png')
+im = cv2.imread('../data/Linus.png')
 print(im.shape)
 cv2.imshow('imread', im)
 

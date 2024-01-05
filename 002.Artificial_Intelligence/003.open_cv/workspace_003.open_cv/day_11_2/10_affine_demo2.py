@@ -1,7 +1,7 @@
 '''
 
 
-        旋转
+        仿射变换-旋转
 
 '''
 import numpy as np
@@ -36,7 +36,7 @@ def rotate( img, angle, center=None, scale=1.0):
     return rotated
 
 if __name__ == "__main__":
-    im = cv2.imread('../../data/lena.jpg')
+    im = cv2.imread('../data/lena.jpg')
     cv2.imshow('imread', im)
 
     rotate1 = rotate(im,45) #角度为正，逆时针旋转
