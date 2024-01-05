@@ -5,7 +5,7 @@
 
 //=======================使用：决策树模型
 
-单颗决策树
+分类-决策树-单颗
 
 '''
 
@@ -25,11 +25,6 @@ data['target'] = iris.target
 
 
 
-# data = pd.read_csv('../day07/tmp/training_data.csv',
-#                      sep=',',
-#                      header=None)
-
-
 x = data.iloc[:, :-1]
 y = data.iloc[:, -1]
 
@@ -47,11 +42,7 @@ train_x,test_x,train_y,test_y = ms.train_test_split(x,y,
 
 
 #（4）构建模型
-# model = lm.LogisticRegression(solver='liblinear', C=1
-#                               # ,multi_cass  = 'auto'
-#                               # 它自动就是多分类类
-#                               # 它会根据类型判断，自动创建多分类器
-#                               )
+
 
 model = st.DecisionTreeClassifier()
 

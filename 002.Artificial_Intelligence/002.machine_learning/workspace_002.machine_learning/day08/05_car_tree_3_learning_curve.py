@@ -29,7 +29,7 @@
 
 
     //======================================  所以这里需要样本数量均衡化
-    （1）样本上采样： 以 “样本数量多” 的为准，把其它类别搜索到差不多的数量
+    （1）样本上采样： 以 “样本数量多” 的为准，把其它类别删除到差不多的数量
                 //现实情况可能无法实现
     （2）样本下采样： 以 “样本数量少” 的为准，删除其它类别多余要样本。
                 //下采样，需要保证数量少的样本，也要足够多。
@@ -49,7 +49,7 @@ import sklearn.ensemble as se #集成学习
 import sklearn.model_selection as ms #模型选择
 import matplotlib.pyplot as plt
 #（1）加载数据
-data = pd.read_csv('../../data_test/car.txt',
+data = pd.read_csv('../data_test/car.txt',
                    sep=',',
                    header=None,
                    names=['a', 'b', 'c', 'd', 'e', 'f', 'g']

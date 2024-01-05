@@ -1,13 +1,8 @@
 
 '''
-
-分类问题： 鸢尾花分类
-
+————————————————模型评估：性能优化——————>交叉验证法【2】
 //=======================
-交叉验证得分：
-    （它包含了训练、预测、评估的整体过程）
-    创建模型后就开始交叉验证，注释掉后面的代码
-
+交叉验证得分： 没有问题，然后再使用这个模型，再打开后面的代码
 '''
 
 import sklearn.datasets as sd #数据集合
@@ -24,9 +19,6 @@ data = pd.DataFrame(iris.data,
 data['target'] = iris.target
 
 
-# data = pd.read_csv('../day07/tmp/training_data.csv',
-#                      sep=',',
-#                      header=None)
 
 x = data.iloc[:, :-1]
 y = data.iloc[:, -1]
@@ -46,18 +38,6 @@ model = lm.LogisticRegression(solver='liblinear', C=1
                               # 它自动就是多分类类
                               # 它会根据类型判断，自动创建多分类器
                               )
-#
-# #（4.1）做5次交叉验证，评估模型是否可用
-# score = ms.cross_val_score(model,
-#                            x, y,                        # 样本输入、输出
-#                            cv=5,                        # 折叠数量，当前 的数量划分成几份
-#                            scoring="f1_weighted")       # 指定返回的指标 #精度、错误率、查准率、召回率等等 ,f1_weighted得分
-#
-# print(score)        #打印5次得分
-#
-# print(score.mean()) #打印平均值
-
-# ======================== 没有问题，可以使用，再做后面的代码。
 
 #（5）训练
 model.fit(train_x,train_y)

@@ -2,7 +2,7 @@
 '''
 分类问题：
     使用 "决策树模型"
-    使用集成学习- 随机森林
+    使用集成学习——（随机森林-分类）
     对小汽车进行等级预测。
 
 
@@ -29,7 +29,7 @@ import sklearn.ensemble as se #集成学习
 import sklearn.model_selection as ms #模型选择
 
 #（1）加载数据
-data = pd.read_csv('../../data_test/car.txt',
+data = pd.read_csv('../data_test/car.txt',
                    sep=',',
                    header=None,
                    names=['a', 'b', 'c', 'd', 'e', 'f', 'g']
@@ -70,7 +70,7 @@ model = se.RandomForestClassifier(
     random_state=7)
 
 
-#=====================================（一）通过 "验证典线" 找到深度 最佳值 13
+#=====================================（一）通过 "验证曲线" 找到深度 最佳值 13
 # params = np.arange(3,21)
 # train_scores1, test_scores1 = ms.validation_curve(model, 		                # 要验证的模型
 #                                                   train_x, train_y,             # 全部的样本数据
@@ -84,7 +84,7 @@ model = se.RandomForestClassifier(
 # plt.show()
 
 
-#=====================================（二）通过 "验证典线" 找到 弱模型数量最佳值 700
+#=====================================（二）通过 "验证曲线" 找到 弱模型数量最佳值 700
 # params = np.arange(500,1000,100)
 # train_scores1, test_scores1 = ms.validation_curve(model, 		                # 要验证的模型
 #                                                   train_x, train_y,             # 全部的样本数据

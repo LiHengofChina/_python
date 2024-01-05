@@ -16,11 +16,11 @@ import sklearn.datasets as sd #数据集合
 
 iris = sd.load_iris()
 print(iris.keys())
-# print(iris.DESCR) # 4个特征 150 个样本 3个类别
-# print(iris.feature_names)
-# print(iris.target_names)
-# print(iris.data)
-# print(iris.data.shape)
-# print(iris.target)
+print(iris.DESCR) # 4个特征 150 个样本 3个类别
+print(iris.feature_names)
+print(iris.target_names)
+print(iris.data)
+print(iris.data.shape)
+print(iris.target)
 
 

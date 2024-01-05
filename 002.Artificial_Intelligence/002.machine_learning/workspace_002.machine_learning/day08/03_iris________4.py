@@ -1,7 +1,13 @@
 
 '''
 
-分类问题： 鸢尾花分类
+
+————————————————模型评估：性能优化——————>交叉验证法【1】
+
+交叉验证得分：
+    （它包含了训练、预测、评估的整体过程）
+    创建模型后就开始交叉验证，注释掉后面的代码
+
 
 //=======================
 交叉验证得分：没有问题，
@@ -38,7 +44,6 @@ train_x,test_x,train_y,test_y = ms.train_test_split(x,y,
                                                     , stratify=y #按照 "y值(类别)"进行等比划分
                                                     );
 
-
 #（4）构建模型
 model = lm.LogisticRegression(solver='liblinear', C=1
                               # ,multi_cass  = 'auto'
@@ -55,30 +60,3 @@ score = ms.cross_val_score(model,
 print(score)        #打印5次得分
 
 print(score.mean()) #打印平均值
-#
-# # ======================== 没有问题，可以使用，再做后面的代码。
-#
-# #（5）训练
-# model.fit(train_x,train_y)
-#
-# #（6）将测试集带入预测
-# pred_train_y = model.predict(train_x)
-# pred_test_y = model.predict(test_x)
-#
-# #（7）评估
-#
-# ########################## 混淆矩阵
-# print("\n Confusion Matrix:")
-# cm = sm.confusion_matrix(test_y, pred_test_y)
-# print(cm)
-# # 查准率 = 主对角线上的值 / 该值所在 "列的和"
-# # 召回率 = 主对角线上的值 / 该值所在  "行的和"
-#
-#
-# ########################## 分类报告
-# print("\n classification_report:")
-# cm = sm.classification_report(test_y,pred_test_y)
-# print(cm)
-# # support 指的是样本的数量
-#
-#
