@@ -11,10 +11,11 @@ import numpy as np
 
 #加载数据
 data = pd.read_csv(
-    '../../data_test/perf.txt',
+    '../data_test/perf.txt',
         header=None,
         names=['x1','x2'] )
 # print(data)
+
 
 
 model =  sc.AgglomerativeClustering(n_clusters=5)

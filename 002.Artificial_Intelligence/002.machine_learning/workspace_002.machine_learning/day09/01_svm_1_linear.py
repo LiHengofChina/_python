@@ -19,7 +19,7 @@ import numpy as np
 
 
 #（1）加载数据
-data = pd.read_csv('../../data_test/multiple2.txt',
+data = pd.read_csv('../data_test/multiple2.txt',
                    header=None,
                    names=['x1','x2','y'])
 # print(data.head())

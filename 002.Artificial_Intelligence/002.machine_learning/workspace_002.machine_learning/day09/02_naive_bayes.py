@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 
 
-data = pd.read_csv('../../data_test/multiple1.txt'
+data = pd.read_csv('../data_test/multiple1.txt'
                    , header=None
                    , names=['x1','x2','y'])
 
@@ -35,6 +35,8 @@ print(data['x1'].nunique())
 
 #构建模型
 model = nb.GaussianNB()
+
+
 
 model.fit(train_x,train_y)
 

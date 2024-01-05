@@ -7,16 +7,16 @@
 import pandas as pd
 import sklearn.cluster as sc #聚类模块
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
+
 
 #加载数据
 data = pd.read_csv(
-    '../../data_test/multiple3.txt',
+    '../data_test/multiple3.txt',
         header=None,
         names=['x1','x2'] )
 
 #构建模型
-model = KMeans(n_clusters=4)
+model = sc.KMeans(n_clusters=4)
 model.fit(data)
 
 
