@@ -12,7 +12,7 @@ import cv2
 
 
 #（1）读取图像
-img = cv2.imread('../../data/3.png')
+img = cv2.imread('../data/3.png')
 cv2.imshow('img',img)
 # print(img.shape)
 
