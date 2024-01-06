@@ -28,7 +28,7 @@ cv2.imshow("res",res)
 
 
 
-#放大2  # 最邻近插值法 ，精度低
+#放大2  # 最邻近插值法 
 dst_size = (w*2, h*2)
 near = cv2.resize(img,
                   dst_size,
