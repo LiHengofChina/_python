@@ -2,9 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="2326482e-87b6-4c15-9d74-45624e7f4e2b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace_005.recommend.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../005.deep_base/workspace_005.deep_base/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../005.deep_base/workspace_005.deep_base/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../005.deep_base/workspace_005.deep_base/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../005.deep_base/workspace_005.deep_base/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../005.deep_base/workspace_005.deep_base/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../005.deep_base/workspace_005.deep_base/.idea/workspace_004.deep_base.iml" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -13,6 +17,9 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../.." />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
   </component>
   <component name="ProjectId" id="2aaWQG946IkmnuY407luD47eLVZ" />
   <component name="ProjectViewState">
@@ -25,11 +32,12 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;last_opened_file_path&quot;: &quot;E:/_python/002.Artificial_Intelligence/001.Day01_03/numpy-pandas-matplotlib&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/_python/002.Artificial_Intelligence/005.deep_base/workspace_005.deep_base&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;http.proxy&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RunManager" selected="Python.02_ICF_2">
+  <component name="RunManager" selected="Python.01_UCF">
     <configuration name="01_UCF" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="workspace_004.recommend" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -120,10 +128,10 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.01_UCF" />
         <item itemvalue="Python.02_ICF_2" />
         <item itemvalue="Python.02_ICF_1" />
         <item itemvalue="Python.02_Apriori" />
-        <item itemvalue="Python.01_UCF" />
       </list>
     </recent_temporary>
   </component>
@@ -142,6 +150,16 @@
       <workItem from="1704557911765" duration="50000" />
       <workItem from="1704558232412" duration="108000" />
       <workItem from="1704558384372" duration="28000" />
+      <workItem from="1704558548780" duration="144000" />
+      <workItem from="1704558744093" duration="65000" />
+      <workItem from="1704558873829" duration="222000" />
+      <workItem from="1704559141778" duration="31000" />
+      <workItem from="1704559317158" duration="156000" />
+      <workItem from="1704559516221" duration="131000" />
+      <workItem from="1704559684681" duration="89000" />
+      <workItem from="1704559775996" duration="48000" />
+      <workItem from="1704559881206" duration="104000" />
+      <workItem from="1704559996490" duration="30000" />
     </task>
     <servers />
   </component>
@@ -151,7 +169,7 @@
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/workspace_004_recommend$02_Apriori.coverage" NAME="02_Apriori Coverage Results" MODIFIED="1704557853155" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/day_15" />
     <SUITE FILE_PATH="coverage/workspace_004_recommend$02_ICF_1.coverage" NAME="02_ICF_1 Coverage Results" MODIFIED="1704558287269" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/day_14" />
-    <SUITE FILE_PATH="coverage/workspace_004_recommend$01_UCF.coverage" NAME="01_UCF Coverage Results" MODIFIED="1704557849106" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/day_14" />
+    <SUITE FILE_PATH="coverage/workspace_004_recommend$01_UCF.coverage" NAME="01_UCF Coverage Results" MODIFIED="1704560018077" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/day_14" />
     <SUITE FILE_PATH="coverage/workspace_004_recommend$02_ICF_2.coverage" NAME="02_ICF_2 Coverage Results" MODIFIED="1704558294950" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/day_14" />
   </component>
 </project>
