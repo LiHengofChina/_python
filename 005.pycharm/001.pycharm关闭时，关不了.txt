@@ -1,0 +1,1 @@
+菜单 -> Help -> Find Action -> 输入“Registry” -> 在提示结果点击“Registry..” -> 去掉“ide.await.scope.completion”的勾选
