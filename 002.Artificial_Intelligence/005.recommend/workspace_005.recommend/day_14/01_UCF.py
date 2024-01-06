@@ -1,6 +1,10 @@
+
+
+import pandas as pd
+import numpy as np
 '''
 
-协同过滤推荐==>基于内存==>UCF
+协同过滤推荐==>基于内存/邻域==>UCF
 
         找到登陆用户的相似用户，
         再找到 "登陆用户的相似用户" 看过我的电影，
@@ -10,9 +14,6 @@
         电影推荐
 
 '''
-
-import pandas as pd
-import numpy as np
 
 ratings = pd.read_json('../data_test/ratings.json')
 # print(ratings)
