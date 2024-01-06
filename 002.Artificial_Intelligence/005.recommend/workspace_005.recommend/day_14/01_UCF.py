@@ -1,16 +1,20 @@
 '''
-基于用户的协同过滤：UCF
+
+协同过滤推荐==>基于内存==>UCF
+
         找到登陆用户的相似用户，
         再找到 "登陆用户的相似用户" 看过我的电影，
         判断并记录登陆是否看过，以及打分和相似度。
         最后用打印 * 相似度 得到推荐分
+
+        电影推荐
 
 '''
 
 import pandas as pd
 import numpy as np
 
-ratings = pd.read_json('../../data_test/ratings.json')
+ratings = pd.read_json('../data_test/ratings.json')
 # print(ratings)
 
 
