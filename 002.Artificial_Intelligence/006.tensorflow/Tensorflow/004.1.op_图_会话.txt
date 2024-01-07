@@ -1,0 +1,149 @@
+
+
+
+
+//======================================================= 【1】 操作
+//======================================================= 【1】 操作
+
+操作（Operation ，简称op）
+tensorflow  "函数 或 API定义" 的都是操作
+
+/**
+	"定义"  里面的都是操作
+	tf. 什么的，都 是 "操作"
+
+	sess = tf.Session()//也是属于操作，也属于定义
+	with tf.Session() as sess: //这是简化的写法
+
+*/
+
+
+
+常用操作包括：
+
+	- 标题运算，向量运算，矩阵运行
+	- 带状态的运算
+	- 神经网络组建
+	- 存储、恢复
+	- 控制流
+	- 队列及同步运算
+
+
+
+
+//======================================================= 【2】 图
+//======================================================= 【2】 图
+
+图描述了  "整个程序结构"，操作都定义在里面，
+它是一个抽象的概念，
+可以看成一个大的容器，里面都是 "操作"，存放了所有的操作//OP的容器
+"定义部分" 可以看成一个图，
+图（Graph） 描述了计算的过程，
+
+
+
+#【1】示例1：ok
+x = tf.constant(100.0)
+y = tf.constant(200.0)
+res  = tf.add(x,y)
+#拿到默认图，并明确指定执行这个图
+graph = tf.get_default_graph()
+print('默认图',graph)
+with tf.Session(graph = graph) as sess:
+    result = sess.run(res)
+    print(result)
+    print(x.graph)
+    print(y.graph)
+    print(res.graph)
+    print(sess.graph)
+
+
+#【2】示例2 ：Error
+x = tf.constant(100.0)
+y = tf.constant(200.0)
+res  = tf.add(x,y)
+#新创建一个图
+new_graph= tf.Graph()
+with tf.Session(graph = new_graph) as sess:
+    result = sess.run(res)#此时 res 在默认图上面，不在新创建的图上面，因此会报错
+    print(result)
+
+
+#【3】示例3 ：新图使用方法
+x = tf.constant(100.0)
+y = tf.constant(200.0)
+old_op  = tf.add(x,y)
+#新创建一个图
+new_graph= tf.Graph()
+with new_graph.as_default(): #临时设置为默认图，再创建op，这时
+	new_op = tf.constant('hello world in new_op')
+
+with tf.Session(graph = new_graph) as sess:
+    result = sess.run(new_op)#此时 new_op 在 new_graph 上面
+    print(result)
+
+with tf.Session() as sess: #旧op
+    result = sess.run(old_op)#此时 old_op 还是在  默认图上面
+    print(result)
+
+
+
+//==== （1）默认图
+//==== （1）默认图
+
+所有OP 不指定会创建在默认的图中
+新建立的OP都在默认的图上面
+(default graph)
+
+这个默认的图对诸多程序来说已足够用了，
+
+一个程序可以有一个图，也可以有很多图，
+但一般用一个默认的图，也就够了
+
+
+//==== （2）新建图
+//==== （2）新建图
+
+想让OP在新的图上，//实际场景几乎不用
+
+也可以创建新的图来描述计算过程。
+
+
+//======================================================= 【3】 会话
+//======================================================= 【3】 会话
+
+用来  "执行图" 的运算
+	// 所有的 "操作OP" 都在 "图"里面 执行
+	// 执行 图 中的运算
+	// 通过 session 对象 来执行
+
+
+会话（session）用来 执行图中的计算，
+并且保存了计算系统架构对象的上下文信息。
+会议的作用主要有：
+- 运行图结构
+- 分配资源
+- 掌握资源（变量、队列、线程）
+
+//======== 创建Session
+//======== 创建Session
+tf.Session() #不指定使用默认图
+
+//======== run
+//======== run
+session.run(fetches,feed_dict)
+		#（1）fetches 要执行哪个op，单个或多个
+		# # result = sess.run(res, x, y) #结果也会有多个
+
+		#（2）feed_dict ，是给占位符号传参数的。
+
+
+
+//======================================================= session 和 图的关系
+//======================================================= session 和 图的关系
+
+（1）"一个session" 只能执行 "一个图运算"
+
+（2）但是 "多个Session" 可以执行 "同一个图"
+
+ 
