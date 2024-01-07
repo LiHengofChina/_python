@@ -1,12 +1,16 @@
-'''
-图像文件读取
-'''
+
 
 import tensorflow as tf
 
 import os
 
+'''
+    tf—————————————— 图像读取
+        说明：
+            （1）多张大小不同的图片，读取过程中可以 resize 成 "全部一样的大小"
+            （2）一张图就是一个样本数据
 
+'''
 def read_img(filelist):
 
     #（1）构建队列
@@ -22,7 +26,7 @@ def read_img(filelist):
     #（4）解码，#自动统一转成张量
     imgs = tf.image.decode_jpeg(v)
     resized_img = tf.image.resize(imgs, [250, 250])  # 所有图片固定大小 250 * 250
-    resized_img.set_shape([250, 250, 3]) #修改张量和通道
+    resized_img.set_shape([250, 250, 3]) #修改 “张量” 和 “通道”
 
     #（5）批处理
     imgs = tf.train.batch([resized_img],
@@ -42,7 +46,7 @@ if __name__ == '__main__':
         file_list.append(os.path.join(dir_name, f))
 
     # （2）加载文件，返回的是两个OP，所以需要运行这两个OP
-    img = read_img(file_list)
+    img = read_img(file_list) #
 
     #执行
     with tf.Session() as sess:

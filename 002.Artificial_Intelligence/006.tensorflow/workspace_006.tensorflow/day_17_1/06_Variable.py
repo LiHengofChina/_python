@@ -25,9 +25,9 @@ w = tf.Variable(initial_value=init_val)
 init_b = tf.ones(shape=(4,))  # 4个1
 b = tf.Variable(initial_value=init_b)
 
-init_op = tf.global_variables_initializer()  # 变量初始化
+
 with tf.Session() as sess:
-    sess.run(init_op)
+    sess.run(tf.global_variables_initializer())# 变量初始化
     w_res, b_res = sess.run([w, b])
     print(w_res)
     print(b_res)
