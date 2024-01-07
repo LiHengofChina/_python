@@ -1,7 +1,7 @@
 
 
 
-tensorboard 可以把数据流转的方向，数据计算的流程，通过图表的形式画出来。
+tensorboard 可以把  "数据流转" 的方向， "数据计算" 的流程，通过图表的形式画出来。
 	
 //========================================= 什么是tensorboard
 //========================================= 什么是 tensorboard
@@ -53,18 +53,18 @@ tensorboard是一个bs架构的项目
 
 //=========================================  tensorboard 启动
 //=========================================  tensorboard 启动
-tensorboard --logdir="PycharmProjects/tensorflow_study/summary/"
-				//logdir事件文件的路径
-				//可以看到访问路径
+
+（1）第一步：运行程序，保存所有的 summary 信息、事件文件。
+	 保存的路径：E:\_python\002.Artificial_Intelligence\006.tensorflow\workspace_006.tensorflow\summary\
+	
+（2）第二步：启动服务器
+	tensorboard --logdir="E:\_python\002.Artificial_Intelligence\006.tensorflow\workspace_006.tensorflow\summary\"
 
 
+（3）第三步：访问图形
 
-
-tensorboard --logdir="E:\_python\002.Artificial_Intelligence\worspace\month04\deep_learning\summary\"
-
-访问：
-http://localhost:6006/ 
-http://liheng_xiaomi:6006/ 
+	http://localhost:6006/ 
+	http://liheng_xiaomi:6006/ 
 
 //========================================= 摘要与事件文件的操作
 //========================================= 摘要与事件文件的操作

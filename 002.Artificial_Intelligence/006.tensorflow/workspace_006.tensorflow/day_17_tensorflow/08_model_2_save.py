@@ -40,7 +40,7 @@ with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())  # 变量初始化
 
     fw = tf.summary.FileWriter('../summary/', graph=sess.graph)
-    for i in range(100):
+    for i in range(200):
         sess.run(train_op)
 
         summary = sess.run(merged)

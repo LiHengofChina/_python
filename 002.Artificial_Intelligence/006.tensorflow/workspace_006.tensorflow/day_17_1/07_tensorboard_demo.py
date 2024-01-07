@@ -14,5 +14,6 @@ with tf.Session() as sess:
     print(sess.run(res))
 
     tf.summary.FileWriter('../summary/',
-                         graph=sess.graph) #将sess.graph中的op，全部写到事件文件当中去。
+                         graph=sess.graph)
+    #将sess.graph中的op，全部写到事件文件当中去。
 

@@ -1,8 +1,4 @@
-'''
-手写体识别2
-        模型：全连接神经网络（1层：这一层直接就是输出层）
-        拿两张图进行预测
-'''
+
 
 
 
@@ -10,6 +6,10 @@ import tensorflow as tf
 
 
 from tensorflow.examples.tutorials.mnist import input_data
+'''
+手写体识别
+           ———————— 预测
+'''
 
 #加载数据
 mnist = input_data.read_data_sets('../MNIST_data/',  # 加载文件路径
@@ -19,7 +19,7 @@ mnist = input_data.read_data_sets('../MNIST_data/',  # 加载文件路径
 
 # （1）定义占位符
 x = tf.placeholder('float32', shape=[None, 784]) #这里每个图片 “已经拉伸成了 784” 个特征了。
-y = tf.placeholder('float32', shape=[None, 10]) #10列表示每个样本的相对概率
+# y = tf.placeholder('float32', shape=[None, 10]) #10列表示每个样本的相对概率
 
 # （2）定义权重，权重个数 (784,10)
 w = tf.Variable(tf.random_normal(shape=[784, 10]))  # 标准的正太分布
@@ -42,7 +42,7 @@ with tf.Session() as sess:
 
     sess.run(tf.global_variables_initializer())
 
-    saver.restore(sess, '../../model/mnist/')  # 加载模型
+    saver.restore(sess, '../model/mnist/')  # 加载模型
 
 
     #从测试集中拿张两图片进行预测

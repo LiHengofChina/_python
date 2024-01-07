@@ -3,13 +3,14 @@ import tensorflow as tf
 
 '''
     使用TensorFlow搭建线性回归
-            ---加入tensorboard
+            ---加入 tensorboard
             （1）.收集变量
                     #收集损失函数的值
                     tf.summary.scalar('losses',loss)
             （2）.合并变量
                     #把收集下来的损失值，转换成能够写入到事件文件的一个格式
                     merged = tf.summary.merge_all()
+            （3）.收集的损失函数的值，可以通过图tensorboard 显示在界面
 
 '''
 ################################################################## 【1】定义
@@ -50,6 +51,7 @@ with tf.Session() as sess:
     for i in range(500):
 
         sess.run(train_op)
+
         #每运行一次就收集一次，然后加入文件中
         summary = sess.run(merged) #返回的结果才是收集的损失值
         fw.add_summary(summary,i+1)
