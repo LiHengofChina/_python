@@ -33,7 +33,7 @@ for i in batch_reader():  # 4个批次读取完成
 print("==" * 20)
 batch_reader = paddle.batch(shuffle_reader, 3,
                             drop_last=True
-                            # 最后 一个批次数量太少，就删除
+                            # 最后 一个批次数量太少，不能达到3个，就删除最后 一个
                             # 保证每个批次数量相同
                             )
 for i in batch_reader():

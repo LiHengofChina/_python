@@ -14,6 +14,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 数据集：MNIST
    ———————— 创建模型并训练
+   只有一层的全连接
 
 '''
 

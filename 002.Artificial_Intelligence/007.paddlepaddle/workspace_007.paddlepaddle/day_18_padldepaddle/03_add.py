@@ -1,5 +1,9 @@
 '''
-使用paddle实现两个系统架构的相加
+
+【本地运行】
+第一个paddle程序， 需要paddle 1.8.4 版本运行
+
+使用paddle实现相加
 '''
 import paddle.fluid as fluid
 
@@ -23,6 +27,7 @@ exe = fluid.Executor(place=place) #可以指定这段代码在哪里执行，GPU
 result = exe.run(program=fluid.default_main_program()
                 # program :选择执行哪个程序，和tensorflow一样， 选择要执行哪个图， 这里选择的是哪个program
                 # 不写执行默认的主程序
+
                 , fetch_list=[res]  #
                                 # 和tensorflow有点像，但是不一样。
                                 # tensorflow 是选择要运行的op,其它op不会执行。
@@ -31,6 +36,7 @@ result = exe.run(program=fluid.default_main_program()
 
                                 #而这里选择要 要哪个res的执行结果，所以返回的是它的结果
                                 #返回列表套数组
+
                 )
 print(result)
 print(result[0])
