@@ -1,0 +1,37 @@
+ 
+
+
+//======================= 解压 tile_server.zip
+//======================= 解压 tile_server.zip
+
+目录说明：
+（1）model_freeze   //存放训练后的模型 *****************
+						
+（2）tile_server	//主App，Django 2.2.x 主目录（按照Djanggo规范创建）
+（3）infer			//关于预测推理的内容
+（3）templates		//静态文件目录
+
+//============================================================================== 代码说明：
+//============================================================================== 代码说明：
+
+tile_sever
+	（1）
+			tile_sever/urls.py 是一个总的路由文件
+			urlpatterns  = [
+				path('admin/', admin.site.urls),
+				path('', include('infer.urls')) # wdb
+			]
+			/**
+			请求的是 'admin'  走一个路径 admin.site.urls
+			请求的是 '' 走另一个路径，由 include('infer.urls') 进行转发。
+			*/
+		（2）
+			infer/urls.py 走的是一个路径
+			do_infer.html 转到 views.do_infer
+				转发到 ：infer/views.py里面
+				到def do_infer(request): 函数
+						在     result = core_do_infer(img_data) 进行预测
+
+				//模型加载是在服务器启动的时候进行的加载
+				core_load_freeze_models()  # 加载模型
+

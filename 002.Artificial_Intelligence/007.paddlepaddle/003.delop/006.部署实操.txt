@@ -1,14 +1,18 @@
 
-//======================= 解压 tile_server.zip
-//======================= 解压 tile_server.zip
 
-目录说明：
-（1）model_freeze   //存放训练后的模型
-（2）tile_server	//主App，Django 2.2.x 主目录（按照Djanggo规范创建）
-（3）infer			//关于预测推理的内容
-（3）templates		//静态文件目录
+//======================================= 过程
+//======================================= 过程
 
 
+（1）压缩模型：
+	zip -r model_freeze.zip model_freeze
+
+（2）下载模型：
+
+	model_freeze.zip
+
+
+                                         
 
 //======================= 安装
 //======================= 安装
@@ -19,11 +23,15 @@
 		（3）Djanggo 2.2.x
 				pip3 install  --user Django==2.2.12 --index-url https://pypi.tuna.tsinghua.edu.cn/simple/  --trusted-host https://pypi.tuna.tsinghua.edu.cn --timeout 600
 
+
+（二）模型存放目录
+		E:\_python\002.Artificial_Intelligence\007.paddlepaddle\workspace_007.paddlepaddle\tile_server\model_freeze
+
+
 （二）启动服务
 		E:
-		cd E:\_python\002.Artificial_Intelligence\worspace\month04\deep_learning\day_20\tile_server
+		cd E:\_python\002.Artificial_Intelligence\007.paddlepaddle\workspace_007.paddlepaddle\tile_server
 		python manage.py runserver 0.0.0.0:8000
-
 
 （三）进行预测
 		http://127.0.0.1:8000/static/infer_index.html
