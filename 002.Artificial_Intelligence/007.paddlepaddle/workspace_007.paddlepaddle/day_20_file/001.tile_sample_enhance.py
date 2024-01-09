@@ -1,4 +1,4 @@
-# 图像样本预处理
+#【1】 第一步：数据增强
 import cv2
 import numpy as np
 import os

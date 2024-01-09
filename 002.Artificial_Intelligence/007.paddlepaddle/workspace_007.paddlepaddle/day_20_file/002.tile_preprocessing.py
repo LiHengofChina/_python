@@ -1,4 +1,4 @@
-# 人脸（水果）识别示例：数据预处理
+#【2】第二步：数据预处理：数据预处理
 import paddle.fluid as fluid
 import os
 import json

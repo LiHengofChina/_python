@@ -1,4 +1,5 @@
-# 人脸(水果)识别示例：训练
+#【3】 第三步：训练
+
 import paddle
 import paddle.fluid as fluid
 import numpy
@@ -18,7 +19,7 @@ BUF_SIZE = 10000
 BATCH_SIZE = 16 # 批次大小
 
 EPOCH_NUM = 5 # 迭代次数
-learning_rate=0.00001 # 学习率
+learning_rate=0.001 # 学习率
 
 # 定义训练的mapper
 def train_mapper(sample):
@@ -238,7 +239,7 @@ for pass_id in range(EPOCH_NUM):
                                         feed=feeder.feed(data),  # 喂入一个batch的数据
                                         fetch_list=[avg_cost, accuracy])  # fetch均方误差和准确率
         if batch_id % 50 == 0:
-            tmp_str = "Pass:%d, Step:%d, Cost:%.6f, Acc:%.6f" % (pass_id, batch_id, train_cost[0], train_acc[0])
+            tmp_str = "Pass:%d, Step:%d, Cost:%.9f, Acc:%.9f" % (pass_id, batch_id, train_cost[0], train_acc[0])
             # logger.info(tmp_str)
             print(tmp_str)
 
@@ -270,7 +271,7 @@ fluid.io.save_persistables(exe, model_save_dir, fluid.default_main_program())
 
 print("保存增量模型成功!")
 
-# 保存固化模型
+# 保存：固化模型、推理模型、预测模型
 model_freeze_dir = "model_freeze/"
 if not os.path.exists(model_freeze_dir):
     os.makedirs(model_freeze_dir)

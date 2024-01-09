@@ -1,4 +1,4 @@
-# 预测
+# 【4】第四步：预测
 import paddle
 import paddle.fluid as fluid
 import numpy as np
