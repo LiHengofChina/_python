@@ -1,11 +1,12 @@
+
+import paddle.reader
+
 '''
 读取数据: 随机读取器
     随机
+【本地运行】
 
 '''
-import paddle.reader
-
-
 #原始读取器
 def reader_createor(file_path):
 

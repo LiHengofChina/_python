@@ -1,5 +1,10 @@
-'''
 
+import paddle.fluid as fluid
+import paddle
+import matplotlib.pyplot as plt
+
+'''
+【本地运行】
 利用paddle实现多元回归
     多元指：多个 “自变量” 实现一个因变量
 
@@ -8,11 +13,6 @@
     小批量梯度下降
 
 '''
-
-import paddle.fluid as fluid
-import paddle
-import matplotlib.pyplot as plt
-
 
 import os
 

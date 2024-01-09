@@ -1,12 +1,15 @@
 
 
+
+import  os
+
+
 '''
+【AIStudio运行】
 paddlepaddle：
     利用CNN实现水果分类
 '''
-
-import  os
-###############################数据预处理
+###############################【1】数据预处理
 #把类别转换成字典，也可以使用：'标签编码'
 name_dict = {'apple': 0,  #注意，要按字母顺序
              'banana': 1,
@@ -15,7 +18,7 @@ name_dict = {'apple': 0,  #注意，要按字母顺序
              'pear': 4
              }
 
-data_root_path = '../../fruits/' #数据集所在目录
+data_root_path = '../fruits/' #数据集所在目录
 
 train_file_path = data_root_path + 'train.txt' # 训练集，图片路径
 test_file_path = data_root_path + 'test.txt'   # 测试集，图片路径
@@ -77,7 +80,7 @@ print('数据预处理完成')
 
 
 
-###############################搭建模型 训练
+###############################【2】搭建模型 训练
 
 import paddle
 from multiprocessing import cpu_count
@@ -244,7 +247,7 @@ def convolution_neural_network(image):
     return pred_y
 
 pred_y = convolution_neural_network(image)
-#损失函数
+#损失函数（交叉熵）
 cost = fluid.layers.cross_entropy(input=pred_y,  #预测值
                                   label=label)   #真实值
 avg_cost = fluid.layers.mean(cost) #求平均值
@@ -283,7 +286,7 @@ feeder = fluid.DataFeeder(feed_list=[image, label],
 costs = []
 accs = []
 iters = []
-for pass_id in range(35):
+for pass_id in range(2):
 
     ###################训练
     train_costs = []
@@ -320,8 +323,9 @@ for pass_id in range(35):
     test_avg_acc = sum(test_accs) / len(test_accs)
     print('Test:{},Acc:{}'.format(pass_id, test_avg_acc))
 
-# 保存模型
-model_save_path = '../../model/fruits'
+
+# 保存模型（保存推荐模型）
+model_save_path = '../model/fruits'
 if not os.path.exists(model_save_path):
     os.makedirs(model_save_path)
 fluid.io.save_inference_model(model_save_path,

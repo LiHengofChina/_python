@@ -21,7 +21,7 @@ name_dict = {'apple': 0,  #注意，要按字母顺序
              'pear': 4
              }
 # 保存模型 路径
-model_save_path = '../../model/fruits'
+model_save_path = '../model/fruits'
 
 
 import numpy as np

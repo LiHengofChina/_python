@@ -1,10 +1,11 @@
+
+import paddle.reader
 '''
+【本地运行】
 读取数据: 批量读取器
     批量
 
 '''
-import paddle.reader
-
 
 # 原始读取器
 def reader_createor(file_path):

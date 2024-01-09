@@ -1,10 +1,4 @@
-'''
 
-利用paddle实现多元回归
-
-    加载模型，执行预测
-
-'''
 
 import paddle.fluid as fluid
 import paddle
@@ -12,6 +6,15 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 import os
+
+'''
+【本地运行】
+利用paddle实现多元回归
+
+    加载模型，执行预测
+
+'''
+
 
 #执行
 place = fluid.CPUPlace()#指定执行设备

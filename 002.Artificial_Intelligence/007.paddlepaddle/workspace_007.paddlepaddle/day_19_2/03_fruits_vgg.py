@@ -1,12 +1,19 @@
 
+
+
+
 '''
 paddlepaddle：
     利用CNN实现水果分类
-      ____ vgg 模型结构
-'''
+      ____ vgg-19 模型结构  （5个卷积激活池化组 + 3个全连接）
 
-import  os
+      只有醋不一样，其它都 一样
+
+
+'''
+#【1】
 ###############################数据预处理
+import  os
 #把类别转换成字典，也可以使用：'标签编码'
 name_dict = {'apple': 0,  #注意，要按字母顺序
              'banana': 1,
@@ -15,7 +22,7 @@ name_dict = {'apple': 0,  #注意，要按字母顺序
              'pear': 4
              }
 
-data_root_path = '../../fruits/' #数据集所在目录
+data_root_path = '../fruits/' #数据集所在目录
 
 train_file_path = data_root_path + 'train.txt' # 训练集，图片路径
 test_file_path = data_root_path + 'test.txt'   # 测试集，图片路径
@@ -77,7 +84,7 @@ print('数据预处理完成')
 
 
 
-###############################搭建模型 训练
+###############################【2】搭建模型 训练
 
 import paddle
 from multiprocessing import cpu_count
@@ -186,7 +193,7 @@ def vgg_bn_drop(image):
 
         #卷积激活
         return fluid.nets.img_conv_group(input=input, #要卷的是谁#输入
-                                  conv_num_filter=[num_filter]*group, #卷积核数量，，如[64,64]，列表乘以整数，重复生成元素
+                                  conv_num_filter=[num_filter]*group, #卷积核数量，如[64,64]，列表乘以整数，重复生成元素
                                   pool_size=2,               #池化区域 2 * 2
                                   conv_padding=1,            #卷积填充
                                   conv_filter_size=3,        #卷积核大小尺寸
@@ -300,7 +307,7 @@ for pass_id in range(3):
     print('Test:{},Acc:{}'.format(pass_id, test_avg_acc))
 
 # 保存模型
-model_save_path = '../../model/fruits'
+model_save_path = '../model/fruits'
 if not os.path.exists(model_save_path):
     os.makedirs(model_save_path)
 fluid.io.save_inference_model(model_save_path,
@@ -316,17 +323,6 @@ plt.plot(iters, accs, color='dodgerblue') #精度
 
 plt.savefig('train.png')
 plt.show()
-
-
-
-
-
-
-
-
-
-
-
 
 
 
