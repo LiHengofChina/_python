@@ -269,7 +269,7 @@ feeder = fluid.DataFeeder(feed_list=[image, label],
 costs = []
 accs = []
 iters = []
-for pass_id in range(3):
+for pass_id in range(50):
 
     ###################训练
     train_costs = []
