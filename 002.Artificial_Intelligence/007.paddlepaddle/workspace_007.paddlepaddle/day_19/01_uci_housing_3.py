@@ -18,7 +18,7 @@ place = fluid.CPUPlace()#指定执行设备
 #加载模型
 infer_exe = fluid.Executor(place=place) #定义一个执行器
 
-model_save_path  = '../../model/uci_housing/'
+model_save_path  = '../model/uci_housing/'
 
 infer_program, fee_names, target_vars = fluid.io.load_inference_model(model_save_path,
                                                                       infer_exe)

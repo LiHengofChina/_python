@@ -13,8 +13,8 @@ import paddle.fluid as fluid
 import paddle
 import matplotlib.pyplot as plt
 
-import numpy as np
 
+import os
 
 
 #数据准备 8: 2
@@ -33,11 +33,11 @@ train_reader = paddle.batch(random_reader,
 #构建模型
 
 x = fluid.layers.data(name='xxx',
-                      shape=(13,),  # 13个特征
+                      shape=(13,),  # 13个特征  ,13列1行
                       dtype='float32'
                       )  # 占位符号
 y = fluid.layers.data(name='yyy',
-                      shape=(1,),  # 1
+                      shape=(1,),  # 1 个y值   ,1列1行
                       dtype='float32'
                       )  # 占位符号
 
@@ -49,7 +49,7 @@ pred_y = fluid.layers.fc(input=x, #输出数据
 # 损失函数(均方误差)
 cost = fluid.layers.square_error_cost(input=pred_y,  # input表示预测值
                                       label=y
-                                      ) # 这一行捕的是 (y-y')^2
+                                      ) # 这一行表示： (y-y')^2
 avg_cost = fluid.layers.mean(cost)  # 求和除以 n
 
 #梯度下降优化器
@@ -86,8 +86,8 @@ for pass_id in range(100):  # 外层控制轮数
             feed=feeder.feed(data),                 # 上面的 “参数喂入器” 已经传入参数了。
             fetch_list=[avg_cost]                   # 每一轮的损失值
         )
-        # feed 另一种写法
-        # # [(x,y)] #把所有xy整合到一起传给x，把所有y整合到一起传给y
+        # feed 取值另一种写法
+        # # [(x,y)] #把所有x整合到一起传给x，把所有y整合到一起传给y
         # feed = {'xxx': np.array([i[0] for i in data], dtype='float32'),  # 这里是每一个x放在列表中
         #         'yyy': np.array([i[1] for i in data], dtype='float32')  # 把每一个y放在一列表中
         #         },  # 传参数
@@ -102,7 +102,20 @@ for pass_id in range(100):  # 外层控制轮数
 
     print('轮数：{},cost:{}'.format(pass_id,train_avg_cost ))
 
-# 扣件函数的可视化
+# 损失函数的可视化
 plt.plot(iters, costs, color='orangered')
 plt.savefig('train.png')
 plt.show()
+
+
+#保存模型
+model_save_path  = '../model/uci_housing/'
+if not os.path.exists(model_save_path):
+    os.makedirs(model_save_path)
+
+fluid.io.save_inference_model(model_save_path,  # 保存的路径 （保存的是推荐模型）
+                              feeded_var_names=['xxx'],  # 喂入变量的名字
+                              target_vars=[pred_y],  # 从哪里取结果？pred_y
+                              executor=exe  # 要保存的模型
+                              )
+
