@@ -5,7 +5,7 @@ import os.path
 from tensorflow.examples.tutorials.mnist import input_data
 
 '''
-手写体识别-图片分类
+——————————————————————————手写体识别-图片分类
 训练集有 60000 个样本
 测试集有 10000 个样本
 28* 28 的灰度图像
@@ -49,7 +49,15 @@ pred_y = tf.nn.softmax(tf.matmul(x, w) + b)  # 注意顺序x在前，w在后，
 loss = -tf.reduce_sum(y * tf.log(pred_y),
                       reduction_indices=1  # 水平方向求和
                       )
-cost = tf.reduce_mean(loss)  # 平均交叉熵
+
+cost = tf.reduce_mean(loss)  # 平均交叉熵（所有）
+'''
+因为使用了小批量梯度下降，每次训练传的是 “一个批量的数据”，
+所以得到的损失值也是 "一个批量" 的，
+它是一个向量，如: [0.5,0.6,0.7,...,0.9]
+因此，要进行求平均
+'''
+
 
 
 
@@ -80,29 +88,32 @@ with tf.Session() as sess:
         #计算总的批次数 ，每个批次100个样本，600*100=60000 # # 这样每轮才能每轮训练完6万个样本
         total_batch = int(mnist.train.num_examples / batch_size)
 
-        total_cost = 0.0
-        for i in range(total_batch):# 内层控制 "总批次数" ，
+        total_cost = 0.0  #存放这一轮（600个批次）的损失值
+        for i in range(total_batch):# 内层控制 "总批次数" ，600个批次
 
-            train_x, train_y = mnist.train.next_batch(batch_size) #随机取100个样本
+            # 随机取100个样本
+            train_x, train_y = mnist.train.next_batch(batch_size)
             o, c = sess.run([train_op, cost],
                             feed_dict= {x: train_x, y: train_y})
 
 
-            total_cost += c   # 返回：c是一个批次的损失值，c 是100个样本损失值的平均值
+            total_cost += c   # 返回：c是 “一个批次” 的损失值，c 是100个样本损失值的平均值
 
+        # 每一轮的平均损失值
         avg_cost = total_cost / total_batch # c累加在一起就是 “这一轮” 的 “所有批次” 的平均损失值，
-                                            #每一轮的平均损失值
+
         print('轮数：{},cost：{}'.format(epoch, avg_cost))
         #可以看到损失值是在不断的减小
 
 
         #====================
         # 每训练一轮，进行一次评估：评估、精度，#或者移动到外层循环，只打印一次
-        tf.argmax(y, axis=1)        # 真实类型
-        tf.argmax(pred_y, axis=1)   # 预测类别
+        # tf.argmax(y, axis=1)        # 真实类型
+        # tf.argmax(pred_y, axis=1)   # 预测类别
 
         corr = tf.equal(tf.argmax(y, axis=1),       # 真实类型
                         tf.argmax(pred_y, axis=1))  # 预测类别
+
         # 计算精度
         accuracy = tf.reduce_mean(tf.cast(corr, 'float32'))  # 求和除以n
 

@@ -3,6 +3,7 @@ import tensorflow as tf
 
 '''
     使用TensorFlow搭建线性回归
+    一个x和一个y值
     并进行训练
     
     徒手搭线性回归
@@ -21,6 +22,8 @@ y = tf.matmul(x,[[2.0]]) + 5.0
                 # x和 一个 "一行一列的2" 相乘，矩阵相乘
                 #必须用矩阵乘法,且x在前，2.0在后，
 
+
+
 ################################################################## （2）构建模型
 #现在是输入一个特征，输出一个值，
 #一个特征 和 一个神经元进行全连接， 产生一个结果，也只有一个w，它是一行一列，偏置也是一个
@@ -30,7 +33,19 @@ w = tf.Variable(tf.random_normal(shape=[1,1]), trainable=True)
 b = tf.Variable(0.0,trainable=True)
 
 #（2.2）构建模型
+# pred_y = x * w + b
 pred_y = tf.matmul(x,w) + b # 一个x与一个神经元进行全连接，再加上偏置，得到一个结果
+
+'''
+（1）如果你只有一个特征，可以不使用矩阵乘法，而是使用逐元素相乘
+pred_y = x * w + b ,利用数组广播机制来做，这种写法更简洁
+
+（2）但是，这里x 是二维的
+pred_y = tf.matmul(x,w) + b
+"矩阵乘法" 在这里用于 "同时计算多个样本" 的线性组合
+（3）两者的效果是相同的。
+
+'''
 
 #损失函数：均方误差 Σ((y-y')^2)/n
 loss = tf.reduce_mean(tf.square(y - pred_y))
@@ -47,6 +62,7 @@ train_op = tf.train.GradientDescentOptimizer(0.1 #学习率
 ################################################################## （3）运行
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())  # 变量初始化
+
 
     for i in range(500):
         _, loss_value, w_value, b_value = sess.run([train_op, loss, w, b])

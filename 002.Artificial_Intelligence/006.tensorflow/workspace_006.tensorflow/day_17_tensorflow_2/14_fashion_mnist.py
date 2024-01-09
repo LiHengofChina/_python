@@ -2,6 +2,7 @@
 使用卷积神经网络：实现服务识别
 '''
 import tensorflow as tf
+import os.path
 
 from tensorflow.contrib.learn.python.learn.datasets.mnist import read_data_sets
 
@@ -207,8 +208,13 @@ class FashionMnist:
         # 初始化变量
         self.sess.run(tf.global_variables_initializer())
         batch_size = 100  # 批次大小
+
+        saver = tf.train.Saver()
+        if os.path.exists('../model/fashion_mnist/checkpoint'):
+            saver.restore(self.sess, '../model/fashion_mnist/')  # 加载模型,
+
         print('开始训练...')
-        for i in range(10):
+        for i in range(3):
             # 总批次
             total_batch = int(self.data.train.num_examples / batch_size)
 
@@ -225,12 +231,14 @@ class FashionMnist:
 
             print('轮数：{},精度：{}'.format(i, avg_acc))
 
+        saver.save(self.sess, '../model/fashion_mnist/')
+
 
 
     #评估
     def metrics(self):
         #使用测试集进行评估
-        test_x, test_y = self.data.test.next_batch(10000)
+        test_x, test_y = self.data.test.next_batch(10000)#拿到全部的测试数据
         params = {self.x: test_x, self.y: test_y}
         test_acc = self.sess.run(self.accuracy,
                       feed_dict=params)

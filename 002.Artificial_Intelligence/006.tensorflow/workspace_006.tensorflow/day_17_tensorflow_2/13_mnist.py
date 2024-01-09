@@ -44,7 +44,6 @@ with tf.Session() as sess:
 
     saver.restore(sess, '../model/mnist/')  # 加载模型
 
-
     #从测试集中拿张两图片进行预测
     test_x, test_y = mnist.test.next_batch(2)
 
