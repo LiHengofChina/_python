@@ -1,0 +1,7 @@
+
+两阶段检测技术
+FasterRCNN
+
+https://aistudio.baidu.com/projectdetail/1039055?channelType=0&channel=0
+
+

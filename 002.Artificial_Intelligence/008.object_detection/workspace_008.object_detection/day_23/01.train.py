@@ -1,11 +1,17 @@
+# 【2】训练模型
 # -*- coding: UTF-8 -*-
 """
 训练常基于dark-net的YOLOv3网络，目标检测
 """
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import os
+
+import paddle
+
+paddle.enable_static()
 
 os.environ["FLAGS_fraction_of_gpu_memory_to_use"] = '0.82'
 
@@ -32,28 +38,28 @@ logger = None  # 日志对象
 train_params = {
     "data_dir": "data/data6045",  # 数据目录
     "train_list": "train.txt",  # 训练集文件
-    "eval_list": "eval.txt",  # 评估数据集
-    "class_dim": -1,  # 类别数量
+    "eval_list": "eval.txt",
+    "class_dim": -1,
     "label_dict": {},  # 标签字典
     "num_dict": {},
-    "image_count": -1,  # 图片数量
+    "image_count": -1,
     "continue_train": True,  # 是否加载前一次的训练参数，接着训练
     "pretrained": False,  # 是否预训练
     "pretrained_model_dir": "./pretrained-model",
-    "save_model_dir": "./yolo-model",  # 增量模型保存目录
+    "save_model_dir": "./yolo-model",  # 模型保存目录
     "model_prefix": "yolo-v3",  # 模型前缀
-    "freeze_dir": "freeze_model",  # 模型固化目录(真正执行预测的模型)
+    "freeze_dir": "freeze_model",
 
-    "use_tiny": True,  # 是否使用精简版YOLO模型
+    "use_tiny": True,  # 是否使用 裁剪 tiny 模型
 
     "max_box_num": 20,  # 一幅图上最多有多少个目标
 
-    "num_epochs": 80,  # 训练轮次
+    "num_epochs": 10,  # 训练轮次
 
-
-    "train_batch_size": 2,  # 对于完整yolov3，每一批的训练样本不能太多，内存会炸掉；如果使用tiny，可以适当大一些
+    "train_batch_size": 5,  # 对于完整yolov3，每一批的训练样本不能太多，内存会炸掉；如果使用tiny，可以适当大一些
 
     "use_gpu": True,  # 是否使用GPU
+
     "yolo_cfg": {  # YOLO模型参数
         "input_size": [3, 448, 448],  # 原版的边长大小为608，为了提高训练速度和预测速度，此处压缩为448
         "anchors": [7, 10, 12, 22, 24, 17, 22, 45, 46, 33, 43, 88, 85, 66, 115, 146, 275, 240],  # 锚点??
@@ -65,9 +71,9 @@ train_params = {
         "anchor_mask": [[3, 4, 5], [0, 1, 2]]
     },
     "ignore_thresh": 0.7,
-    "mean_rgb": [127.5, 127.5, 127.5],  # 数据增强使用的灰度值
+    "mean_rgb": [127.5, 127.5, 127.5],
     "mode": "train",
-    "multi_data_reader_count": 4,  # reader线程数量
+    "multi_data_reader_count": 4,
     "apply_distort": True,  # 是否做图像扭曲增强
     "nms_top_k": 300,
     "nms_pos_k": 300,
@@ -188,7 +194,7 @@ class YOLOv3(object):
     def get_yolo_classes(self):
         return self.yolo_classes
 
-    # 卷积/批量正则化函数: 卷积、批量正则化处理、leakyrelu
+    # 卷积正则化函数: 卷积、批量正则化处理、leakrelu
     def conv_bn(self,
                 input,  # 输入
                 num_filters,  # 卷积核数量
@@ -197,16 +203,15 @@ class YOLOv3(object):
                 padding,  # 填充
                 use_cudnn=True):
         # 2d卷积操作
-        conv = fluid.layers.conv2d(
-            input=input,
-            num_filters=num_filters,
-            filter_size=filter_size,
-            stride=stride,
-            padding=padding,
-            act=None,
-            use_cudnn=use_cudnn,  # 是否使用cudnn，cudnn利用cuda进行了加速处理
-            param_attr=ParamAttr(initializer=fluid.initializer.Normal(0., 0.02)),
-            bias_attr=False)
+        conv = fluid.layers.conv2d(input=input,
+                                   num_filters=num_filters,
+                                   filter_size=filter_size,
+                                   stride=stride,
+                                   padding=padding,
+                                   act=None,
+                                   use_cudnn=use_cudnn,  # 是否使用cudnn，cudnn利用cuda进行了加速处理
+                                   param_attr=ParamAttr(initializer=fluid.initializer.Normal(0., 0.02)),
+                                   bias_attr=False)
 
         # batch_norm中的参数不需要参与正则化，所以主动使用正则系数为0的正则项屏蔽掉
         # 在batch_norm中使用leaky的话，只能使用默认的alpha=0.02；如果需要设值，必须提出去单独来
@@ -218,17 +223,14 @@ class YOLOv3(object):
         out = fluid.layers.batch_norm(input=conv, act=None,
                                       param_attr=param_attr,
                                       bias_attr=bias_attr)
-
         # leaky_relu: Leaky ReLU是给所有负值赋予一个非零斜率
         out = fluid.layers.leaky_relu(out, 0.1)
         return out
 
     # 通过卷积实现降采样
     # 如：原始图片大小448*448，降采样后大小为 ((448+2)-3)/2 + 1 = 224
-    def down_sample(self, input, num_filters, filter_size=3,
-                    stride=2, padding=1):
+    def down_sample(self, input, num_filters, filter_size=3, stride=2, padding=1):
         self.downsample_ratio *= 2  # 降采样率
-
         return self.conv_bn(input,
                             num_filters=num_filters,
                             filter_size=filter_size,
@@ -237,32 +239,23 @@ class YOLOv3(object):
 
     # 基本块：包含两个卷积/正则化层，一个残差块
     def basic_block(self, input, num_filters):
-        conv1 = self.conv_bn(input, num_filters,
-                             filter_size=1, stride=1, padding=0)
-        conv2 = self.conv_bn(conv1, num_filters * 2,
-                             filter_size=3, stride=1, padding=1)
-        out = fluid.layers.elementwise_add(x=input,
-                                           y=conv2,
-                                           act=None)  # 计算H(x)=F(x)+x
+        conv1 = self.conv_bn(input, num_filters, filter_size=1, stride=1, padding=0)
+        conv2 = self.conv_bn(conv1, num_filters * 2, filter_size=3, stride=1, padding=1)
+        out = fluid.layers.elementwise_add(x=input, y=conv2, act=None)  # 计算H(x)=F(x)+x
         return out
 
     # 创建多个basic_block
     def layer_warp(self, input, num_filters, count):
         res_out = self.basic_block(input, num_filters)
-
         for j in range(1, count):
             res_out = self.basic_block(res_out, num_filters)
-
         return res_out
 
     # 上采样
     def up_sample(self, input, scale=2):
         # get dynamic upsample output shape
         shape_nchw = fluid.layers.shape(input)  # 获取input的形状
-        shape_hw = fluid.layers.slice(shape_nchw,
-                                      axes=[0],
-                                      starts=[2],
-                                      ends=[4])
+        shape_hw = fluid.layers.slice(shape_nchw, axes=[0], starts=[2], ends=[4])
         shape_hw.stop_gradient = True
         in_shape = fluid.layers.cast(shape_hw, dtype='int32')
         out_shape = in_shape * scale  # 计算输出数据形状
@@ -304,7 +297,6 @@ class YOLOv3(object):
             blocks.append(block)
             if i < len(stages) - 1:  # 如果不是最后一组，做降采样
                 downsample_ = self.down_sample(block, block.shape[1] * 2)
-
         blocks = blocks[-1:-4:-1]  # 取倒数三层，并且逆序，后面跨层级联需要
 
         # yolo detector
@@ -385,16 +377,17 @@ class YOLOv3Tiny(object):
                 padding,
                 num_groups=1,
                 use_cudnn=True):
-        conv = fluid.layers.conv2d(input=input,
-                                   num_filters=num_filters,
-                                   filter_size=filter_size,
-                                   stride=stride,
-                                   padding=padding,
-                                   act=None,
-                                   groups=num_groups,
-                                   use_cudnn=use_cudnn,
-                                   param_attr=ParamAttr(initializer=fluid.initializer.Normal(0., 0.02)),
-                                   bias_attr=False)
+        conv = fluid.layers.conv2d(
+            input=input,
+            num_filters=num_filters,
+            filter_size=filter_size,
+            stride=stride,
+            padding=padding,
+            act=None,
+            groups=num_groups,
+            use_cudnn=use_cudnn,
+            param_attr=ParamAttr(initializer=fluid.initializer.Normal(0., 0.02)),
+            bias_attr=False)
 
         # batch_norm中的参数不需要参与正则化，所以主动使用正则系数为0的正则项屏蔽掉
         out = fluid.layers.batch_norm(
@@ -559,7 +552,7 @@ def box_to_center_relative(box, img_height, img_width):
 # 调整图像大小
 def resize_img(img, sampled_labels, input_size):
     target_size = input_size
-    img = img.resize((target_size[1], target_size[2]), Image.BILINEAR)  # 重置大小，双线性插值
+    img = img.resize((target_size[1], target_size[2]), Image.BILINEAR)
     return img
 
 
@@ -795,8 +788,7 @@ def custom_reader(file_list, data_dir, input_size, mode):
                 parts = line.split('\t')  # 按照tab键拆分
                 image_path = parts[0]
 
-                img = Image.open(os.path.join(data_dir,
-                                              image_path))  # 读取图像数据
+                img = Image.open(os.path.join(data_dir, image_path))  # 读取图像数据
                 if img.mode != 'RGB':
                     img = img.convert('RGB')
                 im_width, im_height = img.size
@@ -827,10 +819,7 @@ def custom_reader(file_list, data_dir, input_size, mode):
                 if len(bbox_labels) == 0:
                     continue
 
-                img, sample_labels = preprocess(img,
-                                                bbox_labels,
-                                                input_size,
-                                                mode)  # 预处理
+                img, sample_labels = preprocess(img, bbox_labels, input_size, mode)  # 预处理
                 # sample_labels = np.array(sample_labels)
                 if len(sample_labels) == 0:
                     continue
@@ -847,7 +836,7 @@ def custom_reader(file_list, data_dir, input_size, mode):
                 ret_lbls[0: cope_size] = lbls[0: cope_size]
                 ret_difficults[0: cope_size] = difficults[0: cope_size]
 
-                yield img, ret_boxes, ret_lbls  # 返回图像、边框、标签
+                yield img, ret_boxes, ret_lbls
 
             elif mode == 'test':
                 img_path = os.path.join(line)
@@ -883,7 +872,8 @@ def optimizer_sgd_setting():
 
     optimizer = fluid.optimizer.SGDOptimizer(
         learning_rate=fluid.layers.piecewise_decay(boundaries, values),  # 分段衰减学习率
-        regularization=fluid.regularizer.L2Decay(0.00005))  # L2权重衰减正则化
+        # learning_rate=lr,
+        regularization=fluid.regularizer.L2Decay(0.00005))
 
     return optimizer
 
@@ -911,17 +901,10 @@ def build_program_with_feeder(main_prog, startup_prog, place):
 
         with fluid.unique_name.guard():
             # 创建yolo模型
-            model = get_yolo(ues_tiny,
-                             train_params['class_dim'],
-                             yolo_config['anchors'],
+            model = get_yolo(ues_tiny, train_params['class_dim'], yolo_config['anchors'],
                              yolo_config['anchor_mask'])
-
             outputs = model.net(img)
-
-        return feeder, reader, get_loss(model,
-                                        outputs,
-                                        gt_box,
-                                        gt_label)
+        return feeder, reader, get_loss(model, outputs, gt_box, gt_label)
 
 
 # 损失函数
@@ -931,20 +914,18 @@ def get_loss(model, outputs, gt_box, gt_label):
 
     with fluid.unique_name.guard('train'):
         for i, out in enumerate(outputs):
-            loss = fluid.layers.yolov3_loss(
-                x=out,
-                gt_box=gt_box,  # 真实边框
-                gt_label=gt_label,  # 标签
-                anchors=model.get_anchors(),  # 锚点
-                anchor_mask=model.get_anchor_mask()[i],
-                class_num=model.get_class_num(),
-                ignore_thresh=train_params['ignore_thresh'],
-                # 对于类别不多的情况，设置为 False 会更合适一些，不然 score 会很小
-                use_label_smooth=False,
-                downsample_ratio=downsample_ratio)
+            loss = fluid.layers.yolov3_loss(x=out,
+                                            gt_box=gt_box,  # 真实边框
+                                            gt_label=gt_label,  # 标签
+                                            anchors=model.get_anchors(),  # 锚点
+                                            anchor_mask=model.get_anchor_mask()[i],
+                                            class_num=model.get_class_num(),
+                                            ignore_thresh=train_params['ignore_thresh'],
+                                            # 对于类别不多的情况，设置为 False 会更合适一些，不然 score 会很小
+                                            use_label_smooth=False,
+                                            downsample_ratio=downsample_ratio)
             losses.append(fluid.layers.reduce_mean(loss))
             downsample_ratio //= 2
-
         loss = sum(losses)
         optimizer = optimizer_sgd_setting()
         optimizer.minimize(loss)
@@ -957,7 +938,7 @@ def load_pretrained_params(exe, program):
         logger.info('load param from retrain model')
         fluid.io.load_persistables(executor=exe,
                                    dirname=train_params['save_model_dir'],
-                                   main_program=program)  # 加载增量模型
+                                   main_program=program)
     elif train_params['pretrained'] and os.path.exists(train_params['pretrained_model_dir']):
         logger.info('load param from pretrained model')
 
@@ -970,24 +951,21 @@ def load_pretrained_params(exe, program):
 
 # 执行训练
 def train():
-    init_log_config()  # 初始化日志
-    init_train_parameters()  # 初始化参数
+    init_log_config()
+    init_train_parameters()
 
     logger.info("start train YOLOv3, train params:%s", str(train_params))
     logger.info("create place, use gpu:" + str(train_params['use_gpu']))
 
-    place = fluid.CUDAPlace(0) if train_params['use_gpu'] else fluid.CPUPlace()  # 选择设备
+    place = fluid.CUDAPlace(0) if train_params['use_gpu'] else fluid.CPUPlace()
 
     logger.info("build network and program")
-    # 创建两个Program
     train_program = fluid.Program()
     start_program = fluid.Program()
-    # 设置main program和startup program
     feeder, reader, loss = build_program_with_feeder(train_program, start_program, place)
 
     logger.info("build executor and init params")
 
-    # 创建exe, 加载增量模型
     exe = fluid.Executor(place)
     exe.run(start_program)
     train_fetch_list = [loss.name]
@@ -1024,14 +1002,12 @@ def train():
             batch_id += 1
             total_batch_count += 1
 
-            if batch_id % 20 == 0:  # 调整日志输出的频率
+            if batch_id % 10 == 0:  # 调整日志输出的频率
                 logger.info(
                     "pass {}, trainbatch {}, loss {} time {}".format(pass_id, batch_id, loss, "%2.2f sec" % period))
 
         pass_mean_loss = total_loss / batch_id
         logger.info("pass {0} train result, current pass mean loss: {1}".format(pass_id, pass_mean_loss))
-
-        ###### 模型评估可以加在这里  ######
 
         # 采用每训练完一轮停止办法，可以调整为更精细的保存策略
         if pass_mean_loss < current_best_loss:
@@ -1046,185 +1022,4 @@ def train():
 
 if __name__ == '__main__':
     train()
-
-###############################################################################
-# 固化保存模型
-import paddle
-import paddle.fluid as fluid
-import codecs
-
-init_train_parameters()
-
-
-def freeze_model():
-    exe = fluid.Executor(fluid.CPUPlace())
-
-    ues_tiny = train_params['use_tiny']
-    yolo_config = train_params['yolo_tiny_cfg'] if ues_tiny else train_params['yolo_cfg']
-    path = train_params['save_model_dir']
-
-    model = get_yolo(ues_tiny, train_params['class_dim'],
-                     yolo_config['anchors'], yolo_config['anchor_mask'])
-    image = fluid.layers.data(name='image', shape=yolo_config['input_size'], dtype='float32')
-    image_shape = fluid.layers.data(name="image_shape", shape=[2], dtype='int32')
-
-    boxes = []
-    scores = []
-    outputs = model.net(image)
-    downsample_ratio = model.get_downsample_ratio()
-
-    for i, out in enumerate(outputs):
-        box, score = fluid.layers.yolo_box(x=out,
-                                           img_size=image_shape,
-                                           anchors=model.get_yolo_anchors()[i],
-                                           class_num=model.get_class_num(),
-                                           conf_thresh=train_params['valid_thresh'],
-                                           downsample_ratio=downsample_ratio,
-                                           name="yolo_box_" + str(i))
-        boxes.append(box)
-        scores.append(fluid.layers.transpose(score, perm=[0, 2, 1]))
-        downsample_ratio //= 2
-
-    pred = fluid.layers.multiclass_nms(bboxes=fluid.layers.concat(boxes, axis=1),
-                                       scores=fluid.layers.concat(scores, axis=2),
-                                       score_threshold=train_params['valid_thresh'],
-                                       nms_top_k=train_params['nms_top_k'],
-                                       keep_top_k=train_params['nms_pos_k'],
-                                       nms_threshold=train_params['nms_thresh'],
-                                       background_label=-1,
-                                       name="multiclass_nms")
-
-    freeze_program = fluid.default_main_program()
-
-    fluid.io.load_persistables(exe, path, freeze_program)
-    freeze_program = freeze_program.clone(for_test=True)
-    print("freeze out: {0}, pred layout: {1}".format(train_params['freeze_dir'], pred))
-    # 保存模型
-    fluid.io.save_inference_model(train_params['freeze_dir'],
-                                  ['image', 'image_shape'],
-                                  pred, exe, freeze_program)
-    print("freeze end")
-
-
-if __name__ == '__main__':
-    freeze_model()
-
-######################################################################
-# 预测
-import codecs
-import sys
-import numpy as np
-import time
-import paddle
-import paddle.fluid as fluid
-import math
-import functools
-
-from IPython.display import display
-from PIL import Image
-from PIL import ImageFont
-from PIL import ImageDraw
-from collections import namedtuple
-
-init_train_parameters()
-ues_tiny = train_params['use_tiny']
-yolo_config = train_params['yolo_tiny_cfg'] if ues_tiny else train_params['yolo_cfg']
-
-target_size = yolo_config['input_size']
-anchors = yolo_config['anchors']
-anchor_mask = yolo_config['anchor_mask']
-label_dict = train_params['num_dict']
-class_dim = train_params['class_dim']
-print("label_dict:{} class dim:{}".format(label_dict, class_dim))
-
-place = fluid.CUDAPlace(0) if train_params['use_gpu'] else fluid.CPUPlace()
-exe = fluid.Executor(place)
-
-path = train_params['freeze_dir']
-[inference_program, feed_target_names, fetch_targets] = \
-    fluid.io.load_inference_model(dirname=path, executor=exe)
-
-
-# 给图片画上外接矩形框
-def draw_bbox_image(img, boxes, labels, save_name):
-    img_width, img_height = img.size
-
-    draw = ImageDraw.Draw(img)  # 图像绘制对象
-    for box, label in zip(boxes, labels):
-        xmin, ymin, xmax, ymax = box[0], box[1], box[2], box[3]
-        draw.rectangle((xmin, ymin, xmax, ymax), None, 'red')  # 绘制矩形
-        draw.text((xmin, ymin), label_dict[int(label)], (255, 255, 0))  # 绘制标签
-    img.save(save_name)
-    display(img)
-
-
-def resize_img(img, target_size):
-    """
-    保持比例的缩放图片
-    :param img:
-    :param target_size:
-    :return:
-    """
-    img = img.resize(target_size[1:], Image.BILINEAR)
-    return img
-
-
-def read_image(img_path):
-    """
-    读取图片
-    :param img_path:
-    :return:
-    """
-    origin = Image.open(img_path)
-    img = resize_img(origin, target_size)
-    resized_img = img.copy()
-    if img.mode != 'RGB':
-        img = img.convert('RGB')
-    img = np.array(img).astype('float32').transpose((2, 0, 1))  # HWC to CHW
-    img -= 127.5
-    img *= 0.007843
-    img = img[np.newaxis, :]
-    return origin, img, resized_img
-
-
-def infer(image_path):
-    """
-    预测，将结果保存到一副新的图片中
-    :param image_path:
-    :return:
-    """
-    origin, tensor_img, resized_img = read_image(image_path)
-    input_w, input_h = origin.size[0], origin.size[1]
-    image_shape = np.array([input_h, input_w], dtype='int32')
-    # print("image shape high:{0}, width:{1}".format(input_h, input_w))
-
-    t1 = time.time()
-    # 执行预测
-    batch_outputs = exe.run(inference_program,
-                            feed={feed_target_names[0]: tensor_img,
-                                  feed_target_names[1]: image_shape[np.newaxis, :]},
-                            fetch_list=fetch_targets,
-                            return_numpy=False)
-    period = time.time() - t1
-    print("predict cost time:{0}".format("%2.2f sec" % period))
-    bboxes = np.array(batch_outputs[0])  # 预测结果
-    # print(bboxes)
-
-    if bboxes.shape[1] != 6:
-        print("No object found in {}".format(image_path))
-        return
-    labels = bboxes[:, 0].astype('int32')  # 类别
-    scores = bboxes[:, 1].astype('float32')  # 概率
-    boxes = bboxes[:, 2:].astype('float32')  # 边框
-
-    last_dot_index = image_path.rfind('.')
-    out_path = image_path[:last_dot_index]
-    out_path += '-result.jpg'
-    draw_bbox_image(origin, boxes, labels, out_path)
-
-
-if __name__ == '__main__':
-    image_name = sys.argv[1]
-    image_path = image_name
-    image_path = "data/data6045/lslm-test/2.jpg"
-    infer(image_path)
+    print("ok!")

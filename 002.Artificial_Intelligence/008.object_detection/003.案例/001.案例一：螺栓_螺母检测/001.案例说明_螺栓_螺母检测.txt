@@ -42,11 +42,20 @@
 
 （3） 【2】定义：训练 
 		（1）修改一些参数
-			"use_tiny": True,        //使用完整版
+			"use_tiny": False,        //使用完整版 //改这个参数，需要删除模型的目录
+									  //建议使用完整版
+
 			"num_epochs": 2,          //训练轮数
+
 			"train_batch_size": 2,    //批次大小，完整不能设置太大
 
+			"use_gpu": True,  # 是否使用GPU
+
+
 		（2）删除之前的模型目录
+				yolo-model	  # 增量模型保存目录
+				freeze_model  # 模型固化目录(真正执行预测的模型)
+
 		（3）执行
 		（4）查看日志
 			 tail -f logs/train.log

@@ -1,0 +1,14 @@
+
+
+
+
+
+https://aistudio.baidu.com/projectdetail/1948888?channelType=0&channel=0
+
+一共有7种害虫，能识别7种害虫
+
+paddle 2.x 写的，比较复杂
+
+
+
+
