@@ -43,10 +43,16 @@ train_params = {
     "save_model_dir": "./yolo-model",  # 增量模型保存目录
     "model_prefix": "yolo-v3",  # 模型前缀
     "freeze_dir": "freeze_model",  # 模型固化目录(真正执行预测的模型)
+
     "use_tiny": True,  # 是否使用精简版YOLO模型
+
     "max_box_num": 20,  # 一幅图上最多有多少个目标
+
     "num_epochs": 80,  # 训练轮次
-    "train_batch_size": 32,  # 对于完整yolov3，每一批的训练样本不能太多，内存会炸掉；如果使用tiny，可以适当大一些
+
+
+    "train_batch_size": 2,  # 对于完整yolov3，每一批的训练样本不能太多，内存会炸掉；如果使用tiny，可以适当大一些
+
     "use_gpu": True,  # 是否使用GPU
     "yolo_cfg": {  # YOLO模型参数
         "input_size": [3, 448, 448],  # 原版的边长大小为608，为了提高训练速度和预测速度，此处压缩为448
