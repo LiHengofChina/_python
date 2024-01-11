@@ -6,14 +6,13 @@
   <component name="ChangeListManager">
     <list default="true" id="517e2471-5fc2-4e52-9368-419affa8e3ac" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/../../../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../../../.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../004.人脸识别/019.人脸识别.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../004.人脸识别/020.人脸活体检测模型.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../004.人脸识别/021.人脸识别模型.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../004.人脸识别/022.人脸识别代码.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace_008.object_detection.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace_008.object_detection.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../讲义/08_目标检测_笔记.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../讲义/13_人脸检测与人脸识别.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../010.ocr/000.ocr/001.OCR.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../010.ocr/000.ocr/001.OCR.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../010.ocr/000.ocr/002.文字检测模型.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../010.ocr/000.ocr/003.文字识别模型.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../010.ocr/000.ocr/004.代码.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../010.ocr/000.ocr/005.如何提升OCR.模型的识别精度.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../010.ocr/000.第三方/005.第三方库.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../010.ocr/09_光学字符识别（OCR）_笔记.md" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../../接口汇总.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../接口汇总.xlsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../汇总.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../汇总.xlsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../../task.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../../task.txt" afterDir="false" />
@@ -39,6 +38,7 @@
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
+    "last_opened_file_path": "E:/_python/002.Artificial_Intelligence/worspace",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -84,6 +84,7 @@
       <option name="presentableId" value="Default" />
       <updated>1704957129856</updated>
       <workItem from="1704957130949" duration="665000" />
+      <workItem from="1704968846552" duration="24000" />
     </task>
     <servers />
   </component>

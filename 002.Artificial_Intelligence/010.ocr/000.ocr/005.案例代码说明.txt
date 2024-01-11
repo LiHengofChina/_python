@@ -1,0 +1,92 @@
+
+//==========================  数据集说明
+//==========================  数据集说明
+
+
+
+（1）10000多个小图片，
+（2）全是英文和数字。
+（3）图片位置 
+		data/data6927/word-recognition/imageSet/ *
+（4）标注格式说明，
+		data/data6927/word-recognition/image_label.txt	
+		000001_0.jpg	POLICE
+		000002_0.jpg	UBS
+		000003_0.jpg	SIGHTSEEING
+		000003_1.jpg	TOURS
+		000004_0.jpg	Centre
+		000005_0.jpg	HEEP
+		/**
+			说明：文件名 + 类别
+
+			//文字识别，实际上是一个 "分类"，所以它没有定位信息，只有内容
+			所以 POLICE  UBS SIGHTSEEING
+
+		*/
+
+
+//========================== （2）登陆
+//========================== （2）登陆
+
+https://aistudio.baidu.com/aistudio/index
+
+13688007165/liheng_liheng
+liheng520
+
+//========================== 注意：要用 1.7.2 的paddle
+//========================== 注意：要用 1.7.2 的paddle
+
+
+
+（1）
+	解压数据//删除之前已解压的数据
+	# 解压数据集
+	!cd /home/aistudio/data/data6927 && unzip -qo word-recognition.zip
+
+（2）
+	# 解压预训练参数
+	!cd /home/aistudio/data/data6963 && unzip -qo pretrained-model.zip -d /home/aistudio
+
+（3）
+	# 预处理数据，将其转化为标准格式。同时将数据拆分成两份，以便训练和计算预估准确率
+
+（4）
+	#训练：
+	//练习的时候少训练一点轮数
+
+	"num_epochs": 2,  # 训练轮次
+	"train_batch_size": 5,  # 训练批次大小
+
+	//动态设置学习率
+	"learning_rate": 0.0005,
+	"lr_epochs": [70, 120, 170, 220, 270, 320],  # 学习率衰减分段（6个数字分为7段）
+	"lr_decay": [1, 0.5, 0.1, 0.05, 0.01, 0.005, 0.001],  # 每段采用的学习率，对应lr_epochs参数7段
+
+
+	//是否使用GPU
+	"use_gpu": False,  # 是否使用gpu
+
+（5）
+	# 保存推理模型
+				//只保执行一次
+
+
+
+（6） 预测和推理：
+	  1）把 img_file 换成要测试的文件
+	     img_file ="huawei2.png"
+	  2）先测试简单的，再测试复杂的。
+		  oracle.png
+		  songxia.png
+		  chepai.png
+		  piaoju_1.png //模糊图像
+						/**
+						 可以处理一下，
+						 做超分辨率提升，
+						 模糊图像还原成高分辨率的图像
+						*/
+		  piaoju_2.png
+		  google.png
+		  google2.png   //文件的白边会挤压文字的特征，因为它会拉伸
+		  huawei.png   //图案文字一起的，要把图案拆掉
+		  huawei2.png

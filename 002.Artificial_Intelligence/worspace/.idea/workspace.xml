@@ -1,24 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="AutoImportSettings">
-    <option name="autoReloadType" value="SELECTIVE" />
-  </component>
   <component name="ChangeListManager">
-    <list default="true" id="00e15ebb-ad0e-4790-8960-92ace0e96aca" name="Changes" comment="">
+    <list default="true" id="4ab7ec67-de78-4917-8c64-3c86f13996c2" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/../../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../../.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../007.paddlepaddle/002.tile/003.工业质检（工业质检）_智慧案列_瓷砖检测案例.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../007.paddlepaddle/002.tile/003.工业质检（工业质检）_智慧案列_瓷砖检测案例.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/worspace.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/worspace.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/month04/deep_learning/day_20/001.tile_sample_enhance.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/month04/deep_learning/day_20/002.tile_preprocessing.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/month04/deep_learning/day_20/003.tile_train.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/month04/deep_learning/day_20/004.tile_inference.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/month04/deep_learning/day_20/global_var.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../008.object_detection/workspace_008.object_detection/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../008.object_detection/workspace_008.object_detection/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../010.ocr/000.ocr/001.OCR.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../010.ocr/000.ocr/001.OCR.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../010.ocr/000.ocr/002.文字检测模型.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../010.ocr/000.ocr/003.文字识别模型.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../010.ocr/000.ocr/004.代码.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../010.ocr/000.ocr/005.如何提升OCR.模型的识别精度.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../010.ocr/000.第三方/005.第三方库.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../010.ocr/09_光学字符识别（OCR）_笔记.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../接口汇总.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/../接口汇总.xlsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../汇总.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/../汇总.xlsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../第四阶段/002.DeepLearning/006.tile/001.高级阶段.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../第四阶段/002.DeepLearning/006.tile/002.回顾神经网络.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../第四阶段/002.DeepLearning/006.tile/003.工业质检（工业质检）_智慧案列_瓷砖检测案例.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../task.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../task.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -28,10 +24,7 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
   </component>
-  <component name="MarkdownSettingsMigration">
-    <option name="stateVersion" value="1" />
-  </component>
-  <component name="ProjectId" id="2aiKXqjJp8dOhf6UPh05Tiwovul" />
+  <component name="ProjectId" id="2anyxSKSp1zVc5VBBniw9p5BRN5" />
   <component name="ProjectViewState">
     <option name="autoscrollFromSource" value="true" />
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -41,23 +34,18 @@
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "E:/_python/002.Artificial_Intelligence/007.paddlepaddle/workspace_007.paddlepaddle",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="00e15ebb-ad0e-4790-8960-92ace0e96aca" name="Changes" comment="" />
-      <created>1704796001347</created>
+      <changelist id="4ab7ec67-de78-4917-8c64-3c86f13996c2" name="Changes" comment="" />
+      <created>1704968883431</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1704796001347</updated>
-      <workItem from="1704796002498" duration="1047000" />
+      <updated>1704968883431</updated>
+      <workItem from="1704968884568" duration="52000" />
     </task>
     <servers />
   </component>
