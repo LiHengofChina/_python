@@ -1,0 +1,9 @@
+
+
+消除词语的歧义，确定词语的正确含义
+
+词义消歧是识别单词正确含义的任务。例如，
+在句子“The dog <u>barked</u> at the mailman”（狗对邮递员吠叫）
+和“Tree <u>bark</u> is sometimes used as a medicine”（树皮有时用作药物）中，单词bark有两种不同的含义。
+词义消歧对于诸如问答之类的任务至关重要。
+
