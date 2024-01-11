@@ -41,6 +41,10 @@ https://aistudio.baidu.com/projectdetail/7354323?contributionType=1
 视频分类
 ORC文件识别
 
+户型图里面的文字检测
+
+
+
 
 
 
