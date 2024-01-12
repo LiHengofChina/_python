@@ -1,9 +1,9 @@
-'''
-    利用jieba库分词，并标记记性
-'''
+
 
 import jieba.posseg as psg
-
+'''
+———————————————— 标记记性
+'''
 
 def pos(text):
     results = psg.cut(text)  # 分词，记性标注
