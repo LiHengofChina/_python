@@ -15,8 +15,10 @@ import jieba
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 '''
+———————————————————— 垃圾邮件识别
+# 【综合】垃圾邮件识别：它是一个划层的语义，所以在机器学习里面，效果也还可以。
 
-# 垃圾邮件识别：它是一个划层的语义，所以在机器学习里面，效果也还可以。
+会用到分词等等技术
 
 
 
