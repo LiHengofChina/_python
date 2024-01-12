@@ -1,17 +1,5 @@
 
-'''
 
-# 垃圾邮件识别：它是一个划层的语义，所以在机器学习里面，效果也还可以。
-
-
-02_spam_recognize.py
-垃圾邮件识别案例
-
-（1）数据集：5000个正常邮件，5001个垃圾邮件
-（2）特征表示：TF-IDF向量作为特征表示
-（3）模型选择：朴树贝喹斯、支持向量机
-
-'''
 import numpy as np
 import re
 import string
@@ -20,8 +8,27 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
 from sklearn import metrics
 
+
+
+
 import jieba
 from sklearn.feature_extraction.text import TfidfVectorizer
+
+'''
+
+# 垃圾邮件识别：它是一个划层的语义，所以在机器学习里面，效果也还可以。
+
+
+
+垃圾邮件识别案例
+
+（1）数据集：5000个正常邮件，5001个垃圾邮件
+（2）特征表示：TF-IDF向量作为特征表示
+（3）模型选择：朴树贝喹斯、支持向量机
+
+'''
+
+
 
 label_name_map = ["垃圾邮件", "正常邮件"]
 

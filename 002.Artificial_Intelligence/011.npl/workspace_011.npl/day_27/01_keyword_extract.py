@@ -1,13 +1,3 @@
-'''
-
-#通过 TF-IDF、TextRank算法提取关键词
-
-01_keyword_extract.py
-
-corpus.txt          //语料库
-stopword.txt        //停用词表
-
-'''
 
 import math
 import jieba
@@ -16,6 +6,19 @@ import jieba.posseg as psg
 from jieba import analyse
 import functools
 import numpy as np
+
+'''
+
+—————————————————————————————— 提取关键词
+        （1） TF-IDF 算法
+        （2） TextRank 算法
+
+
+corpus.txt          //语料库
+stopword.txt        //停用词表
+
+'''
+
 
 # 读取停用词表
 
