@@ -5,16 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="517e2471-5fc2-4e52-9368-419affa8e3ac" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../../../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../../../.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../010.ocr/000.ocr/001.OCR.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../010.ocr/000.ocr/001.OCR.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../010.ocr/000.ocr/002.文字检测模型.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../010.ocr/000.ocr/003.文字识别模型.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../010.ocr/000.ocr/004.代码.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../010.ocr/000.ocr/005.如何提升OCR.模型的识别精度.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../010.ocr/000.第三方/005.第三方库.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../010.ocr/09_光学字符识别（OCR）_笔记.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../接口汇总.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../接口汇总.xlsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../汇总.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../汇总.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../001.detection/001.ObjectDetection.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../001.detection/001.ObjectDetection.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../../task.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../../task.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -38,7 +30,7 @@
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "E:/_python/002.Artificial_Intelligence/worspace",
+    "last_opened_file_path": "E:/_python/002.Artificial_Intelligence/008.object_detection/workspace_008.object_detection",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -85,6 +77,7 @@
       <updated>1704957129856</updated>
       <workItem from="1704957130949" duration="665000" />
       <workItem from="1704968846552" duration="24000" />
+      <workItem from="1706071255604" duration="3054000" />
     </task>
     <servers />
   </component>
