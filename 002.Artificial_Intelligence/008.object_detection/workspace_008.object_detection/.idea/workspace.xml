@@ -5,8 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="517e2471-5fc2-4e52-9368-419affa8e3ac" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../001.detection/001.ObjectDetection.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../001.detection/001.ObjectDetection.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../接口汇总.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../接口汇总.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../汇总.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../汇总.xlsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../../task.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../../task.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -77,7 +78,7 @@
       <updated>1704957129856</updated>
       <workItem from="1704957130949" duration="665000" />
       <workItem from="1704968846552" duration="24000" />
-      <workItem from="1706071255604" duration="3054000" />
+      <workItem from="1706071255604" duration="10949000" />
     </task>
     <servers />
   </component>
