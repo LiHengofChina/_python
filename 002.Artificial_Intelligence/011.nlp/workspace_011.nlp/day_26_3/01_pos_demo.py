@@ -2,7 +2,9 @@
 
 import jieba.posseg as psg
 '''
-———————————————— 标记记性
+———————————————— 标记记性 
+jieba
+
 '''
 
 def pos(text):
