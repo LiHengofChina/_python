@@ -26,7 +26,17 @@ NLP（Nature Language Processing，自然语言处理）是**计算机学科**�
 - **自然语言处理**是人工智能领域中一个重要的方向。它研究实现人与计算机之间用自然语言进行有效沟通的各种理论和方法。——百度百科
 - **自然语言处理**研究在人与人交际中及人与计算机交际中的语言问题的一门学科。NLP要研制表示语言能力和语言应用的模型，建立计算机框架来实现这些语言模型，提出相应的方法来不断完善这种模型，并根据语言模型设计各种实用系统，以及对这些系统的评测技术。——Bill Manaris，《从人机交互的角度看自然语言处理》
 
-自然语言处理还有其它一些名称，例如：自然语言理解（Natural Language Understanding），计算机语言学（Computational Linguistics），人类语言技术（Human Language Technology）等等。
+
+
+自然语言处理还有其它一些名称，
+
+例如：
+
+​	**自然语言理解（Natural Language Understanding），**
+
+​	**计算机语言学（Computational Linguistics），**
+
+​	**人类语言技术（Human Language Technology）等等。**
 
 
 
@@ -35,6 +45,8 @@ NLP（Nature Language Processing，自然语言处理）是**计算机学科**�
 NLP的主要任务可以分为两大类，一类是基于现有文本或语料的分析，另一类是生成新的文本或语料。
 
 ![LP_task](img/NLP_task.png)
+
+
 
 #### 1）分词
 
@@ -48,7 +60,17 @@ NLP的主要任务可以分为两大类，一类是基于现有文本或语料�
 
 #### 2）词义消歧
 
-词义消歧是识别单词正确含义的任务。例如，在句子“The dog <u>barked</u> at the mailman”（狗对邮递员吠叫）和“Tree <u>bark</u> is sometimes used as a medicine”（树皮有时用作药物）中，单词bark有两种不同的含义。词义消歧对于诸如问答之类的任务至关重要。
+词义消歧是识别单词正确含义的任务。
+
+例如，
+
+在句子“**The dog <u>barked</u> at the mailman**”（狗对邮递员吠叫）
+
+“**Tree <u>bark</u> is sometimes used as a medicine**”（树皮有时用作药物）中，
+
+单词bark有两种不同的含义。词义消歧对于诸如问答之类的任务至关重要。
+
+
 
 #### 3）命名实体识别（NER）
 
