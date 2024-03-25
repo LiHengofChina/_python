@@ -2,7 +2,9 @@
 import jieba
 
 '''
-———————————————— 统计 "文章词频" 示例
+———————————————— 统计 "文章词频" 示例：
+先分词，再统计词频。
+
 '''
 
 #读取文件内容
@@ -39,7 +41,7 @@ def get_stop_words(path):
 
 
 if __name__ == '__main__':
-    fname = "11.txt"  # 待统计文件
+    fname = "input.txt"  # 待统计文件
     corpus = get_content(fname)  # 读取文件内容
     tmp_list = list(jieba.cut(corpus)) #分词
 

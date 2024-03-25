@@ -2,7 +2,12 @@
 import jieba
 
 '''
+
+基于规则_jieba库
+pip install jieba==0.42.1
 ————————————————  分词
+
+
 
 '''
 text = "吉林市长春药店"
