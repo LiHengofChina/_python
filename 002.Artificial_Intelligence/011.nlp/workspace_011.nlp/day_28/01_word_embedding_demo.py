@@ -82,7 +82,7 @@ model = Word2Vec(LineSentence(in_file), # 输入
                  workers=multiprocessing.cpu_count()) # 线程数量
 # 保存模型
 model.save(out_file1)
-# 保存权重矩阵C
+# 保存权重矩阵
 model.wv.save_word2vec_format(out_file2, # 文件路径
                               binary=False) # 不保存二进制
 
