@@ -14,7 +14,7 @@
 
 	（3）【1】安装 gensim 库
 
-			!pip install gensim==3.8.1 # 如果不在AIStudio下执行去掉前面的叹号
+			!pip install gensim==3.8.1 # 如果不 在AIStudio下执行去掉前面的叹号
 
 			//安装之后就有了 data104767
 
