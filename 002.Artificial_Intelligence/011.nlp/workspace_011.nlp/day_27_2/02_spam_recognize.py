@@ -20,9 +20,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 会用到分词等等技术
 
-
-
-垃圾邮件识别案例
+垃圾邮件识别案例说明 
 
 （1）数据集：5000个正常邮件，5001个垃圾邮件
 （2）特征表示：TF-IDF向量作为特征表示
