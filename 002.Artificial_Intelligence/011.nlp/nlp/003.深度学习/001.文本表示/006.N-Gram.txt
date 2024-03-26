@@ -1,0 +1,12 @@
+
+N-Gram
+	N-Gram模型是一种基于统计语言模型
+	N-Gram基本思想是将文本里面的内容按照字节进行大小为n的滑动窗口操作，形成了长度是n的字节片段序列	
+
+	句子：L love deep learning
+	Bi-gram: {I, love}, {love, deep}, {deep, learning}
+	Tri-gram: {I, love, deep}, {love deep learning}
+
+
+
+

@@ -1,0 +1,15 @@
+
+（4）共现矩阵
+			I like deep learning.
+			I like NLP.
+			I enjoy flying.
+
+			"共同出现" 的次数越多，它们的 "相似度" 越高。
+
+			飞机、大炮
+			苹果和梨
+			马克思和恩格斯
+
+
+
+
