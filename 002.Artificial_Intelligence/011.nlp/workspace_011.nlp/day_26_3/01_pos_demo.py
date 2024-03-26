@@ -2,7 +2,7 @@
 
 import jieba.posseg as psg
 '''
-———————————————— 标记记性 
+———————————————— 标记词性 
 jieba
 
 '''
