@@ -1,0 +1,61 @@
+
+
+perfect
+
+low-cost 低成本 
+
+
+
+Pattern 模式  //模板方法模式（Template Method Pattern）
+
+
+
+Allocations：分配
+Reserve：储备
+
+
+
+Author：著者;作者;作家;(尤指计划或思想的)创造者，发起人
+Favorite apps： 喜欢、特别喜欢的。
+Jet brains ：喷气机头（读：杰特 不伦斯）
+Strange    	陌生的
+volatile    不稳定的（读：瓦落脱）。
+signed     	有符号、签名   
+unsigned   	无符号、未签名
+restrict	限制
+interpret	解释（读：inter 扑锐特）
+reinterpret	解释（读：re inter 扑锐特）
+grade		等级
+capture		捕获
+mutable		可变的（读：mju 特博）		
+debian		德比安（linux系统）
+recipe		配方;食谱;秘诀;方法;烹饪法;诀窍
+replications	复制
+Congratulations： 恭喜;祝贺
+Related topics：相关主题
+While：虽然
+following 下列的
+both 二者都
+possible 能做到
+based 基于什么
+called 命名为
+section 部分
+Solaris  读： So  ner er si 
+measurement	 (迈 xio	er ment)：测量工具 mea sure ment
+Elapsed 流逝的   ：衣拉蒲斯特 
+Acquisition 并购，获得，掌握。
+capture 捕获，抓住
+Direction 方向
+Idle 空闲的
+Complex 复杂的
+occurred 发生
+spectrum 光谱
+Frequency 频率
+recall 回忆、召回，动词 。
+adjust调整
+adjacent 邻接的
+Superior 上级，更高的
+Increase 添加、增加
+initiate （启动） 英耐吸 压特 initi ate
+IMMediate（即时通信） 一米地 压特 IMMedi ate
+Exactly （完全正确） 依克 ra 特立
