@@ -21,7 +21,7 @@
 
 （3）命名体识别NER: 输入句子，输出每个字体类型、位置 信息
 	输入：梅   兰   芳   大   剧   院   周   六   有 演 出 
- 	输出：P-B  P-I  P-E  A-B  A-I  A-E  T-B  T-E  O  O  O
+ 	输出：P-B  P-I  P-E  A-B  A-I  A-E  T-B  T-E  O  O  O //O 表示other，识别实体时，不关注
 
 
 
