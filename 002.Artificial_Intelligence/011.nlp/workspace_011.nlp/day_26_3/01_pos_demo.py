@@ -9,6 +9,7 @@ jieba
 
 def pos(text):
     results = psg.cut(text)  # 分词，记性标注
+
     for w, t in results:
         print("%s/%s" % (w, t), end=" ")
     print("")

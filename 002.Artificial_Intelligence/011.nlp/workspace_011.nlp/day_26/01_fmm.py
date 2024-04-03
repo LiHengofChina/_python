@@ -1,4 +1,11 @@
-# 正向最大匹配分词示例
+
+'''
+        正向最大匹配分词示例
+        （需要词典）
+        （需要假设：最长词为4个字）
+'''
+
+
 class MM(object):
     def __init__(self):
         self.window_size = 3

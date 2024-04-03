@@ -1,4 +1,9 @@
-# 逆向最大匹配分词示例
+
+'''
+         逆向最大匹配分词示例
+        （需要词典）
+        （需要假设：最长词为4个字）
+'''
 class RMM(object):
     def __init__(self):
         self.window_size = 3
