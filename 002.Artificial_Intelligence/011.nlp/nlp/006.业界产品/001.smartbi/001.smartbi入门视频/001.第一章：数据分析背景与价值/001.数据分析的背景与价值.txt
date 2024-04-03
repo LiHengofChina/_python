@@ -108,6 +108,7 @@ https://wiki.smartbi.com.cn/pages/viewpage.action?smt_poid=23&pageId=119281776
 //===================================== 界面说明
 （1）登陆主页
 	https://demo.smartbi.com.cn/smartbi/vision/index.jsp
+	https://demo.smartbi.com.cn/smartbi/vision/login.jsp
 	账号：13688007165
 	密码：007165
 
