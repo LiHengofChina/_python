@@ -1,22 +1,12 @@
 
 import math
 import jieba
-import jieba.posseg as psg
-# from gensim import corpora, models
-from jieba import analyse
-import functools
-import numpy as np
 
 '''
-
 —————————————————————————————— 提取关键词
-        （1） TF-IDF 算法
-        （2） TextRank 算法
-
-
+（1） TF-IDF 算法
 corpus.txt          //语料库
 stopword.txt        //停用词表
-
 '''
 
 
@@ -126,14 +116,6 @@ def tfidf_extract(word_list, kw_num=20):
     tfidf_model = TfIdf(idf_dict, default_idf, word_list, kw_num)
     tfidf_model.get_tfidf()
 
-# TextRank
-def textrank_extract(text, keyword_num=20):
-    keywords = analyse.textrank(text, keyword_num)
-    # 输出抽取出的关键词
-    for keyword in keywords:
-        print(keyword + ", ", end='')
-    print()
-
 
 if __name__ == '__main__':
     global stopword_list
@@ -151,9 +133,5 @@ if __name__ == '__main__':
     # （1）TF-IDF提取关键词
     print("TF-IDF提取结果：")
     tfidf_extract(filter_list)
-
-    # （1）TextRank提取关键词
-    print('\n TextRank模型结果：')
-    textrank_extract(text)
 
 
