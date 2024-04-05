@@ -2,7 +2,7 @@
 
 "神经网络模型 NNLM" 是一个比较原始的神经网络语言模型
  
-Goolge 在它的基础上面发布了Word2vec 
+Goolge 在 "它的基础" 上面发布了Word2vec 
 Word2vec 库：专门用于词嵌入训练库
 
 
