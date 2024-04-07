@@ -2,23 +2,31 @@
 
 【AI_Studio】执行
 
-利用中文维基百科语料库训练词向量
+利用 “中文维基百科语料库”训练词向量
 
 '''
+#####################################################################【1】安装gensim
+# !pip install gensim==3.8.1 #
+
 
 #####################################################################【2】 由于wiki数据量太大，我们只读取2万笔数据
 
 import codecs
 
-####################################################################【2】
 from gensim.corpora import WikiCorpus
 
+# 这个是中文维基百科语料库，压缩版本它有1.8G左右，太大了，我们只取2万条来训练
 inupt_file = 'data/data104767/articles.xml.bz2'
+
+# 从里面取2万条之后，生成到一个新的文件中
 out_file = open('data/data104767/wiki.zh.text', 'w', encoding='utf-8')
 
+
+#WikiCorpus对象 从指定文件中提取文本
 wiki = WikiCorpus(inupt_file,  # 输入文件
-                  lemmatize=False,  # 不做记性还原
+                  lemmatize=False,  # 词形还原（lemmatization），中文没有记形，在英文文本处理中，词形还原是将词汇还原为其基本形式的过程，
                   dictionary={})
+
 
 count = 0
 for text in wiki.get_texts():
@@ -32,7 +40,7 @@ for text in wiki.get_texts():
 
 out_file.close()
 
-####################################################################【3】分词
+####################################################################【3】生成 分词文件
 
 
 import jieba
@@ -78,7 +86,8 @@ out_file2 = "data/data104767/wiki.zh.text.vector" # 权重
 model = Word2Vec(LineSentence(in_file), # 输入
                  size=100, # 词向量维度(推荐25~300之间)
                  window=3, # 窗口大小
-                 min_count=5, # 如果语料中单词出现次数小于5，忽略该词
+                 min_count=5, # 如果语料中单词出现次数小于5，忽略该词，最低词频
+                 # ,seg=0 #1=CBOW,0=Skip-gram
                  workers=multiprocessing.cpu_count()) # 线程数量
 # 保存模型
 model.save(out_file1)
