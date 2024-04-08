@@ -1,5 +1,4 @@
-
-#【4】
+#【4】加载模型，执行预测
 ################# 加载模型，执行预测##############################################################################
 
 
@@ -9,13 +8,14 @@ from multiprocessing import cpu_count
 import paddle.fluid as fluid
 import os
 
-import paddle.fluid as fluid
+# 启用静态图模式
+paddle.enable_static()
+
 
 data_root = 'data/news_classify/'
 
 dict_file = 'dict_txt.txt'     #编码字典文件
 dict_file_path = data_root + dict_file
-
 
 model_save_path = 'model/news_classify/'
 
@@ -44,15 +44,28 @@ def get_data(sentence):
 # 初始化
 infer_exe.run(fluid.default_startup_program())
 
-# 拿到一组带预测数据
-data1 = get_data('别总盯着帕萨特！曾叫板奥迪A6，现仅19万，开10年只换轮胎')
-data2 = get_data('读研3年和工作3年，差别究竟有多大？')
-data3 = get_data('黄渤退出爆红的极限男人帮，只为在《忘不了餐厅》给老人当配角')
 
-texts = []
+texts = [] # 存放待预测句子
+# 拿到一组带预测数据
+data1 = get_data("在获得诺贝尔文学奖7年之后，莫言15日晚间在山西汾阳贾家庄如是说")
+data2 = get_data("综合'今日美国'、《世界日报》等当地媒体报道，芝加哥河滨警察局表示")
+data3 = get_data("中国队2022年冬奥会表现优秀")
+data4 = get_data("中国人民银行今日发布通知，降低准备金率，预计释放4000亿流动性")
+data5 = get_data("10月20日,第六届世界互联网大会正式开幕")
+data6 = get_data("同一户型，为什么高层比低层要贵那么多？")
+data7 = get_data("揭秘A股周涨5%资金动向：追捧2类股，抛售600亿香饽饽")
+data8 = get_data("宋慧乔陷入感染危机，前夫宋仲基不戴口罩露面，身处国外神态轻松")
+data9 = get_data("此盆栽花很好养，花美似牡丹，三季开花，南北都能养，很值得栽培")  # 不属于任何一个类别
+
 texts.append(data1)
 texts.append(data2)
 texts.append(data3)
+texts.append(data4)
+texts.append(data5)
+texts.append(data6)
+texts.append(data7)
+texts.append(data8)
+texts.append(data9)
 
 # 生成lodTensor
 base_shape = [[len(c) for c in texts]]# 每个个句子的长度，每一个句子的shape

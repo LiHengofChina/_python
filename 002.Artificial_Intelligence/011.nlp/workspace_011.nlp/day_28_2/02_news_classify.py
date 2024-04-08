@@ -143,7 +143,7 @@ ts_reader = test_reader(test_file_path)
 batch_test_reader = paddle.batch(ts_reader, batch_size=128)
 
 # 执行训练
-place = fluid.CUDAPlace(0)
+place = fluid.CUDAPlace(0) #GPU
 exe = fluid.Executor(place=place)
 exe.run(fluid.default_startup_program())  # 初始化
 
@@ -153,10 +153,10 @@ exe.run(fluid.default_startup_program())  # 初始化
 # 参数喂入器
 feeder = fluid.DataFeeder(feed_list=[words, label], place=place)
 
-for pass_id in range(5):
+for pass_id in range(50): #外层：控制轮数
     # 训练
     train_costs, train_accs = [], []
-    for data in batch_train_reader():
+    for data in batch_train_reader(): #内层：控制批次数
         train_cost, train_acc = exe.run(program=fluid.default_main_program(),
                                         feed=feeder.feed(data),
                                         fetch_list=[avg_cost, acc])
