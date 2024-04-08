@@ -1,5 +1,3 @@
-
-
 #【3】
 #################  模型的搭建、训练、评估、保存##############################################################################【2】
 ########## 模型的搭建，训练，评估和保存 ########
@@ -9,6 +7,8 @@ from multiprocessing import cpu_count
 import paddle.fluid as fluid
 import os
 
+# 启用静态图模式
+paddle.enable_static()
 
 # 数据准备
 def data_mapper(sample):
@@ -65,9 +65,7 @@ def Text_CNN(data, dict_dim, emb_dim=128, hid_dim=128,
     :return: 运算结果
     '''
     # 词嵌入层
-    emb = fluid.layers.embedding(input=data,
-                                 size=[dict_dim, emb_dim])
-
+    emb = fluid.layers.embedding(input=data,size=[dict_dim, emb_dim])
     # 并列两组，卷积池化
     conv1 = fluid.nets.sequence_conv_pool(input=emb,  # 输入数据，词嵌入层的输出
                                           num_filters=hid_dim,  # 卷积核数量
@@ -106,6 +104,18 @@ def get_dict_len(dict_path):
     return len(line.keys())
 
 
+##############################################
+data_root = 'data/news_classify/'
+dict_file = 'dict_txt.txt'
+
+dict_file_path = data_root + dict_file
+train_file = 'train_list.txt'  #训练集
+test_file = 'test_list.txt'    #测试集
+
+train_file_path = data_root + train_file
+test_file_path = data_root + test_file
+##############################################
+
 dict_dim = get_dict_len(dict_file_path)
 pred_y = Text_CNN(words, dict_dim)
 # 损失函数
@@ -130,8 +140,7 @@ batch_train_reader = paddle.batch(tr_reader,
                                   batch_size=128)
 
 ts_reader = test_reader(test_file_path)
-batch_test_reader = paddle.batch(ts_reader,
-                                 batch_size=128)
+batch_test_reader = paddle.batch(ts_reader, batch_size=128)
 
 # 执行训练
 place = fluid.CUDAPlace(0)
@@ -142,8 +151,7 @@ exe.run(fluid.default_startup_program())  # 初始化
 # 训练一轮，验证一轮
 
 # 参数喂入器
-feeder = fluid.DataFeeder(feed_list=[words, label],
-                          place=place)
+feeder = fluid.DataFeeder(feed_list=[words, label], place=place)
 
 for pass_id in range(5):
     # 训练
@@ -184,74 +192,3 @@ fluid.io.save_inference_model(model_save_path,
 print('模型保存成功')
 
 
-
-#【4】
-################# 加载模型，执行预测##############################################################################
-
-
-import numpy as np
-import paddle
-from multiprocessing import cpu_count
-import paddle.fluid as fluid
-import os
-
-import paddle.fluid as fluid
-
-data_root = 'data/news_classify/'
-
-dict_file = 'dict_txt.txt'     #编码字典文件
-dict_file_path = data_root + dict_file
-
-model_save_path = 'model/news_classify/'
-
-#加载模型
-place = fluid.CPUPlace()
-infer_exe = fluid.Executor(place=place)
-infer_program, \
-    feed_names, \
-    target_vars = fluid.io.load_inference_model(model_save_path,
-                                               executor=infer_exe)
-
-# 对待预测的数据进行编码
-def get_data(sentence):
-    # 读取编码字典
-    with open(dict_file_path, 'r', encoding='utf-8') as f:
-        dict_txt = eval(f.readlines()[0])
-
-    ret = []
-    for s in sentence:
-        if not s in dict_txt.keys():
-            s = '<unk>'
-        ret.append(int(dict_txt[s]))
-    return ret
-
-
-# 初始化
-infer_exe.run(fluid.default_startup_program())
-
-# 拿到一组带预测数据
-data1 = get_data('别总盯着帕萨特！曾叫板奥迪A6，现仅19万，开10年只换轮胎')
-data2 = get_data('读研3年和工作3年，差别究竟有多大？')
-data3 = get_data('黄渤退出爆红的极限男人帮，只为在《忘不了餐厅》给老人当配角')
-
-texts = []
-texts.append(data1)
-texts.append(data2)
-texts.append(data3)
-
-# 生成lodTensor
-base_shape = [[len(c) for c in texts]]# 每个个句子的长度，每一个句子的shape
-tensor_words = fluid.create_lod_tensor(texts, base_shape, place)
-
-result = infer_exe.run(program=infer_program,
-                       feed={feed_names[0]: tensor_words},
-                       fetch_list=target_vars)
-
-print(result)
-
-names = ['文化','娱乐','体育','财经','房产','汽车',
-         '教育','科技','国际',]
-
-for i in range(len(texts)):
-    lab = np.argsort(result)[0][i][-1]  # 取到最大值 的下标
-    print('预测结果：', names[lab])

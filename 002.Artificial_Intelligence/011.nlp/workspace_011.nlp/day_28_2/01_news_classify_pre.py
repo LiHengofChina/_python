@@ -20,7 +20,7 @@ data_file = 'news_classify_data.txt'
 train_file = 'train_list.txt'  #训练集
 test_file = 'test_list.txt'    #测试集
 dict_file = 'dict_txt.txt'     #编码字典文件,每一个汉字对应的数值
-                        #{'灯': 1, '茬': 2, '援': 3, '懦': 4,}
+                                #在"字符级别" 工作，所以{'灯': 1, '茬': 2, '援': 3, '懦': 4,}
 
 
 #拼接路径
