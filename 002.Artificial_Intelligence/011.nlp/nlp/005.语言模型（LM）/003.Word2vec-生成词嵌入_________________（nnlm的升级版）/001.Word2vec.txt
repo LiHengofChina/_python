@@ -58,7 +58,16 @@ model = Word2Vec(LineSentence(in_file), # 输入
 
 //=========== 
 //=========== 
- sg=0 时（默认值），使用CBOW算法。
- sg=1 时，使用Skip-gram算法。
+sg=0 时（默认值），使用CBOW算法。
+
+			/**
+					CBOW又有两种版本，
+					（1）正常版本
+					（2）负采样版本
+					 model = Word2Vec(......, 
+									 negative=10) # 使用10个负样本进行训练优化
+			*/
+
+sg=1 时，使用Skip-gram算法。
 
 
