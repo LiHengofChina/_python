@@ -1,0 +1,38 @@
+
+//================================================== 表方位
+//================================================== 表方位
+
+in //在什么物体的内部
+	my call phone is in the back 
+	in my pocket
+	in my room
+	in the toilet
+	in the lecture hall //在学校大礼堂
+	in the library
+	in the gallery
+
+on  //和物体表面有接触，在什么面上
+	the notebook is on the table
+	there is a bottle on my head
+
+
+at  //强调边边角角
+
+	at the school gate
+	at the airport
+
+//================================================== 表时间
+//================================================== 表时间
+
+in //大于某一天，某年、某月、某季节
+	in summer
+	in spring
+
+on //等于某一天
+
+	on Friday
+	on the day
+	on December first
+
+at  //具体到某点
+	at five pm
