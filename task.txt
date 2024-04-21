@@ -25,7 +25,14 @@ java开发工程师，C++项目
 
 （1）QT
 	 https://www.bilibili.com/video/BV1N34y1H7x7/?p=3&vd_source=d849c0e6f50c2ff153bd78581da3b51d
+				//查看参考代码：https://github.com/wwlww/QT-Small-Projects
+
 	 https://www.bilibili.com/video/BV1Hz4y187io/?vd_source=d849c0e6f50c2ff153bd78581da3b51d
+	 https://www.bilibili.com/cheese/play/ss15777?csource=Share_copylink&from_spmid=default-value&plat_id=362&share_from=lesson&share_medium=android&share_plat=android&share_session_id=7ebd7602-0090-4e31-8eb6-77c37130c724&share_source=COPY&share_tag=s_i&spmid=united.player-video-detail.0.0&timestamp=1712980195&unique_k=BOIo93q
+
+
+
+
 
 （2）ROS
 
