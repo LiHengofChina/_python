@@ -12,7 +12,7 @@
 I ate a big apple yesterday //我昨天吃了一个大苹果
 
 主语：I					  //我
-谓语：ate				  //吃
+谓语：ate				  //吃    
 定语：big				  //大的
 宾语：a big apple		  //一个大苹果
 状语：yesterday			  //昨天
