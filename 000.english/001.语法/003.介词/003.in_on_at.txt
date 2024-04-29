@@ -2,6 +2,7 @@
 //================================================== 表方位
 //================================================== 表方位
 
+
 in //在什么物体的内部
 	my call phone is in the back 
 	in my pocket
@@ -10,16 +11,22 @@ in //在什么物体的内部
 	in the lecture hall //在学校大礼堂
 	in the library
 	in the gallery
+	you are in my eyes //你在我眼中
+	my school bag is in the library //我的书包在图书馆
+	there are some books in the school bag.//书包里面有几本书
+
 
 on  //和物体表面有接触，在什么面上
 	the notebook is on the table
+	the cell phone is on the table
 	there is a bottle on my head
 
 
 at  //强调边边角角
-
 	at the school gate
 	at the airport
+	at the bus top
+
 
 //================================================== 表时间
 //================================================== 表时间
@@ -36,3 +43,4 @@ on //等于某一天
 
 at  //具体到某点
 	at five pm
+	at three o'clock
