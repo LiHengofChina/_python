@@ -13,6 +13,7 @@ I touch the teachers head. // 我触摸这个老师的头
 //========= （主谓宾和中文一样的）  //
 不一样的是状态、地点、时间 放后面
 
+
 I drink water happily in the classroome ever day.
 //我每天在教室里开心的喝水
 
