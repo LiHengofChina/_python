@@ -16,7 +16,7 @@
 //===================== 主要看名词名称
 
 （1）我把鸡蛋送给你
-	I will give this egg to you. //鸡蛋 动了，从我这里到你那进而
+	I will give this egg to you. //鸡蛋 动了，从我这里到你那里
 
 （2）我把鸡蛋送给你
 	I made cake for you.	//蛋糕，没有动

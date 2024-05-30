@@ -31,16 +31,36 @@ at  //强调边边角角
 //================================================== 表时间
 //================================================== 表时间
 
-in //大于某一天，某年、某月、某季节
+in  //大于某一天，某年、某月、某季节
 	in summer
 	in spring
+	//用于较长的时间段，如年、月、季节、上午/下午/晚上等。
+	in the morning（在早上）
+	in the afternoon（在下午）
+	in the evening（在晚上）
+	in 2024（在2024年）
+	in July（在七月）
+	in the summer（在夏天）
+	//使用“in”的原因是这些时间段相对较长，不是具体的某一天或某一时刻。
 
-on //等于某一天
-
+on  //等于某一天
 	on Friday
 	on the day
 	on December first
+	//用于较具体的日子或日期。
+	on Friday（在星期五）
+	on December first（在十二月一日）
+	on my birthday（在我生日那天）
+	//使用“on”的原因是这些时间单位较为具体，但比“at”稍长一些。
+
 
 at  //具体到某点
 	at five pm
 	at three o'clock
+	//用于具体的时间点或较短的时间段。
+	at five pm（在下午五点）
+	at three o'clock（在三点）
+	at midnight（在午夜）
+	at noon（在中午）
+	at 3 pm
+
