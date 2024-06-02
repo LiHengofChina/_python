@@ -8,14 +8,26 @@
 如：
 	I eat an apple. //我吃苹果，eat后面必须 + 名词
 
+	I watch him //我看他
+	he bought coffee. //他买咖啡
+	He bought a cup of coffee for me. //他为我买了一杯 咖啡
+
+
 
 //================================= 不及物动词
 //================================= 不及物动词
-不及物动词 就是 "单向狗"，后面不用加物品。
+
+不及物动词 就是 "单向狗"，后面不用加物品。不用加宾语
 
 如：
 	you can go. 		//你可以走了， go 后面就不用加
 	They are chatting.	//他们在聊天， chatting 后面就不用加。
+
+	The boy smiles.     //他笑了
+	I jump.			    //我跳
+	I cried.			//我哭了
+
+
 
 
 //================================= 转换
@@ -30,5 +42,20 @@
 如：
 	look at the blackboard.    //看黑板，look 不及物，所以要加 at介词
 
+//=================================  是及物动词，又是不及物动词
+//=================================  是及物动词，又是不及物动词
+
+
+I am reading.（我在读书）（不及物）
+I am reading a book.（我在读一本书）（及物）
+I am reading an Enghlis book.（我在读一本英语书）（及物）
+
+//========
+//========
+read.
+study.
+
+I should study hard.（我应该好好学习）（不及物）
+I study English hard.（我学习英语很努力）（及物）
 
 
