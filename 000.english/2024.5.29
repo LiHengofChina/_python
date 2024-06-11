@@ -1,7 +1,5 @@
 
 
-
-
 eliminate the deviation
 //消除偏差
 
@@ -11,15 +9,12 @@ significance of the events
 point out deviations, deficiencies or imperfection 
 //指出偏差、不足或缺陷
 
-Troubleshooting 故障排除
+
 
 distinguishes  区分
 
 finite		有限的
 
-Implicit 	隐藏的
-
-explicit	显式的
 
 More Effective C++
 //更有效的C++
@@ -28,8 +23,6 @@ More Effective C++
 one of the following ways
 //用以下方式之一
 
-In such cases
-//在这种情况下
 
 the free of charge software 
 //免费软件
@@ -37,8 +30,7 @@ the free of charge software
 How to manually create Car
 //怎样 “手工创建Car”
 
-consider to use the Car。
-//考虑使用Car。
+consider to use the Car。//考虑使用Car。
 
 Adjust the settings as required
 //根据需要调整这个设置
