@@ -12,58 +12,46 @@
 //====== 它们都有用的意思
 
 
-//====== with一般工具，工具前面要加冠词
-//====== with一般工具，工具前面要加冠词
-
-I killed a cow with a knife. //我用一把刀干掉了一头奶牛
-
-//====== by 使用交通工具
-//====== by 使用交通工具
+//================================================ by 使用交通工具（by后面直接加交通工具）
+//================================================ by 使用交通工具（by后面直接加交通工具）
 
 I go to school by bus every day. //我每天都会坐公交车去上学
 
+	/** by 后面直接加交通工具，
+		by car
+		by train
+		by taxi
+		by bike
+	*/
 
-//====== in 使用语言
-//====== in 使用语言
+//================================================ with一般工具，（工具前面要加冠词）
+//================================================ with一般工具，（工具前面要加冠词）
 
-I will tell you a story in English  //我用英语一会给你讲个故事
+I killed a cow with a knife. （我用一把刀干掉了一头奶牛）
 
+Kill two birds with a stone.  （我用一个石头干掉两个鸟）（一石二鸟）
+Kill two birds with one stone.（我用一个石头干掉两个鸟）（一石二鸟）
+
+I killed the wolf with a gun.（我用一把枪打死一匹狼）
+I killed the wolf with the gun.（我用一把枪打死一匹狼）
+
+
+//================================================ in 使用语言
+//================================================ in 使用语言
+
+I will tell you a story in English  （我用英语一会给你讲个故事）
+I told a story to the lady in English just now.（我刚才用英语给大妈讲故事）
+
+
+	/** 
+		in English
+		in French
+		in Japanese
+	*/
 
 
 //================================================
 //================================================
 
-"with"、"by" 和"in" 都是介词。
-
-介词用于表示 "名词" 或 "代词" 与句中 "其他单词" 之间的关系。
-以下是 "每个介词" 的具体用法示例：
-
-
-//====== 
-//====== 
-with：表示伴随、工具、材料等。
-
-She writes with a pen.（她用笔写字。）
-He went to the party with his friends.（他和朋友一起去参加聚会。）
-
-//======
-//======
-by：表示方式、手段、位置等。
-
-The book was written by the author.（这本书是作者写的。）
-She travels to work by bus.（她乘公交车上班。）
-
-//======
-//======
-in：表示地点、时间、状态等。
-
-He is in the room.（他在房间里。）					//表示方位
-
-The meeting is in the afternoon.（会议在下午。）	//表示时间
-
-//======
-//======
-这些介词在句子中起到连接名词或代词与其他成分的作用，
-以表示各种关系。
-
+I went to school on foot just now
 
