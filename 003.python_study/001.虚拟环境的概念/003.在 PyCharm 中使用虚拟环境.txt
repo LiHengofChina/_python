@@ -1,0 +1,19 @@
+
+
+（1）设置虚拟环境：
+		打开 PyCharm，进入 File > Settings > Project: [Your Project Name] > Python Interpreter。
+		点击右上角的齿轮图标，选择 Add。
+		选择 Virtualenv 选项，并指定虚拟环境的路径。
+		你可以选择现有的虚拟环境或让 PyCharm 创建一个新的虚拟环境。
+
+（2）自动创建虚拟环境：
+		如果你没有手动创建虚拟环境，
+		PyCharm 在项目启动时通常会自动为你创建一个虚拟环境并选择它作为项目的解释器。
+
+（3）安装项目依赖：
+		一旦你选择了虚拟环境作为解释器，
+		你可以通过 PyCharm 的界面直接管理库，
+		或者在项目中使用 requirements.txt 来安装和管理依赖。
+
+
+

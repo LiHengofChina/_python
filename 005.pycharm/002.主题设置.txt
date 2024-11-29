@@ -1,0 +1,10 @@
+
+
+（1）
+
+打开 File > Settings（在 macOS 上是 PyCharm > Preferences）。
+在 Appearance & Behavior > Appearance 中，找到 Theme 设置。
+从下拉菜单中选择你想要的主题：
+Darcula（类似 Eclipse 的 Dark Theme）
+IntelliJ（更接近 Eclipse 默认的浅色主题）
+
