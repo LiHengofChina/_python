@@ -11,8 +11,9 @@
 	 Liheng5210!
 
 
-//=============================================== 手机vpn 0dcloud
-//=============================================== 手机vpn 0dcloud
+//=============================================== 苹果手机vpn 0dcloud
+//=============================================== 苹果手机vpn 0dcloud
+
 
 
 （1）0dcloud的手机版
@@ -28,5 +29,40 @@
 			//可选导入节点
 	（5）开启代理
 			选择节点：连接
+
+
+//===============================================  linux ubuntu 
+//===============================================  linux ubuntu 
+
+
+（1） linux浏览器 登陆0dcloud 官网 ：
+		https://lingdianyun7.xyz/user
+
+（2）下载  clash-verge 
+		官网：https://clashverge.net/
+
+		//TODO，需要高版本的linux内核支持
+
+（3）安装  
+
+		chmod +x clash-verge_1.3.8_amd64.AppImage
+		./clash-verge_1.3.8_amd64.AppImage
+
+
+		教程：https://help.0dyos.com/zh/article/clash-verge-for-linux-1qeyv9t/
+
+（4）Settings ——————> Language ——————> 中文
+
+（5）
+
+
+
+
+
+
+
+
+
+
 
 
