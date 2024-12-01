@@ -4,6 +4,8 @@
 
 （1）python 安装之后，自带 pip 工具
 
+		// LINUX不带
+
 （2）分别查看它们的版本
 		python -V
 		python -m pip --version
