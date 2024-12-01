@@ -1,0 +1,12 @@
+
+
+Linux Docker 镜像： 基于 Linux 操作系统（如 ubuntu、alpine 等），
+					 只能在支持 Linux 内核的宿主机上运行
+					 （如 Linux 系统或 WSL2 环境下的 Windows）。
+
+Windows Docker 镜像：基于 Windows 操作系统（如 microsoft/windowsservercore），
+					 只能在 Windows 系统上运行，
+					 且需要 Docker 配置为 Windows 容器模式。
+
+所以，镜像的类型决定了它只能在对应类型的操作系统上运行。
+

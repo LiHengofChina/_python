@@ -20,6 +20,9 @@
 sudo apt install python3.11-distutils
 
 
+sudo apt install python3.8-distutils
+
+
 
 //==========================（3）安装 pip 对应版本
 //==========================（3）安装 pip 对应版本
@@ -33,6 +36,10 @@ wget https://bootstrap.pypa.io/get-pip.py
 
 python3.11 get-pip.py
 
+python3.8 get-pip.py
+
+python3 get-pip.py
+
 //==========================（3）查看安装位置和版本
 //==========================（3）查看安装位置和版本
 
@@ -41,7 +48,10 @@ python3.11 get-pip.py
 	python3.11 -m pip --version
 
 输出：
-	pip 24.3.1 from /usr/local/lib/python3.11/dist-packages/pip (python 3.11)
+	pip 24.3.1 from /usr/local/lib/python3.11/dist-packages/pip (python 3.11) 
+	或
+	pip 24.3.1 from /usr/local/lib/python3.8/dist-packages/pip (python 3.8)
+
 
 
 //==========================（3）pip命令位置 
