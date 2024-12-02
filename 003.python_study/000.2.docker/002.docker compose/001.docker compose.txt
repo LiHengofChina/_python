@@ -1,0 +1,19 @@
+
+
+docker compose
+	//compose 可以简单翻译为 "编排" 或 "组合"。
+
+
+//============================= docker compose  
+//============================= docker compose  
+
+docker compose 是 Docker 的一个扩展命令
+
+
+用来 "方便地管理" 和 "编排" 多个容器的应用。
+它属于 Docker Compose 工具的一部分，
+可以看作是  "Docker CLI 的一个增强工具"，用于简化容器的 "创建和管理"。
+
+
+
+

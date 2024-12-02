@@ -1,0 +1,133 @@
+
+
+version: '3'
+  //======================= 版本号
+  //指定 docker-compose.yml 文件的版本，
+  //这里使用的是 Compose 3 版本，是一个较新的且稳定的版本，
+  //适用于现代 Docker 环境。
+  
+services:
+  //======================= 服务定义
+
+//================================================================================================================= redis
+//================================================================================================================= redis
+
+  redis: 					// 服务的名字  ，标识这个容器，可以在网络中通过 redis 作为主机名访问。
+    image: redis:5			//指定使用 redis:5 版本的官方 Redis 镜像。
+    container_name: redis	//将容器命名为 redis。
+    restart: always			//容器的重启策略。
+							//表示容器无论任何原因停止都会自动重启（包括 Docker 服务重启后）。
+
+    command: redis-server --requirepass 123456
+							//在容器启动时执行的命令。
+							//redis-server：启动 Redis 服务。
+							//--requirepass 123456：设置 Redis 的访问密码为 123456，增强安全性。
+
+    expose:
+      - "6379"				//端口暴露
+
+
+    healthcheck:			// 健康检查
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+//================================================================================================================= mysql
+//================================================================================================================= mysql
+
+
+
+  mysql:
+    image: mysql:5.7		//使用 MySQL 5.7 官方镜像。
+    container_name: mysql	//容器命名为 mysql，便于管理。
+    restart: always			//容器停止后会自动重启，保证服务高可用。
+
+
+
+    ports:					//将容器的 3306 端口映射到宿主机的 3306 端口。
+      - "3306:3306"
+
+
+    volumes:
+      - "./mysql/my.cnf:/etc/mysql/my.cnf"	
+							//将本地的 my.cnf 配置文件挂载到容器中，覆盖默认配置。
+      - "./mysql/datadir:/var/lib/mysql"
+							//将 MySQL 数据目录持久化到本地。
+
+    environment:
+      MYSQL_DATABASE: archery	 	//初始化一个名为 archery 的数据库。
+      MYSQL_ROOT_PASSWORD: 123456	//设置 MySQL 根用户密码为 123456。
+
+    healthcheck:					//使用 mysqladmin ping 检查 MySQL 服务是否健康。
+      test: ["CMD", "mysqladmin", "ping"]	//每 5 秒检查一次，超时 5 秒，失败 5 次后判定容器不健康。
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+//================================================================================================================= goinception
+//================================================================================================================= goinception
+
+
+
+
+
+  goinception:
+    image: hanchuanchuan/goinception			//使用 Goinception 的官方镜像。
+    container_name: goinception					//容器命名为 goinception，便于识别和管理。
+    restart: always								//如果容器停止或 Docker 服务重启，会自动重新启动。
+    ports:
+      - "4000:4000"								//容器的 4000 端口映射到宿主机的 4000 端口，用于外部访问。
+    volumes:
+      - "./inception/config.toml:/etc/config.toml"	//容器的 4000 端口映射到宿主机的 4000 端口，用于外部访问。
+				//将宿主机目录下的 config.toml 配置文件挂载到容器的 /etc/config.toml，用于自定义 Goinception 的配置。
+
+//================================================================================================================= archery
+//================================================================================================================= archery
+
+   archery: 
+    image: hhyo/archery:v1.11.3			//指定 Archery 的 Docker 镜像和版本。
+    container_name: archery				// 容器名称 
+    restart: always						//重启策略
+	
+	
+	//======================================== 服务依赖
+	//======================================== 服务依赖
+	//redis 和 mysql：Archery 服务在启动时需要依赖 Redis 和 MySQL 服务。
+    depends_on:							
+      redis:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+						
+	//======================================== 端口映射
+	//======================================== 端口映射
+    ports:
+      - "9123:9123"
+
+
+	//======================================== 数据卷挂载
+	//======================================== 数据卷挂载
+	//将宿主机的文件或目录挂载到容器中，实现数据共享或自定义配置。
+
+
+    volumes:
+      - "./archery/settings.py:/opt/archery/local_settings.py"
+      - "./archery/soar.yaml:/etc/soar.yaml"
+      - "./archery/docs.md:/opt/archery/docs/docs.md"
+      - "./archery/downloads:/opt/archery/downloads"
+      - "./archery/sql/migrations:/opt/archery/sql/migrations"
+      - "./archery/logs:/opt/archery/logs"
+      - "./archery/keys:/opt/archery/keys"
+
+	//启动命令
+    entrypoint: "bash /opt/archery/src/docker/startup.sh"
+
+	//环境变量文件
+    env_file:
+      - .env
+
+
+

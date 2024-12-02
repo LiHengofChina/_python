@@ -34,22 +34,22 @@
 //===============================================  linux ubuntu 
 //===============================================  linux ubuntu 
 
+教程：https://help.0dyos.com/zh/article/clash-verge-for-linux-1qeyv9t/
+
 
 （1） linux浏览器 登陆0dcloud 官网 ：
 		https://lingdianyun7.xyz/user
 
 （2）下载  clash-verge 
 		官网：https://clashverge.net/
-
-		//TODO，需要高版本的linux内核支持
-
+ 
+ 
 （3）安装  
 
 		chmod +x clash-verge_1.3.8_amd64.AppImage
 		./clash-verge_1.3.8_amd64.AppImage
 
 
-		教程：https://help.0dyos.com/zh/article/clash-verge-for-linux-1qeyv9t/
 
 （4）Settings ——————> Language ——————> 中文
 

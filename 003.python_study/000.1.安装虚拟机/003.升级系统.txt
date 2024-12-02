@@ -1,0 +1,11 @@
+
+
+
+//例如，从Ubuntu 20.04 LTS升级到Ubuntu 24.10 LTS
+
+
+（1）先克隆备份一个虚拟机
+
+
+（2）联网升级
+	do-release-upgrade

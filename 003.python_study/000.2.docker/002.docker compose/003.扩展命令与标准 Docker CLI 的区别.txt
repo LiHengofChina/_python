@@ -1,0 +1,23 @@
+
+
+//============================= Docker Compose 的作用
+//============================= Docker Compose 的作用
+
+
+
+（1）标准 Docker 命令： 
+			使用命令如 docker run 或 docker stop 来操作单个容器。
+			//例如：docker run -d -p 8000:8000 my-archery-image
+
+
+（2）Docker Compose 命令： 
+			使用 docker compose 来管理一组相关的容器。
+
+			//例如：docker compose up
+			//这会根据 docker-compose.yml 的配置，启动整个服务栈。
+
+
+
+
+
+
