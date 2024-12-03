@@ -27,12 +27,14 @@ sudo apt upgrade -y	//：会自动确认并直接进行升级，无需手动确�
 
 安装一些必要的依赖包，以便安装 Docker：
 
+
 sudo apt install apt-transport-https ca-certificates curl software-properties-common -y
 
 //			apt-transport-https：支持通过 HTTPS 下载软件包。
 //				ca-certificates：确保系统信任 Docker 的 GPG 密钥。
 //						   curl：用于下载 Docker 的 GPG 密钥。
 //	 software-properties-common：允许你管理软件源。
+
 
 
 
@@ -49,20 +51,17 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o 
 //=========================================== （6）添加 Docker 仓库
 //=========================================== （6）添加 Docker 仓库
 
+
 https://registry-1.docker.io
 
 将 Docker 官方的 APT 仓库 添加到你的 Ubuntu 系统的软件源列表中
 //	/etc/apt/sources.list.d/docker.list
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 
-修改为国内的
-（1）
-vim /etc/apt/sources.list.d/docker.list
-deb [arch=amd64] https://mirrors.aliyun.com/docker-ce/linux/ubuntu focal stable
-
-（2）
+ 
 //=========================================== （7）配置镜像加速地址
 //=========================================== （7）配置镜像加速地址
 
@@ -103,7 +102,18 @@ sudo apt update
 安装 Docker CE（社区版）：
 //安装 Docker Community Edition (Docker CE) 的 最新稳定版本。
 
-sudo apt install docker-ce -y
+
+ 
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+/**
+	docker-ce 				//Docker 社区版（核心引擎）。
+	docker-ce-cli 			//Docker 命令行工具。
+	containerd.io 			//容器运行时依赖。
+	docker-compose-plugin	//Docker Compose v2 插件。
+*/
+
+
 
 //=========================================== （10）启动并验证 Docker
 //=========================================== （10）启动并验证 Docker

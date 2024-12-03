@@ -102,7 +102,7 @@ sudo apt-get install --reinstall python3-apt
 
 
 输出：
-	Version: 2.0.1ubuntu0.20.04.1
+	Version: 2.7.7ubuntu3
 
 
 //================================== 确认 python3-apt 安装位置
@@ -114,12 +114,12 @@ sudo apt-get install --reinstall python3-apt
 	....
 	/usr/lib/python3/dist-packages/apt_pkg-stubs
 	/usr/lib/python3/dist-packages/apt_pkg-stubs/__init__.pyi
-	/usr/lib/python3/dist-packages/apt_pkg.cpython-38-x86_64-linux-gnu.so
+	/usr/lib/python3/dist-packages/apt_pkg.cpython-312-x86_64-linux-gnu.so
 	....
 
 	//输出很多，但是可以确认就是这一个 /usr/lib/python3/dist-packages 路径 
 	//是一个c的动态库
-	//cpython-38 表示它是python3.7 版本的
+	//cpython-312 表示它是python3.12 版本的
 
 
 	/**

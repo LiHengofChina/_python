@@ -1,0 +1,26 @@
+
+
+（1）确保 Snap 已安装并启用：
+
+
+	sudo apt update
+	sudo apt install snapd
+	sudo systemctl enable --now snapd
+
+（2）安装 PyCharm Community Edition： 运行以下命令安装免费版 PyCharm：
+
+	sudo snap refresh
+
+	sudo snap install pycharm-community --classic
+
+
+（3）启动 PyCharm
+
+	运行 pycharm-community
+
+	GUI：搜索 "PyCharm Community" 并启动。
+
+
+	pycharm-community
+
+

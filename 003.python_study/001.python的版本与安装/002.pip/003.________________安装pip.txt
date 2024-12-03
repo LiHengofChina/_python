@@ -14,13 +14,14 @@
 //==========================（2）安装 python3.11-distutils
 //==========================（2）安装 python3.11-distutils
 
+//==================== 3.11
+//==================== 3.11
+
 安装 Python 3.11 版本的 distutils 包，
 它提供了用于构建和安装 Python 包的工具，通常用于编译 C 扩展等操作。
 
 sudo apt install python3.11-distutils
 
-
-sudo apt install python3.8-distutils
 
 
 

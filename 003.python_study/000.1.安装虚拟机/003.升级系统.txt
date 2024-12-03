@@ -49,7 +49,15 @@ yes | sudo apt upgrade && yes | sudo do-release-upgrade
 //======================================================================= 升级中断恢复
 //======================================================================= 升级中断恢复
 
+
+sudo lsof /var/cache/debconf/passwords.dat
+sudo lsof /var/cache/debconf/templates.dat
+
+
+
 （1）修复中断状态
+
+
 
 sudo dpkg --configure -a		//完成未完成的包配置。
 
