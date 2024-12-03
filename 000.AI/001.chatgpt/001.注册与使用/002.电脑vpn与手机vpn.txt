@@ -37,13 +37,11 @@
 教程：https://help.0dyos.com/zh/article/clash-verge-for-linux-1qeyv9t/
 
 
-（1） linux浏览器 登陆0dcloud 官网 ：
-		https://lingdianyun7.xyz/user
 
 （2）下载  clash-verge 
 		官网：https://clashverge.net/
- 
- 
+
+
 （3）安装  
 
 		chmod +x clash-verge_1.3.8_amd64.AppImage
@@ -53,9 +51,22 @@
 
 （4）Settings ——————> Language ——————> 中文
 
-（5）
+
+（6） 复制配置
+	登陆0dcloud 官网 ：
+	https://lingdianyun7.xyz/user
 
 
+
+（7）界面==>配置，添加配置
+
+		http://47.243.161.149/link/9d5OoizdKhlxmgZO?clash=2
+		
+
+（8）界面 ==> 代理，选择你要的节点
+
+（9）界面 ==> 设置 ==> 系统代理
+		打开
 
 
 
