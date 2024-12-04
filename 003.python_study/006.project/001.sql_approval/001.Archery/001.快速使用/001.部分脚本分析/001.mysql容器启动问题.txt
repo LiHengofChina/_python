@@ -1,0 +1,90 @@
+//============================================================================ 查看错误日志
+//============================================================================ 查看错误日志
+
+docker logs mysql
+
+2024-12-04 02:48:50+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 5.7.44-1.el7 started.
+2024-12-04 02:48:50+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
+2024-12-04 02:48:50+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 5.7.44-1.el7 started.
+2024-12-04 02:48:50+00:00 [Note] [Entrypoint]: Initializing database files
+mysqld: Can't create directory '/var/lib/mysql/' (Errcode: 17 - File exists)
+2024-12-04T02:48:50.470652Z 0 [Warning] TIMESTAMP with implicit DEFAULT value is deprecated. Please use --explicit_defaults_for_timestamp server option (see documentation for more details).
+2024-12-04T02:48:50.472416Z 0 [ERROR] Aborting
+
+//============================================================================ 分析一：
+//============================================================================ 分析一：
+
+（1）检查虚拟机是否启动mysql
+		sudo systemctl status mysql
+
+（2）检查3306端口是否被占用
+		sudo netstat -tuln | grep 3306
+	 tcp        0      0 0.0.0.0:3306            0.0.0.0:*               LISTEN     
+	 tcp6       0      0 :::3306                 :::*                    LISTEN  
+
+（3）查看这占用这个端口的进程：
+	 sudo lsof -i:3306
+
+//============================================================================ 分析二：
+//============================================================================ 分析二：
+
+    volumes:
+      - "./mysql/my.cnf:/etc/mysql/my.cnf"
+#      - "./mysql/datadir:/var/lib/mysql"
+
+可能是     image: mysql:5.7 里面自带了 /var/lib/mysql 文件，
+
+导致挂载失败
+注释这行代码，
+再次启动，
+依然失败
+
+//============================================================================ 分析三：
+//============================================================================ 分析三：
+
+删除已经创建的 "错误容器"，重新创建
+
+（1）停止 docker-compose.yml 指定的容器，并删除 //挂载的卷（如 volumes）不会被删除。
+docker compose  -f docker-compose.yml down 
+	//docker rm -f mysql，如果需要可以强制删除docker rm -f mysql
+
+（2）查看停止情况
+docker ps -a
+
+（3）重新启动
+docker compose -f docker-compose.yml up -d
+
+
+（4）启动成功，问题解决了。
+
+
+//============================================================================ 查看目录
+//============================================================================ 查看目录
+
+
+（1）
+	docker ps
+	docker ps -a
+
+
+（2）docker exec -it mysql bash
+	 或
+	 docker exec -it <CONTAINER_ID> bash
+
+（3）检查目录：
+	ls -ld /var/lib/mysql
+
+
+//============================================================================ 最终
+//============================================================================ 最终
+
+（1）创建一个mysql数据目录
+mkdir -p /home/liheng/data_mysql
+
+（2）修改权限
+sudo chmod -R 777 /home/liheng/data_mysql
+
+（3）修改配置文件挂载路径
+    volumes:
+      - "/home/liheng/data_mysql:/var/lib/mysql"
+
