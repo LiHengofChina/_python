@@ -1,0 +1,43 @@
+
+
+
+//=========================================================
+//=========================================================
+
+如果你需要 "一个脚本来简化运行" 这些命令，
+可以创建 "一个自定义 Python 脚本" ，
+执行 makemigrations 和 migrate，
+
+//========================================================= 例如：
+//========================================================= 例如：
+
+（1）编写一个脚本，内容为： run_migrations.py
+#!/usr/bin/env python
+import os
+import sys
+from django.core.management import execute_from_command_line
+
+def main():
+
+    # 设置 Django 项目的设置模块
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "archery.settings")
+
+    # 执行 makemigrations
+    print("Running makemigrations...")
+    execute_from_command_line(["manage.py", "makemigrations", "sql"])
+
+    # 执行 migrate
+    print("Running migrate...")
+    execute_from_command_line(["manage.py", "migrate"])
+
+if __name__ == "__main__":
+    main()
+
+（2）添加权限
+	chmod +x run_migrations.py
+
+（3）执行
+	./run_migrations.py
+
+
+

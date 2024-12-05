@@ -1,0 +1,52 @@
+
+
+//========================================================= 脚本
+//========================================================= 脚本
+ 
+
+#!/usr/bin/env python
+import os
+import sys
+
+if __name__ == "__main__":
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "archery.settings")
+
+    from django.core.management import execute_from_command_line
+
+    execute_from_command_line(sys.argv)
+
+
+//=========================================================  Django 项目的 manage.py 文件
+//=========================================================  Django 项目的 manage.py 文件
+
+它是 Django 的管理脚本，用于执行各种管理命令，
+
+比如 makemigrations 和 migrate。
+
+
+//========================================================= 我执行的命令
+//========================================================= 我执行的命令
+
+我执行的命令
+python3 manage.py makemigrations sql
+python3 manage.py migrate
+
+就相当于执行
+manage.py makemigrations sql
+manage.py migrate
+
+
+//=========================================================
+//=========================================================
+ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "archery.settings")
+
+
+archery.settings 指的是 Django 项目的 设置模块，
+它通常是一个 Python 文件，位于项目的根目录下的 archery 文件夹中。
+
+archery.settings 指的就是 archery 文件夹下的 settings.py 文件
+
+
+它指的是：D:\workspace_2024_12\Archery\archery\settings.py
+
+

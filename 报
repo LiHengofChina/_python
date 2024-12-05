@@ -296,10 +296,11 @@
 
 
 （1） 技术准备  docker、docker compose、Goinception、Django
-（2） 了解Archery 系统的基本概念、业务功能、系统功能、配置操作等等。
-（3） 在本地运行 Archery 官方镜像，部署运行环境等等。
-（4） Archery二次开发准备。
+（2） 了解Archery框架和架构。
+（3） 了解Archery 系统的基本概念、业务功能、系统功能、配置操作等等。
+（4） 在本地运行 Archery 官方镜像，部署运行环境等等。
 （5） Archery二次开发准备。
+
 
 
 

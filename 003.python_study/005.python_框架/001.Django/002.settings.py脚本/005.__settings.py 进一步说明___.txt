@@ -1,0 +1,167 @@
+
+
+settings.py 进一步说明
+settings.py 进一步说明
+
+
+
+//============================================================================================================================================= Django 的核心配置项之一：INSTALLED_APPS
+//============================================================================================================================================= Django 的核心配置项之一：INSTALLED_APPS
+
+它定义了项目中启用的应用列表。
+Django 会根据这个列表加载对应的应用程序，
+并初始化它们的 "模型、信号、管理" 后台和其他功能。
+
+
+
+# Application definition
+INSTALLED_APPS = (
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django_q",
+    "sql",
+    "sql_api",
+    "common",
+    "rest_framework",
+    "django_filters",
+    "drf_spectacular",
+)
+
+
+//========== 第一部分：django.contrib.* 系列
+//========== 第一部分：django.contrib.* 系列
+
+django.contrib.* 系列： 这些是 Django 内置的官方应用，用于提供基础功能：
+
+
+	（1）"django.contrib.admin"：
+		 //提供 Django 的管理后台，用于管理模型数据。
+		 //启用后，你可以通过 manage.py createsuperuser 创建管理员账户，并访问 /admin/ 页面。
+
+	（2）"django.contrib.auth"：
+		 //供用户认证和权限管理功能，包括用户登录、注册和权限控制。
+
+	（3）"django.contrib.contenttypes"：
+		 //支持通用框架模型，允许跨模型的内容类型管理。
+
+	（4）"django.contrib.sessions"：
+		 //提供会话支持，用于存储用户的会话数据（例如登录状态）。
+
+	（5）"django.contrib.messages"：
+		 //提供基于会话的消息框架，支持通知和提示消息。
+
+	（6）"django.contrib.staticfiles"：
+		 //管理静态文件（如 CSS、JavaScript 和图片），提供收集和部署工具。
+
+//========== 第二部分：django.contrib.* 系列
+//========== 第二部分：django.contrib.* 系列
+	（1）django_q
+		 //一个异步任务队列，用于管理后台任务的执行，例如定时任务或耗时的异步操作。
+
+	（2）"rest_framework"：
+		 //Django REST Framework，提供构建 API 的工具和框架。
+		 //用于快速开发 RESTful API，支持认证、权限、序列化等功能。
+
+	（3）"django_filters"：
+		 //提供过滤器支持，与 rest_framework 搭配使用，方便在 API 中实现数据过滤。
+
+	（4）drf_spectacular"：
+		 //用于生成 API 文档，基于 OpenAPI 标准。
+		 //配合 rest_framework 自动生成接口文档，例如 Swagger 或 Redoc 格式。
+
+
+//========== 第三部分： 自定义应用：
+//========== 第三部分： 自定义应用：
+
+（1）"sql"：
+		//自定义的应用，用于管理 SQL 审核相关的功能（可能是 Archery 的核心模块）。
+
+（2）"sql_api"：
+		//自定义的 API 模块，提供 SQL 审核的 API 接口。
+
+（3）	"common"：
+		//自定义的通用模块，可能包含项目的通用工具和功能（如公共模型、工具类等）。
+
+
+
+
+
+//============================================================================================================================================= Django 的核心配置项之一：DATABASES
+//============================================================================================================================================= Django 的核心配置项之一：DATABASES
+
+DATABASES 是 Django 项目中用于定义数据库连接的配置项。
+
+Django 通过这个配置项与数据库通信，例如存储和查询模型数据。
+
+
+//======================================================= 示例分析：
+//======================================================= 示例分析：
+
+
+DATABASES = {
+    "default": {
+        **env.db(),
+        **{
+            "DEFAULT_CHARSET": "utf8mb4",
+            "CONN_MAX_AGE": 50,
+            "OPTIONS": {
+                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+                "charset": "utf8mb4",
+            },
+            "TEST": {
+                "NAME": "test_archery",
+                "CHARSET": "utf8mb4",
+            },
+        },
+    }
+}
+
+（1）DATABASES 是一个字典，"default" 是默认数据库的配置。
+	 Django 支持多数据库配置，"default" 是主数据库。
+
+（2）**env.db()
+	 env.db() 是一种快捷方法，通常来自第三方库（如 environ）， // 这里找的是 Archery\src\docker-compose\.env 文件
+			  //用于通过环境变量设置数据库连接。
+			  //它会从环境变量中读取数据库配置，如：
+				数据库引擎（ENGINE）
+				主机名（HOST）
+				端口（PORT）
+				数据库名称（NAME）
+				用户名和密码（USER、PASSWORD）
+			 //这是动态加载数据库配置的最佳实践，便于在开发、测试、生产环境中灵活切换。
+
+（3）"DEFAULT_CHARSET": "utf8mb4"
+
+			默认字符集设置为 utf8mb4，
+			支持存储更广泛的 Unicode 字符（如 emoji）。
+
+			确保数据库和表使用此字符集，
+			避免因字符集不匹配导致的数据存储问题。
+
+（4）"CONN_MAX_AGE": 50
+			数据库连接的最大生命周期（单位：秒）。
+			Django 会使用数据库连接池，50 秒内复用已有的连接，减少连接创建的开销。
+
+（5）"OPTIONS"，提供数据库连接的额外选项：
+		（1）"init_command": "SET sql_mode='STRICT_TRANS_TABLES'"
+			//设置 MySQL 的 SQL 模式为 STRICT_TRANS_TABLES，
+			//让插入无效数据时抛出错误（而不是自动修正），确保数据完整性。
+		（2）"charset": "utf8mb4"：
+			再次明确数据库连接使用的字符集为 utf8mb4。
+
+（6） "TEST"
+	用于 Django 测试环境中的数据库设置。
+
+	"NAME": "test_archery"：
+	指定测试数据库的名称为 test_archery。
+	当运行测试时，Django 会自动创建和销毁这个测试数据库。
+
+	"CHARSET": "utf8mb4"：
+	确保测试数据库也使用 utf8mb4 字符集。
+
+
+	
