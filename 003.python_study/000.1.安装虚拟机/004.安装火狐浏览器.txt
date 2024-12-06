@@ -1,0 +1,15 @@
+
+
+（1）安装
+sudo snap install firefox
+
+
+（2）验证安装
+snap list | grep firefox
+
+
+（3）启动
+firefox
+
+
+
