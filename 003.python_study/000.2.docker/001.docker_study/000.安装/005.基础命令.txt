@@ -45,8 +45,8 @@ docker run hello-world
 
 
 （3）删除镜像
-	docker rmi hello-world		//删除镜像
-	docker rmi -f hello-world	//强制删除镜像
+	 docker rmi hello-world		//删除镜像
+	 docker rmi -f hello-world	//强制删除镜像
 
 
 

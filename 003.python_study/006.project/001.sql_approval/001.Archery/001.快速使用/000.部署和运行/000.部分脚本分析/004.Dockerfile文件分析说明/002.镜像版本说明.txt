@@ -23,7 +23,33 @@
 
 
 
+//====================================================================== 查看基本镜像中 apt的配置配置文件路径
+//====================================================================== 查看基本镜像中 apt的配置配置文件路径
+
+
+（1）启动一个 基于 hhyo/archery-base:sha-d8159f4 镜像的容器，
+并在容器内以交互式终端模式（-it）运行一个 /bin/bash 的 shell 会话。
+
+
+sudo docker run -it --entrypoint /bin/bash hhyo/archery-base:sha-d8159f4
+
+
+（2）查看
+cat /etc/apt/sources.list
+cat /etc/apt/sources.list.d/*
 
 
 
+（3）替换
+# 替换 /etc/apt/sources.list
+sed -i 's|http://deb.debian.org/debian|http://mirrors.aliyun.com/debian|g' /etc/apt/sources.list
+sed -i 's|http://deb.debian.org/debian-security|http://mirrors.aliyun.com/debian-security|g' /etc/apt/sources.list
+
+# 替换 /etc/apt/sources.list.d/* 中的源
+find /etc/apt/sources.list.d/ -type f -exec sed -i 's|http://repo.percona.com|http://mirrors.aliyun.com/percona|g' {} \;
+find /etc/apt/sources.list.d/ -type f -exec sed -i 's|https://packages.microsoft.com|http://mirrors.aliyun.com/microsoft|g' {} \;
+
+
+（4）删除刚才创建的容器
+sudo docker ps -a --filter ancestor=hhyo/archery-base:sha-d8159f4 -q | xargs sudo docker rm
 
