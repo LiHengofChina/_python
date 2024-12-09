@@ -1,0 +1,27 @@
+
+
+//====================================================================== 构建步骤说明
+//====================================================================== 构建步骤说明
+
+
+（1）找到docker 文件构建文件
+
+	/home/liheng/workspace_2024_12/Archery/src/docker/Dockerfile
+
+	cd /home/liheng/workspace_2024_12/Archery/src/docker/
+
+（2）构建镜像：
+	sudo docker build -t archery-custom:latest .
+
+	/**
+		参数说明：
+			（1）-t archery-custom:latest：指定 "镜像的名称为archery-custom" 和 "版本号"
+			（2）. 指  Dockerfile  文件所在的目录
+
+	*/
+
+
+（3）查看自己构建的镜像
+
+（4）
+
