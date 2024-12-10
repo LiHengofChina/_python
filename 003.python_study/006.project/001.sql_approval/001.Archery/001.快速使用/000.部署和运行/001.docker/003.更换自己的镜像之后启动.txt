@@ -4,19 +4,19 @@
 //=============================================================
 //=============================================================
 
- 
-（1）启动服务
 
+（1）启动服务
 	cd /home/liheng/workspace_2024_12/Archery/src/docker-compose
 	docker compose --env-file .env -f docker-compose.yml up -d
 	sudo docker logs archery
 
-（3）进入容器
+（2）进入容器
 	 sudo docker exec -it archery /bin/bash
 
 
 （3）停止 服务
-	 docker compose  -f docker-compose.yml down
+	cd /home/liheng/workspace_2024_12/Archery/src/docker-compose
+	docker compose  --env-file .env -f docker-compose.yml down
 
 （4）访问
 	 http://127.0.0.1:9123/login/
