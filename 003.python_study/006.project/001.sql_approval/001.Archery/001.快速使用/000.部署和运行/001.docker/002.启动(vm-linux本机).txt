@@ -24,19 +24,24 @@ https://archerydms.com/home/
 //================================================================= （2）下载github上面的源码
 //================================================================= （2）下载github上面的源码
 
-（1）从 Fork 出一个自己的
 
-	https://github.com/hhyo/Archery.git
+（1）
+	先下载 官方代码 Archery
 
-（2）下载代码
+	切换到 v1.11.3 Tag
+	删除git标记
 
+
+（2）代码存放目录
 	/home/liheng/workspace_2024_12
 
+
+（3） 
 	//把当前用户添加到vboxsf组
 	sudo usermod -aG vboxsf liheng
 
 
-（3）pycharm 导入项目
+（4）pycharm 导入项目
 
 		创建虚拟环境
 
@@ -66,6 +71,10 @@ sudo chmod -R 777 /home/liheng/data_mysql
 
 （1）进入目录：
 	 cd /home/liheng/workspace_2024_12/Archery/src/docker-compose
+
+（2）检查 .env  文件内容
+
+	docker compose --env-file .env -f docker-compose.yml config
 
 （2）启动服务
 	 docker compose -f docker-compose.yml up -d

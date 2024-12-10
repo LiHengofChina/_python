@@ -2,33 +2,29 @@
 
 //====================================================================== 构建步骤说明
 //====================================================================== 构建步骤说明
+（1）构建镜像：
 
-（1）删除旧的镜像
-	docker rmi archery-custom:latest
-
-
-（2）进入项目目录
-	cd /home/liheng/workspace_2024_12/Archery/
-
-
-
-（3）构建镜像：
-
-	sudo docker build -t archery-custom:latest -f ./src/docker/Dockerfile .
+//使用缓存
+docker compose  -f docker-compose.yml down
+docker rmi archery-custom:latest
+cd /home/liheng/workspace_2024_12/Archery/
+sudo docker build -t archery-custom:latest -f ./src/docker/Dockerfile .
 
 
 
+//不使用缓存来构建
+docker compose  -f docker-compose.yml down
+docker rmi archery-custom:latest
+cd /home/liheng/workspace_2024_12/Archery/
+sudo docker build --no-cache -t archery-custom:latest -f ./src/docker/Dockerfile .
 
 
-（4）查看自己构建的镜像 sudo docker images
 
 
+（2）查看自己构建的镜像 
 
-	liheng@liheng-VirtualBox:~/桌面$ sudo docker images
 
-	REPOSITORY                  TAG           IMAGE ID       CREATED          SIZE
-	archery-custom              latest        8f7c10adfc8e   14 minutes ago   2.28GB
-
+sudo docker images
 
 
 
