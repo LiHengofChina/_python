@@ -5,22 +5,6 @@
 https://archerydms.com/home/
 
 
-//================================================================= （1）环境准备（可选）（因为它们使用的是镜像中的）
-//================================================================= （1）环境准备（可选）（因为它们使用的是镜像中的）
-
-（1）Ubuntu 24.4 版本
-
-（2）pycharm
-
-（3）python 3.12 版本
-		安装 pip
-		安装 python3-apt
-（4）安装docker
-		安装 docker compose
-
-
-
-
 //================================================================= （2）下载github上面的源码
 //================================================================= （2）下载github上面的源码
 
@@ -74,7 +58,7 @@ sudo chmod -R 777 /home/liheng/data_mysql
 
 （2）检查 .env  文件内容
 
-	docker compose --env-file .env -f docker-compose.yml config
+	 docker compose --env-file .env -f docker-compose.yml config
 
 （2）启动服务
 	 docker compose -f docker-compose.yml up -d
@@ -96,6 +80,15 @@ cd /opt/archery
 //================================================================= （6）表结构初始化（只执行一次）
 //================================================================= （6）表结构初始化（只执行一次）
 
+
+（1）创建数据库
+先创建一个名为 archery 的数据库
+字符集选择分别为：
+utf8mb4
+utf8mb4_general_ci
+
+
+（2）执行脚本
 source /opt/venv4archery/bin/activate
 					//这段脚本是用于设置和管理 Python 虚拟环境（virtual environment）的激活与环境变量配置
 					//就是说在 archery容器里面有自己的python
