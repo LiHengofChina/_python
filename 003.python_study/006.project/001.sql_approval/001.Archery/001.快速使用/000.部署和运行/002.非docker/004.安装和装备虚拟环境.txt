@@ -1,0 +1,39 @@
+
+//==========================================（1）目录说明
+//==========================================（1）目录说明
+
+项目目录：/opt/archery
+
+虚拟环境目录：/opt/venv4archery
+
+
+//==========================================（2）安装python的 模块 virtualenv
+//==========================================（2）安装python的 模块 virtualenv
+
+（1）安装
+	# virtualenv
+	pip3 install virtualenv -i https://mirrors.ustc.edu.cn/pypi/web/simple/ 
+
+（2）查看版本
+	/usr/local/python3/bin/virtualenv --version
+
+（3）创建连接
+	ln -fs /usr/local/python3/bin/virtualenv /usr/bin/virtualenv 
+
+
+//==========================================（3）准备虚拟环境
+//==========================================（3）准备虚拟环境
+
+（1）创建虚拟环境 //
+	cd /opt
+	virtualenv venv4archery --python=python3
+
+（2）激活虚拟环境
+
+	# 切换python运行环境到虚拟环境
+	source venv4archery/bin/activate
+
+
+（3）退出虚拟环境
+	deactivate
+

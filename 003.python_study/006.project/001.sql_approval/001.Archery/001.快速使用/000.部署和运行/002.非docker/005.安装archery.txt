@@ -1,0 +1,76 @@
+
+
+https://archerydms.com/installation/manual/#_4
+
+
+
+//======================================================================（1）安装 archery
+//======================================================================（1）安装 archery
+
+（1）上传代码到: 
+	 将 D:\workspace_2024_12\Archery
+	 上传至 /opt/Archery
+
+
+（2） 激活虚拟环境
+	  source /opt/venv4archery/bin/activate
+
+
+（3） 安装项目的python依赖
+		cd /opt/Archery
+		pip3 install -r requirements.txt -i https://mirrors.ustc.edu.cn/pypi/web/simple/ 
+
+（4） 验证安装
+	  pip list
+
+
+（5）退出虚拟环境
+	 deactivate
+
+
+//======================================================================（2）修改配置
+//======================================================================（2）修改配置
+
+
+（）修改项目配置 vi Archery/settings.py
+
+
+	（1）基础配置
+	（2）MySQL配置
+	（3）Django-Q配置
+	（4）缓存配置 ：redis
+
+
+（5）初始化数据
+
+	# 数据库初始化
+	python3 manage.py makemigrations sql
+	python3 manage.py migrate 
+
+	# 数据初始化
+	python3 manage.py dbshell<sql/fixtures/auth_group.sql
+	python3 manage.py dbshell<src/init_sql/mysql_slow_query_review.sql
+
+	# 创建管理用户
+	python3 manage.py createsuperuser
+
+
+（6）启动
+	（1）本机启动
+			......
+	（3）Gunicorn+Nginx启动
+			......
+
+
+//==========================================（8）访问
+//==========================================（8）访问
+
+http://127.0.0.1:9123/
+
+
+
+
+
+
+
+ 

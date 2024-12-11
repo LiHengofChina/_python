@@ -1,0 +1,16 @@
+
+
+//Python 内置的 venv 是一个轻量化的替代方案，但 virtualenv 提供更多功能。
+
+在 Python 3.3 之后，Python 标准库引入了一个内置模块 venv，
+它功能类似于 virtualenv，可以创建和管理虚拟环境。
+
+
+venv 是官方推荐的选择，
+但 virtualenv 仍然很流行，因为它在某些情况下有更强的兼容性和功能扩展。
+
+如果你使用 Python 3.x，可能更常用的是 python -m venv。
+
+
+
+

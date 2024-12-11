@@ -1,0 +1,56 @@
+
+//================================================================================（1）机器信息
+//================================================================================（1）机器信息
+
+
+（1）机器信息
+	192.168.100.231
+	root/Rklink_1024
+
+（2）系统版本
+
+	cat /etc/os-release    
+	uname -r
+
+（3）修改 yum 仓库地址
+
+	//备份原始的 yum 源配置
+	cp -r /etc/yum.repos.d /etc/yum.repos.d.bak
+
+	//下载国内镜像源配置
+	curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo
+
+	//将 $releasever 替换为 7
+	sed -i 's/\$releasever/7/g' /etc/yum.repos.d/CentOS-Base.repo
+
+	//清理缓存并更新缓存：
+	yum clean all
+	yum makecache
+
+	//验证镜像源是否生效
+	yum repolist
+
+
+
+（4） 防炎墙
+
+	//查看防火墙
+	firewall-cmd --state
+
+（5）安装一些镜像仓库
+
+	yum install -y https://repo.ius.io/ius-release-el7.rpm
+
+	yum install -y https://rpms.remirepo.net/enterprise/remi-release-7.rpm
+	yum-config-manager --enable remi
+
+
+	查看启用的镜像源
+	yum repolist enabled
+
+	清理缓存
+	yum clean all 
+	yum makecache
+
+
+

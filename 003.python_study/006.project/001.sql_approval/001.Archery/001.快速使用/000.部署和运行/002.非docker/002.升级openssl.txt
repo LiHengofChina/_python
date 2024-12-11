@@ -1,0 +1,31 @@
+
+
+（1） python3.11 需要升级 openssl
+
+	openssl version -a 版本
+	1.0.2k 需要升级到  1.1.1
+
+（3）升级 OpenSSL
+
+	cd /usr/local/src
+
+	wget https://www.openssl.org/source/openssl-1.1.1u.tar.gz
+
+	
+	tar -xvf openssl-1.1.1u.tar.gz
+	cd openssl-1.1.1u
+
+	./config --prefix=/usr/local/openssl --openssldir=/usr/local/openssl shared zlib
+	make
+	sudo make install
+
+
+（4）验证 OpenSSL 安装
+
+
+	/usr/local/openssl/bin/openssl version -a
+
+
+
+
+
