@@ -8,30 +8,16 @@ https://archerydms.com/home/
 //================================================================= （2）下载github上面的源码
 //================================================================= （2）下载github上面的源码
 
-
 （1）
 	先下载 官方代码 Archery
-
-	切换到 v1.11.3 Tag
-	删除git标记
-
+	切换到 v1.11.3 Tag//注意，要使用 v1.11.3 Tag的代码
 
 （2）代码存放目录
 	/home/liheng/workspace_2024_12
 
-
-（3） 
+（3）
 	//把当前用户添加到vboxsf组
 	sudo usermod -aG vboxsf liheng
-
-
-（4）pycharm 导入项目
-
-		创建虚拟环境
-
-			  位置：/home/liheng/workspace_2024_12/Archery_venv
-		基础解释器：/usr/bin/python3.12
-			依赖项：/home/liheng/workspace_2024_12/Archery/requirements.txt
 
 
 //================================================================= （3）准备mysql数据目录
@@ -40,10 +26,10 @@ https://archerydms.com/home/
  "容器中mysql" 挂载的目录，不能是 "虚拟机中在我本机的共享文件夹"
 
 （1）创建一个mysql数据目录
-mkdir -p /home/liheng/data_mysql
+	mkdir -p /home/liheng/data_mysql
 
 （2）修改权限
-sudo chmod -R 777 /home/liheng/data_mysql
+	sudo chmod -R 777 /home/liheng/data_mysql
 
 （3）修改配置文件挂载路径
     volumes:

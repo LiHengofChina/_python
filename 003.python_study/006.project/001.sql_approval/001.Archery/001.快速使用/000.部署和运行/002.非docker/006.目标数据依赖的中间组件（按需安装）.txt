@@ -1,4 +1,19 @@
 
+安装位置
+root@499833196e4b:/opt# ls -al
+total 22580
+drwxr-xr-x 1 root root     4096 Nov 25  2023 .
+drwxr-xr-x 1 root root     4096 Dec 12 12:22 ..
+drwxr-xr-x 3 root root     4096 Nov 25  2023 microsoft
+-rwxr-xr-x 1 root root  7919430 Nov 25  2023 my2sql
+drwxr-xr-x 3 root root     4096 Nov 25  2023 oracle
+-rw-r--r-- 1 root root    11804 Nov 25  2023 percona-release_latest.generic_all.deb
+-rwxr-xr-x 1 root root 14707104 Nov 25  2023 soar
+-rwxr-xr-x 1 root root   455184 Nov 25  2023 sqladvisor
+drwxr-xr-x 5 root root     4096 Nov 25  2023 venv4archery
+
+
+
 //========================================== 安装 "审核目标数据库" 的依赖项（可选）
 //========================================== 安装 "审核目标数据库" 的依赖项（可选）
 

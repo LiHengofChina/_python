@@ -4,7 +4,7 @@
 
 项目目录：/opt/archery
 
-虚拟环境目录：/opt/venv4archery
+虚拟环境目录：/opt/archery/venv4archery
 
 
 //==========================================（2）安装python的 模块 virtualenv
@@ -25,13 +25,13 @@
 //==========================================（3）准备虚拟环境
 
 （1）创建虚拟环境 //------------- 注意这里使用的是python3
-	cd /opt
+	cd /opt/archery
 	virtualenv venv4archery --python=python3
 
 （2）激活虚拟环境
 
 	# 切换python运行环境到虚拟环境
-	source venv4archery/bin/activate
+	source /opt/archery/venv4archery/bin/activate
 
 
 （3）退出虚拟环境

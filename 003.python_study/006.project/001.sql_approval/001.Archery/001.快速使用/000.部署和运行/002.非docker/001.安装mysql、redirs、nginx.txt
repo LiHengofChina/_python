@@ -13,6 +13,10 @@
 	/etc/yum.repos.d/epel.repo
 	/etc/yum.repos.d/epel-testing.repo
 
+
+	sudo yum install dos2unix
+
+
 （2）redirs
 
 	//安装
@@ -139,6 +143,7 @@
 	wget -O /usr/share/nginx/html/index.html https://raw.githubusercontent.com/nginx/nginx/master/html/index.html
 
 	ls -l /usr/share/nginx/html/index.html
+
 
 
 

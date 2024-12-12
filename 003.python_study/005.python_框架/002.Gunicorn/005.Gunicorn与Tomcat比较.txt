@@ -1,0 +1,15 @@
+
+
+ Gunicorn  有点像java里面的servlet 容器，就像是tomcat是吗，而Django就像是spring-mvc它是后端的框架，
+ 
+
+//================================================================================
+//================================================================================
+Gunicorn 类似于 Java 中的 Servlet 容器（如 Tomcat），负责运行 Web 应用并处理请求，
+
+而 Django 类似于 Spring MVC，是一个 Web 开发框架，专注于业务逻辑的实现。
+
+
+Gunicorn ≈ Servlet 容器（如 Tomcat）
+Django ≈ Spring MVC
+

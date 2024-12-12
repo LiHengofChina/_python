@@ -9,6 +9,11 @@
 （2）自定义构建时，使用的基础镜像：hhyo/archery-base:sha-d8159f4
 
 
+（3）要构建基础镜像：使用 Dockerfile-base 文件
+		//TODO验证一下
+
+
+
 
 //======================================================================
 //======================================================================
@@ -35,21 +40,23 @@ sudo docker run -it --entrypoint /bin/bash hhyo/archery-base:sha-d8159f4
 
 
 （2）查看
-cat /etc/apt/sources.list
-cat /etc/apt/sources.list.d/*
+	cat /etc/apt/sources.list
+	cat /etc/apt/sources.list.d/*
 
 
 
 （3）替换
-# 替换 /etc/apt/sources.list
-sed -i 's|http://deb.debian.org/debian|http://mirrors.aliyun.com/debian|g' /etc/apt/sources.list
-sed -i 's|http://deb.debian.org/debian-security|http://mirrors.aliyun.com/debian-security|g' /etc/apt/sources.list
+	# 替换 /etc/apt/sources.list
+	sed -i 's|http://deb.debian.org/debian|http://mirrors.aliyun.com/debian|g' /etc/apt/sources.list
+	sed -i 's|http://deb.debian.org/debian-security|http://mirrors.aliyun.com/debian-security|g' /etc/apt/sources.list
 
-# 替换 /etc/apt/sources.list.d/* 中的源
-find /etc/apt/sources.list.d/ -type f -exec sed -i 's|http://repo.percona.com|http://mirrors.aliyun.com/percona|g' {} \;
-find /etc/apt/sources.list.d/ -type f -exec sed -i 's|https://packages.microsoft.com|http://mirrors.aliyun.com/microsoft|g' {} \;
+	# 替换 /etc/apt/sources.list.d/* 中的源
+	find /etc/apt/sources.list.d/ -type f -exec sed -i 's|http://repo.percona.com|http://mirrors.aliyun.com/percona|g' {} \;
+	find /etc/apt/sources.list.d/ -type f -exec sed -i 's|https://packages.microsoft.com|http://mirrors.aliyun.com/microsoft|g' {} \;
 
 
 （4）删除刚才创建的容器
-sudo docker ps -a --filter ancestor=hhyo/archery-base:sha-d8159f4 -q | xargs sudo docker rm
+	sudo docker ps -a --filter ancestor=hhyo/archery-base:sha-d8159f4 -q | xargs sudo docker rm
+
+
 
