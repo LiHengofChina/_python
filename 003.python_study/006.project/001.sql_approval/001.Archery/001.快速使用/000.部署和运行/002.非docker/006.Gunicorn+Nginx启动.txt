@@ -1,0 +1,126 @@
+
+
+//======================================================================（1）Nginx 配置
+//======================================================================（1）Nginx 配置
+ 
+（1）vim /etc/nginx/nginx.conf
+
+（2）检查 端口是否被占用
+
+	sudo netstat -tuln | grep 8888
+
+（3）修改nginx配置
+	server {
+
+        listen 9123;
+        server_name 192.168.100.231;
+        client_max_body_size 20M;
+        proxy_read_timeout 600s; 
+
+        location / {
+          proxy_pass http://127.0.0.1:8888; # 将请求转发到 Gunicorn
+          proxy_set_header Host $host:9123; # 解决重定向404的问题，和listen端口保持一致，如果是docker则和宿主机映射端口保持一致
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /static {
+          alias /opt/archery/common/static; 
+		  # 此处指向 settings.py 配置项 STATIC_ROOT 目录的绝对路径，用于nginx收集静态资源
+        }
+
+        error_page 404 /404.html;
+            location = /40x.html {
+        }
+
+        error_page 500 502 503 504 /50x.html;
+            location = /50x.html {
+        }
+
+	}
+
+（4）检查 nginx 配置
+	sudo nginx -t
+
+（5）加载和重新启动nginx
+	sudo systemctl reload nginx
+	sudo systemctl restart nginx
+
+
+（6）查看nginx访问日志
+
+	tail -f /var/log/nginx/access.log
+
+
+	//错误日志
+	sudo tail -f /var/log/nginx/error.log
+ 
+//======================================================================（2） 添加权限
+//======================================================================（2） 添加权限
+ 
+给nginx添加权限
+sudo chmod -R 755 /opt/static
+sudo chown -R nginx:nginx /opt/static
+
+mkdir -p /opt/log
+
+//======================================================================（3）允许niginx发起网络请求
+//======================================================================（3）允许niginx发起网络请求
+ 
+setenforce 0
+sudo setsebool -P httpd_can_network_connect 1
+setenforce 1
+
+//======================================================================（4）supervisord 配置
+//======================================================================（4）supervisord 配置
+
+supervisord 是一个服务，需要一直运行以管理和监控其他进程。
+
+（1）安装
+sudo yum install supervisor -y
+
+
+（2）配置开机启动
+sudo systemctl enable supervisord
+
+（3）启动
+sudo systemctl start supervisord
+
+
+（4）确认
+sudo systemctl status supervisord
+
+
+
+
+//======================================================================（5）启动服务
+//======================================================================（5）启动服务
+
+
+
+（1）
+	# 启动
+	cd /opt/archery
+	source /opt/venv4archery/bin/activate
+	dos2unix /opt/archery/startup.sh
+	bash startup.sh
+
+（2）观察日志
+
+	tail -f /opt/log/gunicorn.err.log
+	tail -f /opt/log/gunicorn.out.log
+
+
+（3）
+	http://192.168.100.231:9123/login/
+	admin/admin
+
+
+
+
+
+
+
+
+ 

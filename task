@@ -6,15 +6,9 @@
 
 （1）Archery
 
-（1）目录：
+qcluster
 
-/opt/archery
-/opt/venv4archery
 
-（2）命令
-python -m venv /opt/venv4archery
-
-（3）小写archery
 
 
 //============================================================================================================= 工作主线

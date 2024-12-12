@@ -1,0 +1,23 @@
+source /opt/venv4archery/bin/activate
+cd /opt/archery
+python3 manage.py qcluster
+
+报错：import local settings failed, ignored
+
+
+//===============================================================
+//===============================================================
+Django 项目中的 settings.py 
+文件可能会尝试导入一个名为 local_settings.py 的文件，
+
+import local settings failed, 
+ignored 这个错误通常是 Django 项目在启动时加载 settings 配置文件时发生的。
+具体来说，Django 项目中的 settings.py 
+文件可能会尝试导入一个名为 local_settings.py 的文件，
+用于加载本地环境的配置（例如开发环境的特殊设置）。
+
+
+并修改里面的部分路径
+
+
+

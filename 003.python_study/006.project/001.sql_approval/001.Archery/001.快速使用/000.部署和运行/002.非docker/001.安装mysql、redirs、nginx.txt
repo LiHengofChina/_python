@@ -46,7 +46,9 @@
 
 	//添加防火墙
 	firewall-cmd --permanent --add-port=6379/tcp
-	firewall-cmd --reload
+	firewall-cmd --reload	
+	
+
 
 //========================================== mysql  //>=5.7
 //========================================== mysql  //>=5.7

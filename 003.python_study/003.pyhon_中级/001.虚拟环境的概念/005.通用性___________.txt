@@ -10,8 +10,8 @@ virtualenv venv4archery --python=python3
 virtualenv 是一个独立的工具，用于创建虚拟环境。
 
 （1）
-python -m venv /opt/venv4archery
-venv 是 Python 3.x 的内置模块，用于创建虚拟环境。
+python3 -m venv /opt/venv4archery
+venv 是 Python3 3.x 的内置模块，用于创建虚拟环境。
 
 
 //=======================================================================

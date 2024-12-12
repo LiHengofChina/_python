@@ -309,7 +309,7 @@
 （3） 非docker部署: 使用非docker方式部署环境，在新机器安装mysql、redirs、nginx、升级ssl和安装python3.11
 							    安装virtualenv、安装Archery、安装Archery项目依赖。
 
-（4） 非docker部署: 
+（4） 非docker部署: 安装 supervisorctl 
 		完成剩余的部署，再梳理一下
 	  使用非docker方式部署环境：安装目标数据 "依赖组件"——
 （5） Archery 的部署和运行环境梳理，确保docker部署与非docker部署都能运行。
