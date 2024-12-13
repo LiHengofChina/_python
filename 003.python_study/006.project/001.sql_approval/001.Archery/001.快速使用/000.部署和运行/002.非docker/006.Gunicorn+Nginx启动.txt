@@ -62,7 +62,6 @@
 sudo chmod -R 755 /opt/static
 sudo chown -R nginx:nginx /opt/static
 
-mkdir -p /opt/log
 
 //======================================================================（3）允许niginx发起网络请求
 //======================================================================（3）允许niginx发起网络请求
@@ -107,13 +106,16 @@ sudo systemctl status supervisord
 
 （2）观察日志
 
-	tail -f /opt/log/gunicorn.err.log
-	tail -f /opt/log/gunicorn.out.log
+	tail -f /opt/logs/gunicorn.err.log
+	tail -f /opt/logs/gunicorn.out.log
 
 
-（3）
+//======================================================================（7）访问
+//======================================================================（7）访问
+
+（1）
 	http://192.168.100.231:9123/login/
-	
+
 	http://192.168.100.231:9123/login/
 	admin/admin
 

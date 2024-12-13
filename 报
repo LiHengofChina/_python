@@ -304,15 +304,12 @@
 
 //===============================（2024.12.2~2024.12.6）本周工作主要内容:
 //===============================（2024.12.2~2024.12.6）本周工作主要内容:
-（1） 了解 "SQL上线详细的业务流程": 工单填写>SQL检测>提交>审批>自动执行 的详细流程和操作。
-（2） docker部署：使用Archery源码生成docker镜像并成功运行项目100%。
-（3） 非docker部署: 使用非docker方式部署环境，在新机器安装mysql、redirs、nginx、升级ssl和安装python3.11
-							    安装virtualenv、安装Archery、安装Archery项目依赖。
+（1）了解 "SQL上线详细的业务流程": 工单填写>SQL检测>提交>审批>自动执行 的详细流程和操作。
+（2）docker部署：使用Archery源码生成docker镜像并成功运行项目100%。
+（3）非docker部署: 使用非docker方式部署环境，在新机器安装mysql、redirs、nginx、升级ssl和安装python，安装virtualenv、安装Archery、安装Archery项目依赖、项目配置，并成功部署，确保docker部署与非docker部署都能运行（100%）。
+（4）非docker部署: 审查目标数据中间件依赖————golang、GoInception安装与测试，配置开机启动。
+（5）在测试环境验证功能，梳理流程。
 
-（4） 非docker部署: 安装 supervisorctl 
- 
-	  使用非docker方式部署环境：安装目标数据 "依赖组件"——
-（5） Archery 的部署和运行环境梳理，确保docker部署与非docker部署都能运行。
 
 
 //===============================下周

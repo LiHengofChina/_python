@@ -176,4 +176,11 @@
 
 （31）在使用开项目时，取代码时要注意：
 		要使用对应的Tag版本，不然要解决很多问题
-		
+
+
+（31）
+ INFO spawned: 'qcluster' with pid 2105
+ INFO exited: archery (terminated by SIGTERM; not expected)
+ INFO exited: qcluster (terminated by SIGTERM; not expected)
+
+ supervisord 启动的目标程序必须运行在前台，而 systemd 则支持前台和后台模式，

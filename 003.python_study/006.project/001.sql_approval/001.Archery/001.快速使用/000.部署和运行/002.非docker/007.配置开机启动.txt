@@ -1,0 +1,46 @@
+
+//======================================================================（6）配置开机启动
+//======================================================================（6）配置开机启动
+
+（1）创建 systemd 服务文件
+	vim /etc/systemd/system/archery.service
+
+		[Unit]
+		Description=Archery Service
+		After=network.target
+
+		[Service]
+		Type=simple
+		User=root
+		WorkingDirectory=/opt/archery
+		Environment="PATH=/opt/venv4archery/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+		Environment="VIRTUAL_ENV=/opt/venv4archery"
+		ExecStart=/bin/bash -c "source /opt/venv4archery/bin/activate && bash /opt/archery/startup.sh"
+		Restart=on-failure
+		TimeoutStartSec=300  # 增加超时时间，防止脚本执行时间过长导致失败
+
+		[Install]
+		WantedBy=multi-user.target
+
+（2）加载服务文件
+	sudo systemctl daemon-reload
+	sudo systemctl enable archery.service
+
+
+（3）启动服务
+	sudo systemctl start archery.service
+	sudo systemctl status archery.service
+
+
+
+（4）重启
+	sudo systemctl restart archery.service
+
+（5）电脑重启系统后，检查 Archery 是否正常启动：
+	sudo systemctl is-active archery.service
+
+
+（6）查看它启动的详细日志	
+	sudo journalctl -u archery.service
+
+
