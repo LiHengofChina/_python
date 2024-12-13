@@ -1,0 +1,179 @@
+
+（1）proC安装的时候，
+		头文件路径不好找
+		//如果头文件指定了子目录
+		#include <librdkafka/rdkafka.h>
+		//指定路径时，就要少指定一层
+		如：/usr/local/include
+（2）proC中使用SCN查询的时候，
+		要使用动态SQL，才能识别 SCN 字符串
+（3）线程中的参数传递问题，
+		不要传递指针等等
+（4）oracle表信息要大写
+（5）引入外部库里，要 "优先" 添加依赖
+（6）多线程中，需要保证子线程中使用的字符串，
+	 在父线程中有效
+     free(table_struct_str); 
+（7） 环境安装：oci和proc，要选择21_14的版本
+（8） proc 查询数据库日期：要提前指定一个格式串
+	  另外：EXEC SQL ALTER SESSION SET NLS_DATE_FORMAT="YYYYMMDDHH24MISS";
+（9）程序时间统计要使用整体时间，不能使用CPU时间。
+（9）多线程下不要使用 sqlca.sqlcode，因为它是全局的
+	 通过计数来达到停止的时间
+
+（10）两处线程同时处理，导致无法停止服务的问题
+			//线程中的ctrl + C 信号被屏蔽导致
+
+（11）linux安装任何软件和依赖 切记，选择与之匹配的版本
+
+（12）服务器返回 400 ，由于请求头没有添加 Host引起的。
+	  evhttp_add_header(output_headers, "Host", login_host);
+
+（13）批量 FETCH 的问题
+（14）mysql 需要一次性全部查询完数据。
+
+（15）文件上传问题
+	//第一次：选择就会触发，有 raw 字段:
+	handleFileChange(file) {
+		this.file = file.raw;
+		this.fileList = [file]; // 只保留最新选择的文件
+	},
+	//第二次要，是超过limit触发，而里面直接是文件对象。
+	handleExceed(files, fileList) {
+		this.$message.warning('已替换为最新选择的文件');
+		const newFile = files[0]; // 获取最新选择的文件
+
+		// 确保 newFile 存在并打印调试信息
+		if (newFile) {
+			
+			console.log('newFile:', newFile);
+			console.log('newFile size:', newFile.size);
+
+			this.file = newFile; // 直接使用 newFile 作为文件对象
+			this.fileList = [newFile]; // 更新文件列表
+
+			this.startUpload(); // 开始上传
+		} else {
+			console.error('newFile is undefined');
+		}
+	},
+
+
+（16）快速定位到页面，找到JS前端的逻辑：
+		（1）在 "标题文字" 后面添加数字，这样就可以快速定位到了。
+		（2）根据api调用来反推 + 排除法。
+
+
+（17） 线上问题
+		（1）少了 斜线
+		（2）区别 http 与 https
+
+（18）app窗口滚动条的问题
+	document.body.style.overflow = 'hidden';
+
+
+（19）加解密的问题
+		//=============================（1）解密失败
+
+		openpgp.js 默认使用 aes256算法加密（利用公钥），
+				而后端不支持这个长度256的密钥解密 ，所以失败了。
+				//因为JDK 8有长度的限制。
+
+		//================ 使用128长度的密钥
+		解决办法 ：aes128
+
+
+ 		//=============================（2）解密后长度问题
+		密钥后的数据头部有额外字节，所以我添加自己的标记来区别它
+
+		//============================= （3）总结
+		只需要在加密时指定 "加密算法" 并使用 "公钥加密"，
+		对方在 "收到加密数据后"， 如果拥有 "对应的私钥"，
+		解密过程会 "自动匹配加密算法" 来完成解密。
+
+
+（20）网关报错
+	reactor.netty.http.client.PrematureCloseException: 
+	Connection prematurely closed BEFORE response
+
+	reactor.netty.http.client.PrematureCloseException: 
+	Connection prematurely closed BEFORE response
+	解决办法 ：
+	//==========================网关的超时时长比后端长了
+	
+	spring:
+	  cloud:
+		gateway:
+		  httpclient:
+			pool:
+			  max-idle-time: 2000
+	//==========================服务配置 //注意：要使用空格，不使用 \t
+	server:
+	  tomcat:
+		max-connections: 200
+		max-threads: 50
+		connection-timeout: 10000  # 连接超时时间设置为 10 秒
+		max-keep-alive-requests: 100  # 可选，设置每个连接的最大请求数
+
+
+（22）nginx部署之后，从缓存中获取
+
+	从而导致对 /rk_app 的访问变成了返回 /mftcc-web的缓存
+
+	Status Code:
+	200 OK (from disk cache)
+
+	解决办法是：把路径全部修改为 /rk_app，再访问一次，然后改回去
+
+（23）spring boot打包时，要添加信号，有些时候
+	<includes>
+		<include>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+		</include>
+	</includes>
+
+
+（24）"web页面内部" 所有到后端 的请求都是先到网关
+
+		在mftcc-doc-server-liheng-remote.yml 中要
+		需要配置网关的 "地址和端口"
+			wps:
+			  accessKey: AMWTSKWXWJYIABVJ
+			  secretKey: SKghpuzsaqpwfwih
+			  fileUrl: http://192.168.100.10:7019/mftcc-doc-server-liheng-remote/v1/3rd/file/downloadFile/
+			  fileTempPath: http://192.168.100.10:7019/mftcc-doc-server-liheng-remote/
+
+
+
+（25）doc本地运行
+	（1）端口要填写网关的，因为是从网关转发
+	（2）nocos要配置自己doc的白名单，因为我的服务改名字了
+	（3）本地app要用ip访问，并在中台配置白名单
+
+（26）vue.js 子组件，如果是多层，取属性
+		//最好传子部分就好了
+
+（27）.使用工具使用 replace-imports.js 工具打锚点来快速定位 
+		 来快速定位引用的地方
+
+
+（28）移动审批，某个用户可以审批，某些用户不可以审批
+
+	 //只要这个用户登陆 一次就可以了，
+	 因为登陆之后，在redirs中存放了数据：
+	 类型: string
+	 key: user_longmanxiao
+	 value:	 {"roleNo":"JR_017|JR_096","corpId":"1000000000","corpName":"成都锦融投资控股有限公司","loginDateTime":"2024-11-22 16:20:10","roleType":"2|","employeeNo":"longmanxiao","homePage":"1","token":"eyJhbGciOiJIUzI1NiJ9.eyJvcE5vIjoibG9uZ21hbnhpYW8iLCJpYXQiOjE3MzIyNjM2MTIsImV4cCI6MTczMjMyMzYxMn0.CaF7_Bqz2H4EFV2Vmy9C78MI-P4xXRplboMRehicXEE","corpIdChildren":["1000000000","1000000001","1000000002"],"opName":"龙满潇","opNo":"longmanxiao","brNoChildren":["10000006"],"loginExpireDateTime":"2024-11-23 00:40:00","brName":"风险法务部","brNo":"10000006"}
+
+（29）虚拟机
+		有时候不需要新安装，克隆后升级就好
+
+（30）wps 消息发送生产问题
+		（1）101.35.38.78  //出口IP
+		（2）应用可见范围
+
+
+（31）在使用开项目时，取代码时要注意：
+		要使用对应的Tag版本，不然要解决很多问题
+		

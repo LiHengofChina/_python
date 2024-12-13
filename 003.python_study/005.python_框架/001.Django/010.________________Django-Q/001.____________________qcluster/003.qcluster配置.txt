@@ -1,0 +1,18 @@
+
+
+qcluster 的配置一般在 Archery 的 settings.py 文件中设置。
+
+
+例如：
+Q_CLUSTER = {
+    'name': 'DjangORM',
+    'workers': 4,  # 并发工作线程数量
+    'recycle': 500,  # 每执行500个任务重启一次工作线程
+    'timeout': 60,  # 每个任务的超时时间（秒）
+    'retry': 90,  # 任务失败后的重试间隔（秒）
+    'queue_limit': 50,  # 队列最大任务数
+    'bulk': 10,  # 批量获取任务的数量
+    'orm': 'default'  # 使用的数据库配置
+}
+
+
