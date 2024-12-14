@@ -47,7 +47,7 @@ RD
 系统管理 ---> 其它配置管理 --->  用户管理
 
 参数说明：
-		（1）用户名: liheng  // 审批账号liheng_a
+		（1）用户名: liheng  // 审批账号 liheng_a
 			 密码：li_heng_li_heng
 		（2）权限组: Default 或 liheng_test
 		（3）单独添加权限说明//用户特定权限

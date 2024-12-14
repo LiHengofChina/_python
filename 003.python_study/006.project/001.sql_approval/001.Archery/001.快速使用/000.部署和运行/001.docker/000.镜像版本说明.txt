@@ -28,8 +28,9 @@
 
 
 
-//====================================================================== 查看基本镜像中 apt的配置配置文件路径
-//====================================================================== 查看基本镜像中 apt的配置配置文件路径
+//====================================================================== （archery）查看基本镜像中 apt的配置配置文件路径
+//====================================================================== （archery）查看基本镜像中 apt的配置配置文件路径
+ 
 
 
 （1）启动一个 基于 hhyo/archery-base:sha-d8159f4 镜像的容器，
@@ -59,4 +60,14 @@ sudo docker run -it --entrypoint /bin/bash hhyo/archery-base:sha-d8159f4
 	sudo docker ps -a --filter ancestor=hhyo/archery-base:sha-d8159f4 -q | xargs sudo docker rm
 
 
+
+//====================================================================== （goInception）
+//====================================================================== （goInception）
+
+docker exec -it goinception /bin/sh
+
+
+在外面找到goIncepiton的配置
+docker inspect --format '{{.Config.Entrypoint}}' goinception
+[/usr/local/bin/dumb-init /goInception --config=/etc/config.toml]
 
