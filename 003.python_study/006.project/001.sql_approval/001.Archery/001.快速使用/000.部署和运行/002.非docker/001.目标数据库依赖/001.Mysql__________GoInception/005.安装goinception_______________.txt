@@ -48,11 +48,14 @@
 
 
 
-（4）编译
-	rm go.sum
+（4）启用 Go Modules
 
+
+	go mod init soar //或rm go.sum
 	go mod tidy
 
+
+（5）编译
 	go build -o goInception ./tidb-server
 
 
@@ -62,6 +65,11 @@
 （5）验证
 	ls -l goInception
 	./goInception -v
+
+
+
+//======================================================================
+//======================================================================
 
 （6）修改goInception中的数据库连接
 
@@ -120,3 +128,4 @@
 		sudo systemctl status goinception
 		//==========（6）查看日志
 		sudo journalctl -u goinception
+

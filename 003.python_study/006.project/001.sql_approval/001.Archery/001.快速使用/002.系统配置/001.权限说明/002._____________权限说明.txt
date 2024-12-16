@@ -1,0 +1,135 @@
+
+
+//=================================================================== SQL上线 （登陆后默认打开这个菜单）（所以新用户一般需要这个必配置）
+//=================================================================== SQL上线 （登陆后默认打开这个菜单）（所以新用户一般需要这个必配置）
+
+
+
+//=================== 父菜单
+//=================== 父菜单
+value="82"                    sql | permission | 菜单 SQL审核
+
+//=================== 子菜单
+//=================== 子菜单
+
+（1）SQL上线
+value="83"                    sql | permission | 菜单 SQL上线
+
+
+value="105"                   sql | permission | 提交SQL上线工单
+
+value="108"                   sql | permission | 执行SQL上线工单(仅自己提交的)
+value="107"                   sql | permission | 执行SQL上线工单(资源组粒度)
+
+
+//审批人才需要吧
+//value="106"                   sql | permission | 审核SQL上线工单
+
+
+
+（2）SQL分析
+value="84"                    sql | permission | 菜单 SQL分析
+value="109"                   sql | permission | 执行SQL分析
+
+
+
+//=================================================================== SQL查询
+//=================================================================== SQL查询
+
+
+//=================== 父菜单
+//=================== 父菜单
+
+value="85"                    sql | permission | 菜单 SQL查询
+
+//=================== 子菜单
+//=================== 子菜单
+
+
+//（1）
+value="86"                    sql | permission | 菜单 在线查询		//是否显示在线查询这个
+value="116"                   sql | permission | 提交SQL查询		//查询权限提交
+
+
+
+//（2）数据字典
+value="97"                    sql | permission | 菜单 数据字典
+value="127"                   sql | permission | 导出数据字典
+
+
+//（3）权限管理
+value="87"                    sql | permission | 菜单 权限管理
+value="113"                   sql | permission | 申请查询权限
+
+
+
+
+//=================================================================== SQL分析
+//=================================================================== SQL分析
+
+//=================== 父菜单
+//=================== 父菜单
+value="88"                    sql | permission | 菜单 SQL优化
+
+//=================== 子菜单
+//=================== 子菜单
+
+
+（1）优化工具
+value="89"                    sql | permission | 菜单 优化工具
+
+//获取对应工具的权限，才能获取建议
+value="112"                   sql | permission | 执行SOAR
+value="110"                   sql | permission | 执行SQLAdvisor
+value="111"                   sql | permission | 执行SQLTuning
+
+
+
+（2）获取优化建议
+value="90"                    sql | permission | 菜单 慢查日志
+
+
+
+
+//=================================================================== SQL查询
+//=================================================================== SQL查询
+
+
+
+
+
+value="99"                    sql | permission | 菜单 数据归档
+value="81"                    sql | permission | 菜单 Dashboard
+value="94"                    sql | permission | 菜单 数据库管理
+value="93"                    sql | permission | 菜单 会话管理
+value="103"                   sql | permission | 菜单 相关文档
+value="91"                    sql | permission | 菜单 实例管理
+value="95"                    sql | permission | 菜单 实例账号管理
+value="92"                    sql | permission | 菜单 实例列表
+value="100"                   sql | permission | 菜单 My2SQL
+value="104"                   sql | permission | 菜单 OpenAPI
+value="96"                    sql | permission | 菜单 参数配置
+value="101"                   sql | permission | 菜单 SchemaSync
+value="102"                   sql | permission | 菜单 系统管理
+value="98"                    sql | permission | 菜单 工具插件
+value="77"                    sql | permission | Can add permission
+value="128"                   sql | permission | 提交归档申请
+value="130"                   sql | permission | 管理归档申请
+value="129"                   sql | permission | 审核归档申请
+value="131"                   sql | permission | 审计权限
+value="78"                    sql | permission | Can change permission
+value="79"                    sql | permission | Can delete permission
+value="124"                   sql | permission | 管理实例账号
+value="126"                   sql | permission | 修改实例参数
+value="125"                   sql | permission | 查看实例参数列表
+value="120"                   sql | permission | 终止会话
+value="119"                   sql | permission | 查看会话
+value="117"                   sql | permission | 可查询所有实例
+value="132"                   sql | permission | 在线查询下载权限
+value="114"                   sql | permission | 管理查询权限
+value="118"                   sql | permission | 可查询所在资源组内的所有实例
+value="115"                   sql | permission | 审核查询权限
+value="121"                   sql | permission | 查看表空间
+value="123"                   sql | permission | 查看锁信息
+value="122"                   sql | permission | 查看事务信息
+value="80"                    sql | permission | Can view permission

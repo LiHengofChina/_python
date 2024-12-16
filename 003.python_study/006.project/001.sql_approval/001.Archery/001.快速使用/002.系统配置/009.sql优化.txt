@@ -7,16 +7,13 @@
 
 
 （1）SQLADVISOR_PATH
-		SQLAdvisor的可执行文件路径，路径需要完整，
-			docker镜像内已经集成:
-			* 1.4.0以前的docker版本配置成/opt/sqladvisor 
-			* 1.4.0以以后的docker版本配置成/opt/archery/src/plugins/sqladvisor
 
 （2）SOAR_PATH
-		SOAR的可执行文件路径，路径需要完整，docker镜像内已经集成，
-			docker镜像内已经集成 
-			* 1.4.0以前的docker版本配置成/opt/soar 
-			* 1.4.0以以后的docker版本配置成/opt/archery/src/plugins/soa
+			//SQL审核--->SQL分析--->   mysql优化，要用到的这个
+			//填写 SOAR安装路径就好
+			///usr/local/src/soar/soar.linux-amd64
 
 （3）SOAR_TEST_DSN
+			//SQL优化-->SQL工具--->  要用到，但是保证它不为空就好了。
+			//
 
