@@ -1,0 +1,17 @@
+
+//====================================================== 使用 Swagger 的话
+//====================================================== 使用 Swagger 的话
+
+
+不同后端（Java、Python 或其他）都可以自动生成 API 接口文档。
+每种语言和框架使用对应的工具或模块来集成：
+
+
+（1）Java 后端：通常使用 Swagger Core 或 Springfox 来集成 Swagger。
+	 你可以通过引入相应的 JAR 包或使用 Spring Boot 的 Swagger 支持来生成 API 文档。
+
+（2）Python 后端：使用模块如 Flask-RESTPlus、drf-yasg（Django）等来集成 Swagger，
+	 自动生成 API 文档。
+
+（3）其他后端：类似的，其他语言和框架也有相应的工具来集成 Swagger。
+

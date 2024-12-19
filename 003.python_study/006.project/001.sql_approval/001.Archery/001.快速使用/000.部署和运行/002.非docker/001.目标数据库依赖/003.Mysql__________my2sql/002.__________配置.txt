@@ -1,0 +1,6 @@
+
+
+MY2SQL
+
+/usr/local/src/my2sql/my2sql/mys2sql
+

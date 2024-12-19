@@ -16,7 +16,6 @@ https://archerydms.com/installation/manual/#_4
 
 
 （2） 激活虚拟环境
-
 	 source /opt/venv4archery/bin/activate
 
 

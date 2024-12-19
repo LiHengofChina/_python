@@ -318,15 +318,12 @@
 
 （1）测试"SQL分析"功能——安装 SOAR（msyql）验证SQL分析功能。
 （2）将Archery的甩有"权限资源"梳理，并找到对应的功能，授权测试。
+（3）功能分析：梳理 Archery 功能清单，并列出 "重点需要集成的功能"
+（4）对测试Archery提供的接口分析和测试。
 
 
-
-（1）功能分析：梳理 Archery 功能清单，并列出 "重点需要集成的功能"
-
-
-
-
-
+//===============================下周
+//===============================下周
 （2）准备集成：Archery框架分析、代码分析、并为二次开发做准备。
 （3）准备集成：
 （4）准备集成：了解公司现有的微服务，准备集成方案。
@@ -335,17 +332,6 @@
 
 
 
-
-
-
-
-<td class="ant-table-cell ant-table-cell-fix-right ant-table-cell-fix-right-first" style="text-align: center; position: sticky; right: 0px;"><div class="ant-space css-1nvuv0x ant-space-horizontal ant-space-align-center" style="gap: 8px;"><div class="ant-space-item"><button type="button" class="ant-btn css-1nvuv0x ant-btn-link inner-table-link"><span>提交</span></button></div></div></td>
-
-
-
-<button type="button" class="ant-btn css-1nvuv0x ant-btn-primary"><span>保存并提交</span></button>
-
-<button type="button" class="ant-btn css-1nvuv0x ant-btn-primary" disabled=""><span>保存并提交</span></button>
 
 
 

@@ -1,0 +1,76 @@
+
+
+这是一组授权API
+
+认证（Authentication）相关的 AP
+
+
+
+
+//==================================================================================================（1）获取token：账号和密码
+//==================================================================================================（1）获取token：账号和密码
+
+//============= 请求
+//============= 请求
+
+curl -X 'POST' \
+  'http://192.168.100.231:9123/api/auth/token/' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -H 'X-CSRFTOKEN: pVpnpybdFuj6TVm6OZpNLcXCFNx9Yf1kTNERPk6I1AXEq3QYrMDZ1dzmgb8g5k0i' \
+  -d '{
+  "username": "admin",
+  "password": "admin"
+}'
+
+//============= 响应
+//============= 响应
+
+{
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTczNDc2NTAzNSwiaWF0IjoxNzM0NTA1ODM1LCJqdGkiOiIwNDU3YWI2M2VkNWU0MzMyYjE0YTViNTA3OWQzNjNiMSIsInVzZXJfaWQiOjF9.ucbjlOxDzwy4MEXEcJmLcAxsjZEzsACSccZLEcg3-kA",
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzM0NTIwMjM1LCJpYXQiOjE3MzQ1MDU4MzUsImp0aSI6ImMzNTQxMmRmYTI0NjQ2YTZiOTgxNTE1ZTI4YmJlMzUyIiwidXNlcl9pZCI6MX0.1dB3gzWvHq4tL40DWButghdQMmW_RWtGiRv2Qn4MoJI"
+}
+
+/**
+refresh（刷新令牌）:用于获取新的 access token，当 access token 过期时，可以通过 refresh token 重新获取新的 access token，而不需要重新登录。
+access（访问令牌）：用于访问受保护的 API 资源，验证用户身份。
+*/
+
+
+ 
+//==================================================================================================（2）使用刷新token获取访问token
+//==================================================================================================（2）使用刷新token获取访问token
+
+//============= 请求
+//============= 请求
+
+curl -X 'POST' \
+  'http://192.168.100.231:9123/api/auth/token/refresh/' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -H 'X-CSRFTOKEN: pVpnpybdFuj6TVm6OZpNLcXCFNx9Yf1kTNERPk6I1AXEq3QYrMDZ1dzmgb8g5k0i' \
+  -d '{
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTczNDc2NTU0OCwiaWF0IjoxNzM0NTA2MzQ4LCJqdGkiOiIwNDJkYTY3ZDQ5MjU0ZWUyYTc2MmQ5ZWY0OWE1MzZlMyIsInVzZXJfaWQiOjF9.eDFXTMnD_F5ELH9yHpx57rE9W9bL1MeyNnjp4MiuX0c"
+}'
+
+//============= 响应
+//============= 响应
+{
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzM0NTIxMDAzLCJpYXQiOjE3MzQ1MDU4MzUsImp0aSI6IjgzYmZhNGRlN2RhYzQyMjlhM2Q2N2NlMjFkMDNhZjRlIiwidXNlcl9pZCI6MX0.Jyc7FJxBGAJrb-Kp1tECDjX5Kn1PkkXDViy98R689yU"
+}
+
+
+//==================================================================================================（2）验证token是否有效
+//==================================================================================================（2）验证token是否有效
+
+
+
+curl -X 'POST' \
+  'http://192.168.100.231:9123/api/auth/token/verify/' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -H 'X-CSRFTOKEN: pVpnpybdFuj6TVm6OZpNLcXCFNx9Yf1kTNERPk6I1AXEq3QYrMDZ1dzmgb8g5k0i' \
+  -d '{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzM0NTIxMDkzLCJpYXQiOjE3MzQ1MDYzNDgsImp0aSI6IjA4YmQxYjUzNmI3NTQzMDViOGI2MGMwYjhkMjFhNWRjIiwidXNlcl9pZCI6MX0.3jDyAdkHjupDXUAV4GINgmWB8SkTYmUSMDj6zZGHbzs"
+}'
+

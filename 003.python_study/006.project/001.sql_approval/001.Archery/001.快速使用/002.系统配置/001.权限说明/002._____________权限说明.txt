@@ -16,7 +16,8 @@ value="81"                    sql | permission | 菜单 Dashboard
 
 
 //=================== 父菜单
-//=================== 父菜单 
+//=================== 父菜单
+ 
 value="82"                    sql | permission | 菜单 SQL审核      	////（登陆后默认打开它的子菜单）（所以新用户一般需要这个必配置）
 
 //=================== 子菜单
@@ -28,6 +29,8 @@ value="83"                    sql | permission | 菜单 SQL上线		////（登陆
 
 
 value="105"                   sql | permission | 提交SQL上线工单
+
+
 value="108"                   sql | permission | 执行SQL上线工单(仅自己提交的)
 value="107"                   sql | permission | 执行SQL上线工单(资源组粒度)
 
