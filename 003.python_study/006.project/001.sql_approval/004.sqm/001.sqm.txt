@@ -1,0 +1,7 @@
+
+
+SQM（SQL Quality Manager）也是一个类似的 SQL 审核平台，
+用于 SQL 语句的质量管理、
+优化 和 安全审查，旨在提高 SQL 查询的效率和可靠性
+
+
