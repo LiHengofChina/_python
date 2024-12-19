@@ -20,8 +20,12 @@
 
 //================ 示例：
 //================ 示例：
-/*--user=root;--password=-ir2dtd%3FXFf>;--host=192.168.100.231;--check=1;--port=3306;*/
-/*--user=root;--password=-ir2dtd?XFf>;--host=192.168.100.231;--check=1;--port=3306;*/
+
+
+
+
+
+/*--user=root;--password=-ir2dtd?XFf>;--host=127.0.0.1;--check=1;--port=3306;*/
 inception_magic_start;
 use test_liheng;
 create table t1(id int primary key);
@@ -37,4 +41,4 @@ inception_magic_commit;
 //	（3）inception_magic_commit;：表示 SQL 审核的结束，提交审核。
 //	（4）在 inception_magic_start 和 inception_magic_commit 之间的 SQL 语句是标记为待审核的内容，而不是直接执行的 SQL 语句。
 
- 
+

@@ -1,11 +1,14 @@
 
 
 安装：
-pip install pymysql prettytable
+source /opt/venv4archery/bin/activate
+pip3 install pymysql prettytable
 
-//================================================ python代码访问
-//================================================ python代码访问
+//================================================ python代码访问 示例1：
+//================================================ python代码访问 示例1：
 
+cd /root/tmp
+vim test.py
 
 
 #!/usr/bin/env python
@@ -15,11 +18,10 @@ import pymysql
 import prettytable as pt
 tb = pt.PrettyTable()
 
-sql = '''/*--user=root;--password=root;--host=127.0.0.1;--check=1;--port=3306;*/
+sql = '''/*--user=root;--password=-ir2dtd?XFf>;--host=127.0.0.1;--check=1;--port=3306;*/
 inception_magic_start;
-use test_inc;
-create table t1(id int primary key,c1 int);
-insert into t1(id,c1,c2) values(1,1,1);
+use test_liheng;
+create table t1(id int primary key);
 inception_magic_commit;'''
 
 conn = pymysql.connect(host='127.0.0.1', user='', passwd='',
@@ -34,5 +36,43 @@ tb.field_names = [i[0] for i in cur.description]
 for row in result:
     tb.add_row(row)
 print(tb)
+
+
+//================================================ python代码访问 示例2：
+//================================================ python代码访问 示例2：
+
+cd /root/tmp
+vim test2.py
+
+
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+import pymysql
+import prettytable as pt
+tb = pt.PrettyTable()
+
+sql = '''/*--user=root;--password=RKgit@2024;--host=192.168.100.11;--check=1;--port=3306;*/
+inception_magic_start;
+
+USE `mftcc-sys-server`;
+SELECT  *
+FROM sys_user;
+inception_magic_commit;'''
+
+conn = pymysql.connect(host='127.0.0.1', user='', passwd='',
+                       db='', port=4000, charset="utf8mb4")
+cur = conn.cursor()
+ret = cur.execute(sql)
+result = cur.fetchall()
+cur.close()
+conn.close()
+
+tb.field_names = [i[0] for i in cur.description]
+for row in result:
+    tb.add_row(row)
+print(tb)
+
+
 
 
