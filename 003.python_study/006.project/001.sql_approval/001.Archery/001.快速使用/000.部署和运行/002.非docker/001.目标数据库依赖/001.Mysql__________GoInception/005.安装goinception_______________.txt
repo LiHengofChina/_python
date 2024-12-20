@@ -55,6 +55,7 @@
 	go mod tidy
 
 
+
 （5）编译
 	go build -o goInception ./tidb-server
 
@@ -92,6 +93,10 @@
 （8）启动
 	cd /usr/local/src/goInception/goInception-1.3.0
 	./goInception -config=/opt/archery/goinception_config.toml
+
+	//============================== 停止
+	ps aux | grep goInception | grep -v grep | awk '{print $2}' | xargs kill
+
 
 
 （9）配置开机启动
