@@ -1,0 +1,108 @@
+
+//==============================================
+//==============================================
+
+实现了 "mysql协议驱动" 的语言（或程序）均可访问（goInceptione服务）
+
+访问方式和mysql一致，语法略有差异，
+
+通过  "特定格式设置" 不同参数以供 "审核"。
+
+//============================================== 使用方式
+//============================================== 使用方式
+
+goInception延用 "inception的使用方式" ，
+在 "审核的sql" 开始前 "添加注释" 来指定 "远端服务器"，
+并在 "sql的前后" 添加 "特殊标识" 以区分 "待审核语句"，
+
+
+//============================================== （命令行示例）（1）示例如下：
+//============================================== （命令行示例）（1）示例如下：
+
+/*--user=root;--password=root;--host=127.0.0.1;--check=1;--port=3306;*/
+inception_magic_start;
+use test;
+create table t1(id int primary key);
+inception_magic_commit;
+
+
+
+//================================================ python代码访问 
+//================================================ python代码访问 
+
+//========（1） 安装模块：
+//========（1） 安装模块：
+
+	source /opt/venv4archery/bin/activate
+	pip3 install pymysql prettytable
+
+//========（2）编写脚本
+//========（2）编写脚本
+
+cd /root/tmp
+vim test.py
+
+//============== python代码访问（1）：建表
+//============== python代码访问（1）：建表
+
+
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+import pymysql
+import prettytable as pt
+tb = pt.PrettyTable()
+
+sql = '''/*--user=root;--password=-ir2dtd?XFf>;--host=127.0.0.1;--check=1;--port=3306;*/
+inception_magic_start;
+use test_liheng;
+create table t1(id int primary key);
+inception_magic_commit;'''
+
+conn = pymysql.connect(host='127.0.0.1', user='', passwd='',
+                       db='', port=4000, charset="utf8mb4")
+cur = conn.cursor()
+ret = cur.execute(sql)
+result = cur.fetchall()
+cur.close()
+conn.close()
+
+tb.field_names = [i[0] for i in cur.description]
+for row in result:
+    tb.add_row(row)
+print(tb)
+
+
+//============== python代码访问（2）：查询
+//============== python代码访问（2）：查询
+
+
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+import pymysql
+import prettytable as pt
+tb = pt.PrettyTable()
+
+sql = '''/*--user=root;--password=RKgit@2024;--host=192.168.100.11;--check=1;--port=3306;*/
+inception_magic_start;
+
+USE `mftcc-sys-server`;
+SELECT  *
+FROM sys_user;
+inception_magic_commit;'''
+
+conn = pymysql.connect(host='127.0.0.1', user='', passwd='',
+                       db='', port=4000, charset="utf8mb4")
+cur = conn.cursor()
+ret = cur.execute(sql)
+result = cur.fetchall()
+cur.close()
+conn.close()
+
+tb.field_names = [i[0] for i in cur.description]
+for row in result:
+    tb.add_row(row)
+print(tb)
+
+
