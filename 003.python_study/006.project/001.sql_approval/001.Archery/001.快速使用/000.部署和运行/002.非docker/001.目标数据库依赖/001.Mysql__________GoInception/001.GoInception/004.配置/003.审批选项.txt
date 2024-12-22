@@ -1,0 +1,27 @@
+check_autoincrement_datatype            // 当建表时 "自增列" 的类型不为int或者bigint时报错
+check_autoincrement_init_value          // 当建表时 "自增列" 的值指定的不为1，则报错
+check_autoincrement_name                // 建表时，如果指定的自增列的名字不为ID，则报错，说明是有意义的，给提示
+check_column_comment                    // 建表时，列没有注释时报错
+check_column_default_value              // 检查在建表、修改列、新增列时，新的列属性是不是要有默认值
+check_column_position_change            // 检查列位置/顺序变更
+check_column_type_change                // 检查字段类型变更
+check_dml_limit                         // 在DML语句中使用了LIMIT时，是不是要报错   （DML不包括查询）
+check_dml_orderby                       // 在DML语句中使用了Order By时，是不是要报错 （DML不包括查询）
+check_dml_where                         // 在DML语句中没有WHERE条件时，是不是要报错
+check_float_double                      // 开启时,当使用 float/double 类型时提示转成 decimal 类型
+check_identifier                        // 检查标识符是否正确,规则是[a-z,A-Z,0-9,_]
+check_identifier_lower                  // 要求标识符即表名、列名、索引名等必须为小写, 默认为false
+check_identifier_upper                  // 要求标识符即表名、列名、索引名等必须为大写, 默认为false
+check_implicit_type_conversion          // 检查where条件中是否存在隐式类型转换, 默认值false
+check_index_prefix                      // 是否检查索引前缀, 索引前缀通过参数index_prefix和uniq_index_prefix配置
+check_insert_field                      // 是不是要检查插入语句中的列链表的存在性
+check_primary_key                       // 建表时，如果没有主键，则报错
+check_table_comment                     // 建表时，表没有注释时报错
+check_timestamp_count                   // 配置是否检查current_timestamp数量
+check_timestamp_default                 // 建表时，如果没有为timestamp类型指定默认值，则报错
+columns_must_have_index                 // 指定的列必须添加索引。多个列时以逗号分隔(格式: 列名 [列类型,可选]), 指定列类型时对类型也会限制
+enable_fingerprint                      // sql指纹功能。dml语句相似时，可以根据相同的指纹ID复用explain结果，以减少远端数据库explain操作，并提高审核速度
+enable_orderby_rand                     // order by rand时是不是报错
+explain_rule                            // explain判断受影响行数时使用的规则("first", "max")。"first": 使用第一行的explain结果作为受影响行数, "max": 使用explain结果中的最大值作为受影响行数
+//enable_nullable                        // 创建或者新增列时是否允许列为NULL
+enable_null_index_name                  // 创建索引时是否允许空索引名
