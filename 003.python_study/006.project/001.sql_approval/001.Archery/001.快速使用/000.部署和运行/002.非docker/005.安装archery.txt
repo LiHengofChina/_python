@@ -1,7 +1,6 @@
 
 
-https://archerydms.com/installation/manual/#_4
-
+https://github.com/hhyo/archery/wiki/docker
 
 
 //======================================================================（1）安装 archery
