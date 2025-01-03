@@ -1,0 +1,88 @@
+
+//================================================== 单独的：rkzl-common（com.rkzl.microservices）
+//================================================== 单独的：rkzl-common（com.rkzl.microservices）
+
+				//======================================== 子模块
+				//======================================== 子模块
+				（1）common-api
+				（2）common-auth
+				（3）common-constants
+				（4）common-enums
+				（5）common-exception
+				（6）common-id
+				（7）common-jpa
+				（8）common-jwt-service
+				（9）common-log
+				（10）common-notice
+				（11）common-seata
+				（12）common-skywalking
+				（13）common-util
+				（14）common-web
+				（15）common-web-result
+
+
+
+				//=========================== 定义依赖
+				//=========================== 定义依赖
+				rkzl-dependencis  //************************************ 这里依赖了一个另外的
+				common-api
+				common-auth
+				common-constants
+				common-enums
+				common-exception
+				common-id
+				common-jpa
+				common-jwt-service
+				common-log
+				common-notice
+				common-seata
+				common-skywalking
+				common-util
+				common-web
+				common-web-result
+				apm-toolkit-trace（org.apache.skywalking）
+				apm-toolkit-logback-1.x //org.apache.skywalking
+				hutool-core //cn.hutool
+				rkzl-user-auth-api
+
+
+
+
+
+
+//================================================== （1）第一层：spring-boot-starter-parent（org.springframework.boot）
+//================================================== （1）第一层：spring-boot-starter-parent（org.springframework.boot）
+
+			//===============================================================（2）第二层：rkzl-dependencis（com.rkzl.microservices）
+			//===============================================================（2）第二层：rkzl-dependencis（com.rkzl.microservices）
+
+					 //定义依赖
+					（1）spring-boot-dependencies//org.springframework.boot
+					（2）spring-cloud-dependencies//org.springframework.cloud
+					（3）spring-cloud-alibaba-dependencies//com.alibaba.cloud
+
+					（4）jjwt-api//io.jsonwebtoken
+					（5）jjwt-impl//io.jsonwebtoken
+					（6）jjwt-jackson//io.jsonwebtoken
+					（7）mapstruct//org.mapstruct
+					（8）common-jpa//com.rkzl.common
+					（9）springdoc-openapi-starter-webmvc-ui//org.springdoc
+
+					//===============================================================（3）第三层：rkzl-parent
+					//===============================================================（3）第三层：rkzl-parent
+					//定义依赖
+					（1）rkzl-common（com.rkzl.microservices）
+
+
+
+								//===============================================================（4）第四层：rkzl-user-auth
+								//===============================================================（4）第四层：rkzl-user-auth
+
+								//子模块
+								rkzl-user-auth-api
+								rkzl-user-auth-server
+								//定义依赖 
+								rkzl-user-auth（com.rkzl.microservices<）
+
+
+

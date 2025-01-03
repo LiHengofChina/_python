@@ -1,0 +1,21 @@
+
+
+（1）InteLLiJ IDEA 导入项目
+
+（2）jdk 17
+
+（3） maven 3.9
+	（1）配置mavne
+	（2）右键点击 pom.xml 文件，选择 Add as Maven Project。
+
+	（3）安装依赖：
+			（1）rkzl-dependencis
+				（1）编译
+				（2）安装它
+
+
+
+
+
+
+
