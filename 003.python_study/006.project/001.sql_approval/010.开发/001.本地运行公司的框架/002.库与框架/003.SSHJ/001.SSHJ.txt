@@ -1,0 +1,44 @@
+SSHJ 是一个 Java库，
+用于通过 SSH协议 执行远程命令、文件传输（SFTP）、端口转发等操作。
+它是一个轻量级、高效且易用的 SSH 客户端库，
+适合用来实现 Java 应用程序中的远程管理功能。
+
+
+//=========================================== 主要功能：
+//=========================================== 主要功能：
+
+通过 SSH 连接到远程服务器，并执行命令。
+SSHClient ssh = new SSHClient();
+ssh.addHostKeyVerifier(new PromiscuousVerifier());
+ssh.connect("remote_host");
+ssh.authPassword("username", "password");
+
+Session session = ssh.startSession();
+Command cmd = session.exec("ls -al");
+System.out.println(IOUtils.readFully(cmd.getInputStream()).toString());
+cmd.join();
+session.close();
+ssh.disconnect();
+
+//=========================================== 文件传输（SFTP）：
+//=========================================== 文件传输（SFTP）：
+支持通过 SFTP 协议上传和下载文件。
+SFTPClient sftp = ssh.newSFTPClient();
+sftp.put(new FileSystemFile("/local/path/file.txt"), "/remote/path/file.txt");
+sftp.get("/remote/path/file.txt", new FileSystemFile("/local/path/file.txt"));
+sftp.close();
+
+
+//=========================================== 端口转发：
+//=========================================== 端口转发：
+支持本地转发和远程转发，类似于 SSH 的端口转发功能。
+
+ssh.newLocalPortForwarder(new LocalPortForwarder.Parameters("127.0.0.1", 1234, "remote_host", 5678)).listen();
+
+
+//=========================================== 身份验证：
+//=========================================== 身份验证：
+支持多种身份验证方式：
+用户名/密码。
+公钥认证（private key）。
+GSSAPI（Kerberos）。

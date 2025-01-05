@@ -1,0 +1,14 @@
+	/**
+	（1）rkzl-common 应该指定rkzl-dependencis 为父项目，而不是依赖rkzl-dependencis
+		 因为 rkzl-common 的好几处子模块使用了 rkzl-dependencis 定义的依赖
+		 没指定版本号
+	（2）rkzl-union-monitor-platform\application\pom.xml 和 rkzl-knowledge-repository\application\pom.xml
+		 rkzl-user-auth-api修改为 common-user-auth-api
+	（3）TopologyApplicationImpl 类中 有两行代码指向路径不正确
+		//import com.rkzl.user.auth.api.web.constants.UserRpcConstants;
+		//import com.rkzl.user.auth.api.web.user.rpc.UserRpcServer;
+	（4）在 UserServiceImpl类中下面三行代码路径也不正确
+		import com.rkzl.user.auth.api.web.user.rpc.UserRpcServer;
+		import com.rkzl.user.auth.api.web.user.rpc.request.UserCreateRequest;
+		import com.rkzl.user.auth.api.web.user.rpc.request.UserUpdateRequest;
+	*/

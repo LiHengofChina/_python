@@ -1,0 +1,52 @@
+hutool-core 是 Hutool 工具包的核心模块，
+是一个轻量级的 Java 工具集，提供了丰富的通用工具类，
+方便开发者快速开发、提升效率。
+
+//=============================================== Hutool 是什么？
+//=============================================== Hutool 是什么？
+
+
+Hutool 是一个 Java 工具库集合，涵盖了很多常用的功能模块，
+		比如
+		文件操作、
+		日期处理、
+		加密解密、
+		HTTP请求、
+		反射、
+		正则处理等。
+hutool-core 是其中的 核心模块，
+提供了绝大部分的基础功能，
+不依赖第三方库，使用起来非常轻便。
+
+
+//================================================== hutool-core 的常用功能
+//================================================== hutool-core 的常用功能
+
+
+（1）日期工具（DateUtil）：
+	处理日期格式化、时间计算、获取当前时间等。
+	Date now = DateUtil.date();
+	String dateStr = DateUtil.format(now, "yyyy-MM-dd HH:mm:ss");
+
+
+（2）字符串工具（StrUtil）：
+	字符串操作，如判空、替换、拆分、拼接等。
+	boolean isEmpty = StrUtil.isEmpty(" ");
+
+（3）集合工具（CollUtil）：
+	操作集合（如 List、Map）的方法，比如判空、交集、差集等。
+	List<Integer> list = CollUtil.newArrayList(1, 2, 3);
+
+（4）文件工具（FileUtil）：
+	文件的读写、拷贝、删除等操作。
+	File file = FileUtil.file("test.txt");
+
+（5）
+	加密解密（SecureUtil）：
+	支持 MD5、SHA-256 等常用加密算法。
+
+	String md5 = SecureUtil.md5("password");
+
+（6）其它：
+	数学工具（MathUtil）、反射工具（ReflectUtil）、HTTP 工具（HttpUtil）等。
+

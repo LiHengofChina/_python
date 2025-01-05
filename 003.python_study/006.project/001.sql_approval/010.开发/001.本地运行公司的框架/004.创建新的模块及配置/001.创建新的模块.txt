@@ -1,0 +1,86 @@
+
+<groupId>com.rkzl.sql_audit</groupId>
+<artifactId>rkzl-sql-audit</artifactId>    
+<version>0.0.1-SNAPSHOT</version>
+<name>rkzl-sql-audit</name>
+
+
+//=======================（1）创建父项目
+//=======================（1）创建父项目
+mvn archetype:generate -Dversion=0.0.1-SNAPSHOT -DgroupId=com.rkzl.sql_audit -DartifactId=rkzl-sql-audit -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+
+/**
+	说明：
+
+	（1）mvn archetype:generate 是 Maven 提供的一个命令，
+		 用于通过指定的 Archetype 模板 生成一个新的 Maven 项目结构。
+
+	（2） 这两个参数不会直接出现在生成的 pom.xml 中，它们仅影响项目的创建过程：
+
+		-DarchetypeArtifactId=maven-archetype-quickstart 
+			//指定创建项目时使用的 Maven 模板（原型）。
+			//maven-archetype-quickstart 是一个官方提供的基础模板，
+			//用于快速创建简单的 Java 项目结构
+			//（包含 src/main/java 和 src/test/java）。
+
+			//不会体现在 pom.xml 中，
+			//它只是项目创建时用的模板，
+			//生成的项目结构和内容基于该模板，创建后与模板无关。
+
+		-DinteractiveMode=false
+			//关闭交互模式，直接使用命令中指定的参数创建项目，而不会提示用户手动输入。
+
+*/
+
+//=======================（2）创建父项目
+//=======================（2）创建父项目
+
+修改其 pom.xml 的 <packaging> 为 pom，并配置 modules
+
+<packaging>pom</packaging>
+
+
+//=======================（3）创建6个子模块
+//=======================（3）创建6个子模块
+
+进入 rkzl-sql-audit 目录，使用以下命令依次创建子模块：
+
+mvn archetype:generate -Dversion=0.0.1-SNAPSHOT -DgroupId=com.rkzl.sql_audit -DartifactId=application -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+mvn archetype:generate -Dversion=0.0.1-SNAPSHOT -DgroupId=com.rkzl.sql_audit -DartifactId=domain -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+mvn archetype:generate -Dversion=0.0.1-SNAPSHOT -DgroupId=com.rkzl.sql_audit -DartifactId=infrastructure -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+mvn archetype:generate -Dversion=0.0.1-SNAPSHOT -DgroupId=com.rkzl.sql_audit -DartifactId=common -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+mvn archetype:generate -Dversion=0.0.1-SNAPSHOT -DgroupId=com.rkzl.sql_audit -DartifactId=web -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+mvn archetype:generate -Dversion=0.0.1-SNAPSHOT -DgroupId=com.rkzl.sql_audit -DartifactId=start -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+
+
+//=======================（4）配置父模块 pom.xml
+//=======================（4）配置父模块 pom.xml
+
+<modules>
+    <module>application</module>
+    <module>domain</module>
+    <module>infrastructure</module>
+    <module>common</module>
+    <module>web</module>
+    <module>start</module>
+</modules>
+
+//=======================（5）配置子模块 pom.xml
+//=======================（5）配置子模块 pom.xml
+
+复制原项目的配置
+
+将原项目中的 依赖、配置 分别复制到对应的子模块中。
+通用配置（如依赖版本、插件）放在父项目的 <dependencyManagement>。
+
+
+//=======================（6）导入到 IDE
+//=======================（6）导入到 IDE
+
+使用 IntelliJ IDEA 或其他工具，打开父项目根目录，自动识别子模块。
+
+//=======================（7）导入到 IDE
+//=======================（7）导入到 IDE
+
+验证构建
+

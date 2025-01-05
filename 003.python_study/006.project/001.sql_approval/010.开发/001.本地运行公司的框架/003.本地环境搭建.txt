@@ -1,7 +1,7 @@
 
 
 （1）InteLLiJ IDEA 导入项目
-
+ 
 （2）jdk 17
 
 （3） maven 3.9
@@ -9,13 +9,27 @@
 	（2）右键点击 pom.xml 文件，选择 Add as Maven Project。
 
 	（3）安装依赖：
-			（1）rkzl-dependencis
-				（1）编译
-				（2）安装它
 
+（4）
+	//=================== 第一层：
+	rkzl-dependencis
 
+		//=================== 第二层：
 
+		（1）rkzl-common //这个是我加的
+		（2）rkzl-parent	
 
+				//=================== 第三层：
+				（1）rkzl-user-auth
+				（2）rkzl-gateway
+				（3）rkzl-knowledge-repository
+				（4）rkzl-union-monitor-platform
 
+（5）大模块说明：rkzl-union-monitor-platform
 
+	web -> application -> domain -> infrastructure
+	common 是通过
+	start  是启动层
 
+ 
+ 
