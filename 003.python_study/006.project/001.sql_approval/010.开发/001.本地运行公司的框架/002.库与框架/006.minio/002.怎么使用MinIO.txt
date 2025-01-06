@@ -1,0 +1,77 @@
+
+//================================================================= 安装 MinIO 并启动服务
+//================================================================= 安装 MinIO 并启动服务
+
+（1）下载 MinIO
+	从官网 MinIO下载页面 下载对应版本。
+
+（2）启动 MinIO 服务
+
+	解压后进入目录，运行以下命令：
+	（1）Windows:
+		minio.exe server D:\minio\data
+	（2）Linux/Mac:
+		./minio server /data
+
+
+（3）验证服务是否启动 打开浏览器访问：
+		http://localhost:9000
+		输入默认的 Access Key 和 Secret Key（如 minioadmin:minioadmin），进入管理界面。
+
+
+//================================================================= 添加 Maven 依赖
+//================================================================= 添加 Maven 依赖
+
+在你的项目的 pom.xml 文件中添加 MinIO 的 Java 客户端依赖：
+<dependency>
+    <groupId>io.minio</groupId>
+    <artifactId>minio</artifactId>
+    <version>8.5.2</version> <!-- 替换为最新版本 -->
+</dependency>
+
+
+
+
+//================================================================= 连接 MinIO 服务
+//================================================================= 连接 MinIO 服务
+在代码中使用 MinIO 的 Java 客户端连接服务：
+
+
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
+import io.minio.GetObjectArgs;
+import java.io.InputStream;
+
+public class MinIOExample {
+    public static void main(String[] args) throws Exception {
+        // 创建 MinIO 客户端
+        MinioClient minioClient = MinioClient.builder()
+                .endpoint("http://localhost:9000")  // MinIO 服务地址
+                .credentials("minioadmin", "minioadmin")  // Access Key 和 Secret Key
+                .build();
+
+        // 创建存储桶（如果不存在）
+        String bucketName = "my-bucket";
+        if (!minioClient.bucketExists(b -> b.bucket(bucketName))) {
+            minioClient.makeBucket(b -> b.bucket(bucketName));
+        }
+
+        // 上传文件
+        minioClient.putObject(PutObjectArgs.builder()
+                .bucket(bucketName)
+                .object("example.txt")  // 文件名
+                .stream(new java.io.ByteArrayInputStream("Hello, MinIO!".getBytes()), -1, 10485760)
+                .build());
+
+        // 下载文件
+        InputStream stream = minioClient.getObject(GetObjectArgs.builder()
+                .bucket(bucketName)
+                .object("example.txt")
+                .build());
+        System.out.println(new String(stream.readAllBytes()));  // 打印文件内容
+    }
+}
+
+
+
+
