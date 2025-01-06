@@ -1,0 +1,103 @@
+
+//===================================== start 模块的作用
+//===================================== start 模块的作用
+
+start 模块是项目的启动入口，通常负责以下任务：
+		（1）配置项目的全局信息。
+		（2）初始化 Spring Boot 应用（main 方法）。
+		（3）加载必要的配置文件（如 application.yml 或 application.properties）。
+		（4）启动其他模块的依赖。
+
+//===================================== 入口注解
+//===================================== 入口注解
+
+		
+@EnableAsync
+@EnableFeignClients(basePackages = "com.rkzl") 
+			//启用 Feign 客户端，用于远程调用，扫描 com.rkzl 包下的 Feign 接口。
+
+@SpringBootApplication(scanBasePackages = "com.rkzl" )
+
+//===================================== application.yaml 配置说明
+//===================================== application.yaml 配置说明
+
+spring:
+  flyway:
+    placeholder-replacement: false
+	//禁用 Flyway 的占位符替换功能。
+	//Flyway 是一个数据库版本管理工具，
+	//可以通过占位符（placeholders）来动态替换 SQL 脚本中的内容。
+	//设置为 false 时，Flyway 不会对 SQL 文件中的占位符（如 ${placeholder}）进行替换，意味着 SQL 文件中的内容会原样执行。
+	
+  application:
+    name: rkzl-sql-audit
+	 ////设置当前 Spring Boot 应用的名称为 rkzl-rump。
+  profiles:
+    active: local
+	//Spring Profiles 用于支持多环境配置（如 dev、test、prod 等）。
+	//根据 active 指定的值，Spring Boot 会加载对应的配置文件。
+	//如果有 application-local.yaml，它将被优先加载。
+	//如果有 application-local.properties，它也会被加载。
+
+
+  jpa:
+    show-sql: true
+	//是否在控制台中显示 JPA 执行的 SQL 语句。
+	//设置为 true 时，Hibernate 会在控制台打印 SQL 语句及其参数。
+	// select * from user where id = ?
+	
+    open-in-view: false
+	//Open-Session-In-View 是 Hibernate 的一个功能，允许在视图渲染阶段仍保持数据库会话（Session）打开。
+	//如果设置为 false，则数据库会话只会在事务的生命周期内存在，视图层无法访问懒加载的关联数据。
+
+	//禁用后，可以提高性能和安全性，避免不必要的数据库连接占用和懒加载问题。
+	//但需要确保在业务逻辑层已经加载所需的所有数据。
+
+    properties:
+      hibernate:
+        session_factory:
+          interceptor: com.rkzl.common.jpa.interceptor.JpaFilterNullInterceptor
+		  //为 Hibernate 的 SessionFactory 配置一个全局拦截器。
+		  //这里的拦截器是 com.rkzl.common.jpa.interceptor.JpaFilterNullInterceptor，
+		  //一个自定义的 Hibernate 拦截器。
+
+		  //Hibernate 提供了拦截器（Interceptor）接口，
+		  //允许在实体的保存、更新、删除等操作之前或之后执行额外逻辑。
+
+		  //例如，这个拦截器可能用于过滤 null 值，避免将空值插入到数据库中。
+		  //或者，用于审计（如记录实体的创建者、修改者和时间等）。
+
+
+
+
+//===================================== application-local.yaml 配置说明
+//===================================== application-local.yaml 配置说明
+
+
+spring:
+  cloud:
+    nacos:
+	  //================ Nacos 登录信息:
+      username: nacos
+      password: Rklink_1024
+
+	  //================ Nacos 服务地址:
+      server-addr: 192.168.100.102:30848
+
+	  //================ Nacos 服务发现:
+      discovery:
+        namespace: 1e801670-a638-415b-beda-c08b28ec4b81	//Nacos 的命名空间 ID，用于隔离配置和服务。
+
+	  //================ Nacos 配置管理:
+      config: 
+        namespace: 1e801670-a638-415b-beda-c08b28ec4b81	//指定从哪个命名空间加载配置。
+
+  //========================从 Nacos 加载配置文件:
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.yaml
+      - optional:nacos:rkzl-common.yaml
+      - optional:nacos:rkzl-seata.yaml
+
+
+

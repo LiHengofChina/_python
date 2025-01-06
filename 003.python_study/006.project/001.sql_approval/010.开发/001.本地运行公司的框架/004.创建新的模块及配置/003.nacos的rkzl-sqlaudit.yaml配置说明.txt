@@ -1,0 +1,65 @@
+
+//=========================================================== mq 配置
+//=========================================================== mq 配置
+rocketmq:
+  name-server: 192.168.100.102:30876
+  consumer:
+    group: sqlaudit
+  producer:
+    group: sqlaudit
+    send-message-timeout: 30000
+    retry-times-when-send-failed: 3
+    retry-times-when-send-async-failed: 3
+spring:
+  //=========================================================== elasticsearch 地址
+  //=========================================================== elasticsearch 地址
+  elasticsearch:
+    uris: http://192.168.100.102:30222
+
+  //=========================================================== 数据库配置
+  //=========================================================== 数据库配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.100.102:30999/sqlaudit_microservice
+    username: root
+    password: 123456
+//=========================================================== minio
+//=========================================================== minio
+minio:
+  endpoint: http://192.168.100.102:31111
+  bucket: "sqlaudit"
+  accessKey: "aoNU5o0dS0E8LhGosK9y"
+  secretKey: "RcH0IYpvmxvMvIVq1c5rijkgn1XWS0WiH0lG8lPJ"
+//=========================================================== 本地文件存储目录
+//=========================================================== 本地文件存储目录
+
+storage:
+  local:
+    directory: "/file-storage"		//本地存储路径
+    preview:
+      path: http://192.168.100.102:32355/api/v1/sqlaudit/file/image/preview/	//预览文件的 URL 地址
+
+
+//=========================================================== 一个参数：OA系统的访问地址
+//=========================================================== 一个参数：OA系统的访问地址
+
+external:
+  system:
+    url: http://192.168.100.102:31999
+
+
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    groups-order: DESC
+    disable-swagger-default-url: true
+  packages-to-scan: com.rkzl.sqlaudit.web
+ 
+system:
+  rpc:
+    token: eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJSS1pMIiwic3ViIjoiMSIsImlhdCI6MTczNTI4NzA0NSwiYXVkIjpbIldlYiJdfQ.t8Fyx-vU6_lOGH7k5_nCbOm-J-NdUeOoRgAkVvbE-rk
+	
+	
+
+	
