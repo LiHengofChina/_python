@@ -1,5 +1,0 @@
-hutool-crypto 是 Hutool 工具库中的一个模块，专注于提供各种加密和解密功能。
-它与 hutool-core 同属于 Hutool 工具集，但 hutool-crypto 是一个独立的模块，
-可以单独引入使用，也可以作为 hutool-all 的一部分。
-
-
