@@ -186,3 +186,18 @@
 	 supervisord 启动的目标程序必须运行在前台，而 systemd 则支持前台和后台模式，
 
 
+
+（32）处理spring的异常时
+	@Valid   +   @NotBlank  +  handleValidationException(MethodArgumentNotValidException e) 
+	必须引入
+	 <dependency>
+	  <groupId>org.springframework.boot</groupId>
+	  <artifactId>spring-boot-starter-validation</artifactId>
+	</dependency>
+	这个才能生效呢
+
+
+（33）自定义校验时，
+		@Validated
+		要放在类上面才生效
+
