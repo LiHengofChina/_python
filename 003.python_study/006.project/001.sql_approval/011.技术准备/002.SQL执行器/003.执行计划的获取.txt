@@ -1,0 +1,11 @@
+
+执行计划获取与解析：
+	 各数据库获取执行计划的方法不同，例如：
+	 （1）SQL Server：使用 SET SHOWPLAN_XML ON 或 EXPLAIN 语句。
+	 （2）Oracle：使用 EXPLAIN PLAN 或 DBMS_XPLAN。
+	 （3）MySQL：使用 EXPLAIN 语句。
+	 （4）达梦数据库：参考达梦官方文档，使用相应的执行计划获取方法。
+将执行计划解析集成到你的SQL解析器中，
+以支持基于  "执行计划"的审核规则。
+
+
