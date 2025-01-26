@@ -1,0 +1,12 @@
+
+//=============================================== 添加依赖
+//=============================================== 添加依赖
+
+<dependency>
+  <groupId>com.github.jsqlparser</groupId>
+  <artifactId>jsqlparser</artifactId>
+  <version>5.1</version>
+</dependency>
+
+
+

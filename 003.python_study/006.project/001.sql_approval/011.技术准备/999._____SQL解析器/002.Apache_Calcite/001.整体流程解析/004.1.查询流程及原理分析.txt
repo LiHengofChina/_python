@@ -1,0 +1,252 @@
+
+详细分析从建立连接到创建statement,以后最后的执行查询的整个流程。
+
+//==============================================================================（1）建立连接
+//==============================================================================（1）建立连接
+
+（1）通过上面的DEMO我们可以看到，第一步骤，仍然是建立连接：
+
+Connection conn = DriverManager.getConnection("jdbc:calcite:",properties)
+
+
+可以发现，建立连接时，使用的是calcite "自己的驱动jdbc:calcite", 详细的建立连接的过程如下：
+
+
+建立连接涉及到 "Calcite的另一个子项目Avatica" ，
+后面再详细介绍，最终获得的 Connection 为 CalciteConnection 。
+
+//==============================================================================（2）创建Statement
+//==============================================================================（2）创建Statement
+
+
+与常规的 "数据库访问" 一样，建立连接后，创建Statement：
+
+Statement stmt = conn.createStatement();
+最终创建的Statement为CalciteJdbc41Statement，创建Statement的详细流程如下：
+
+
+//==============================================================================（3）Statement Execute
+//==============================================================================（3）Statement Execute
+
+创建完Statement后，执行statement，执行的过程，正是Calcite的核心逻辑所在，
+
+其整体流程图如下图所示：
+
+
+其主要流程为：
+
+（1）SQL通过SqlParser转换为SqlNode，同时也需要进行Sql校验；
+（2）通过SqlToRelConverter将SqlNode转化为RelNode;
+（3）对SqlNode进行优化，包括转化为物理执行计划；
+（4）执行之执行计划，获得结果Results;
+
+//================================== SQL解析
+//================================== SQL解析
+
+Calcite采用的是 "标准的SQL语言" ，其SQL语法为：Calcite SQL Language。
+
+用户提交的SQL，Calcite首先会对其进行解析，
+Calcite使用的JavaCC对SQL解析，
+解析的结果是一个 "抽象语法树"，
+其中 "每个节点都是SqlNode" 的一个子类。
+
+//===========
+//===========
+具体代码上，将 "公共配置" 的一部分传递给 "解析器配置"，
+然后实例化SqlParser，最后执行解析。如果您有 "自定义SQL语法"，
+则可以将 "自定义解析器工厂类" 传递给配置。
+public SqlNode parse(String sql) throws Exception {
+    SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
+    parserConfig.setCaseSensitive(config.caseSensitive());
+    parserConfig.setUnquotedCasing(config.unquotedCasing());
+    parserConfig.setQuotedCasing(config.quotedCasing());
+    parserConfig.setConformance(config.conformance());
+
+    SqlParser parser = SqlParser.create(sql, parserConfig.build());
+
+    return parser.parseStmt();
+}
+
+//================================== SQL校验
+//================================== SQL校验
+
+SQL 解析后会形成一棵 SqlNode 的抽象语法树，下一步我们需要对这棵树进行元数据验证，以校验SQL的合法性。
+
+
+
+验证由 SqlValidatorImpl 类执行，这个类需要几个支持对象。
+
+
+（1）首先，我们创建一个 RelDataTypeFactory 实例，
+	 它提供 "SQL类型定义" 。
+	 我们使用内置类型工厂，但如果需要，也可以提供自定义实现。
+	 RelDataTypeFactory typeFactory = new JavaTypeFactoryImpl();
+
+（2）然后，我们创建一个 Prepare.CatalogReader 对象，提供对数据库对象的访问。
+
+	SimpleSchema schema = ... // Create our custom schema
+
+	CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
+	rootSchema.add(schema.getSchemaName(), schema);
+
+	Prepare.CatalogReader catalogReader = new CalciteCatalogReader(
+		rootSchema,
+		Collections.singletonList(schema.getSchemaName()),
+		typeFactory,
+		config
+	);
+
+（3）然后，我们定义一个SqlOperatorTable，它是SQL函数和操作符库。
+	 我们使用内置库。您还可以为您的实现提供自定义函数。
+	SqlOperatorTable operatorTable = ChainedSqlOperatorTable.of(
+		SqlStdOperatorTable.instance()
+	);
+	创建了所有必需的支持对象后，实例化内置的 SqlValidatorImpl。
+
+（3.1）通常，如果需要自定义验证行为(比如自定义错误消息)，可以扩展它。
+	SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
+		.withLenientOperatorLookup(config.lenientOperatorLookup())
+		.withSqlConformance(config.conformance())
+		.withDefaultNullCollation(config.defaultNullCollation())
+		.withIdentifierExpansion(true);
+
+	SqlValidator validator = SqlValidatorUtil.newValidator(
+		operatorTable, 
+		catalogReader, 
+		typeFactory,
+		validatorConfig
+	);
+
+（4）最后，执行验证。保留验证器实例，因为我们将需要它进行AST到关系树的转换。
+	SqlNode sqlNode = parse(sqlString);
+	SqlNode validatedSqlNode = validator.validate(node);
+
+
+总结下，在 Calcite 元数据验证阶段，其主要验证三个点：
+1. 对 SQL 语句中的 Table Schema 进行校验，如 Table 存不存在，Column 存不存在；
+		/**
+			 Apache Calcite 会验证 SELECT 语句中的字段部分和 WHERE 条件中的列是否存在于定义的 Schema 中
+			 这时 """并不会连接数据验证实际的字段"""
+		*/
+2. 对 SQL 语句中函数进行校验，如函数是否存在；
+3. 针对数据类型的校验，如函数中的参数数据类型和函数定义是否匹配；
+
+//================================== To RelNode
+//================================== To RelNode
+
+进行元数据校验之后，我们得到的还是一棵SqlNode 抽象语法树，
+接下来我们需要将其转换为RelNode 关系代数 Tree，
+后续才能基于关系代数优化理论对其进行优化。
+
+Calcite 使用SqlToRelConverter将SqlNode 转换为RelNode ，
+其入口方法是convertQuery()，
+之后会调用convertQueryRecursive方法，
+底层最终调用 convertXXX 方法，递归遍历抽象语法树将SqlNode 转换为RelNode 。
+
+有趣的是，要创建一个转换器，我们必须首先创建一个基于成本的规划器VolcanoPlanner的实例。
+这是Apache Calcite的一个抽象问题。
+
+为了创建VolcanoPlanner，我们再次传递公共配置和计划器将用于计算成本的RelOptCostFactory。
+在生产级优化器中，您可能会定义一个自定义成本工厂，
+因为内置工厂只接受关系的基数计数，这通常不足以进行适当的成本估计。
+
+您还应该指定VolcanoPlanner应该跟踪哪些物理操作符属性。
+每个属性都有一个描述符，它扩展了Apache Calcite的RelTraitDef类。
+在我们的示例中，我们只注册了ConventionTraitDef，它定义了关系节点的执行后端。
+
+VolcanoPlanner planner = new VolcanoPlanner(
+    RelOptCostImpl.FACTORY, 
+    Contexts.of(config)
+);
+
+planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
+
+然后，我们创建一个RelOptCluster，一个在转换和优化期间使用的公共上下文对象。
+
+RelOptCluster cluster = RelOptCluster.create(
+    planner, 
+    new RexBuilder(typeFactory)
+);
+
+然后，我们就可以创建SqlToRelConverter了，完整代码如下：
+
+private static RelRoot toRelNode(SqlNode sqlNode) {
+    // 创建VolcanoPlanner, VolcanoPlanner在后面的优化中还需要用到
+    VolcanoPlanner planner = new VolcanoPlanner(RelOptCostImpl.FACTORY, Contexts.of(config));
+    planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
+    // 创建SqlToRelConverter
+    RelOptCluster cluster = RelOptCluster.create(planner, new RexBuilder(typeFactory));
+    SqlToRelConverter.Config converterConfig =
+            SqlToRelConverter.config().withTrimUnusedFields(true).withExpand(false);
+    SqlToRelConverter converter = new SqlToRelConverter(null, validator, catalogReader, cluster,
+            StandardConvertletTable.INSTANCE, converterConfig);
+    // 将SqlNode树转化为RelNode树
+    RelRoot relRoot = converter.convertQuery(sqlNode, false, true);
+    return relRoot;
+}
+
+注意，在转换过程中，Apache Calcite生成一个逻辑关系操作符树，这些操作符是抽象的，不针对任何特定的执行后端。
+因此，逻辑运算符总是将Convention trait设置为Convention.NONE。
+期望在优化期间将它们转换为物理操作符。物理操作符特定的Convention。
+
+//================================== Rel Optimize
+//================================== Rel Optimize
+
+优化是将 "一棵关系树" 转换为 "另一棵关系树" 的过程。
+您可以分别使用 "启发式" 或 "基于成本的规划器(HepPlanner和VolcanoPlanner)" 进行 "基于规则的优化"。
+您也可以在没有规则的情况下手动重写树。
+Apache Calcite附带了几个强大的重写工具，比如RelDecorrelator和RelFieldTrimmer。
+
+//============= 咱们可以看下，上面的案例优化前和优化后的执行计划的情况。优化前，执行执行计划为：
+//============= 咱们可以看下，上面的案例优化前和优化后的执行计划的情况。优化前，执行执行计划为：
+
+LogicalAggregate(group=[{0}], GRADE=[SUM($1)]): rowcount = 75.0, cumulative cost = {3285.3125035762787 rows, 3202.0 cpu, 0.0 io}, id = 16
+  LogicalProject(NAME=[$1], grade=[$5]): rowcount = 750.0, cumulative cost = {3200.0 rows, 3202.0 cpu, 0.0 io}, id = 15
+    LogicalFilter(condition=[>($0, 0)]): rowcount = 750.0, cumulative cost = {2450.0 rows, 1702.0 cpu, 0.0 io}, id = 14
+      LogicalJoin(condition=[=($0, $4)], joinType=[inner]): rowcount = 1500.0, cumulative cost = {1700.0 rows, 202.0 cpu, 0.0 io}, id = 13
+        LogicalTableScan(table=[[student]]): rowcount = 100.0, cumulative cost = {100.0 rows, 101.0 cpu, 0.0 io}, id = 11
+        LogicalTableScan(table=[[score]]): rowcount = 100.0, cumulative cost = {100.0 rows, 101.0 cpu, 0.0 io}, id = 12
+
+//============= 优化后，执行计划为：
+//============= 优化后，执行计划为：
+LogicalAggregate(group=[{0}], GRADE=[SUM($1)]): rowcount = 75.0, cumulative cost = {1835.3125035762787 rows, 1802.0 cpu, 0.0 io}, id = 25
+  LogicalProject(NAME=[$1], grade=[$5]): rowcount = 750.0, cumulative cost = {1750.0 rows, 1802.0 cpu, 0.0 io}, id = 23
+    LogicalJoin(condition=[=($0, $4)], joinType=[inner]): rowcount = 750.0, cumulative cost = {1000.0 rows, 302.0 cpu, 0.0 io}, id = 30
+      LogicalFilter(condition=[>($0, 0)]): rowcount = 50.0, cumulative cost = {150.0 rows, 201.0 cpu, 0.0 io}, id = 27
+        LogicalTableScan(table=[[student]]): rowcount = 100.0, cumulative cost = {100.0 rows, 101.0 cpu, 0.0 io}, id = 11
+      LogicalTableScan(table=[[score]]): rowcount = 100.0, cumulative cost = {100.0 rows, 101.0 cpu, 0.0 io}, id = 12
+
+
+
+//================================== Physical Plan
+//================================== Physical Plan
+
+注意上面优化后的，还只是逻辑执行计划，
+还需要转换为 "物理执行计划"，
+Calcite也是通过Rule最终转化为物理执行计划的，
+案例中的SQL最终转化为的物理执行计划为：
+
+
+EnumerableAggregate(group=[{1}], GRADE=[$SUM0($3)]): rowcount = 75.0, cumulative cost = {1504.375 rows, 12367.127039663896 cpu, 0.0 io}, id = 1034
+  EnumerableMergeJoin(condition=[=($0, $2)], joinType=[inner]): rowcount = 750.0, cumulative cost = {1420.0 rows, 12367.127039663896 cpu, 0.0 io}, id = 1032
+    JdbcToEnumerableConverter: rowcount = 50.0, cumulative cost = {240.0 rows, 3806.8207048853315 cpu, 0.0 io}, id = 1023
+      JdbcSort(sort0=[$0], dir0=[ASC]): rowcount = 50.0, cumulative cost = {235.0 rows, 3801.8207048853315 cpu, 0.0 io}, id = 1021
+        JdbcProject(id=[$0], name=[$1]): rowcount = 50.0, cumulative cost = {190.0 rows, 281.0 cpu, 0.0 io}, id = 1019
+          JdbcFilter(condition=[>($0, 0)]): rowcount = 50.0, cumulative cost = {150.0 rows, 201.0 cpu, 0.0 io}, id = 1017
+            JdbcTableScan(table=[[db1, student]]): rowcount = 100.0, cumulative cost = {100.0 rows, 101.0 cpu, 0.0 io}, id = 1
+    JdbcToEnumerableConverter: rowcount = 100.0, cumulative cost = {280.0 rows, 8560.306334778565 cpu, 0.0 io}, id = 1030
+      JdbcSort(sort0=[$0], dir0=[ASC]): rowcount = 100.0, cumulative cost = {270.0 rows, 8550.306334778565 cpu, 0.0 io}, id = 1028
+        JdbcProject(student_id=[$1], grade=[$2]): rowcount = 100.0, cumulative cost = {180.0 rows, 261.0 cpu, 0.0 io}, id = 1026
+          JdbcTableScan(table=[[db2, score]]): rowcount = 100.0, cumulative cost = {100.0 rows, 101.0 cpu, 0.0 io}, id = 3
+
+
+//================================== To Linq Expression
+//================================== To Linq Expression
+
+物理执行，最终怎么执行了？确切的说，怎么访问数据了，
+Calcite用的是Linq4j，也就是Linq的java版，将物理执行计划转化Linq表达式后，
+然后执行。上述案例最终转换为Linq4j部分代码如下所示：
+
+执行上述Linq4j代码，即可从相应数据库获得数据。关于这部分的详细内容，后续再详细介绍。
+
+

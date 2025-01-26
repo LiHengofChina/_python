@@ -1,0 +1,14 @@
+
+"sql": "select name from `user` t",
+
+
+"sql": "DELETE FROM table_name",
+
+"sql": "UPDATE table_name SET column1 = value1 ",
+
+{   
+    "sql": "CREATE TABLE my_table (id INT PRIMARY KEY, name VARCHAR(100) )",
+    "sourceId": 10
+}
+ 
+ 

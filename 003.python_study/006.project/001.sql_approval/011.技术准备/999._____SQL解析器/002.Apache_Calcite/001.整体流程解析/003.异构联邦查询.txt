@@ -1,0 +1,109 @@
+
+为了探究 "Calcite的查询流程"，
+我们以 "通过Calcite" 来完成 "异构数据源" 的 "Join查询" 为案例来进行说明一下。
+
+
+//============================================================================== （1）数据准备:学生信息，以及成绩。
+//============================================================================== （1）数据准备:学生信息，以及成绩。
+
+（1）"学生信息" 放到Mysql中，
+	DROP TABLE IF EXISTS `student`;
+	CREATE TABLE `student` (
+	  `id` int unsigned NOT NULL AUTO_INCREMENT,
+	  `name` varchar(100) NOT NULL,
+	  `sex` varchar(5) NOT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb3;
+
+	INSERT INTO `test_liheng`.`student` (`id`, `name`, `sex`) VALUES (1, '小明', '男');
+	INSERT INTO `test_liheng`.`student` (`id`, `name`, `sex`) VALUES (2, '小红', '女');
+
+（2）"成绩信息" 放到PostgreSQL中。
+CREATE TABLE IF NOT EXISTS score
+(
+    id integer NOT NULL,
+    student_id integer NOT NULL,
+    grade integer NOT NULL,
+    PRIMARY KEY (id)
+)
+insert into score(id,student_id,grade)values(1,1,80);
+insert into score(id,student_id,grade)values(2,2,90);
+
+
+
+//============================================================================== （2）测试代码
+//============================================================================== （2）测试代码
+测试异构数据源查询的SQL:
+
+select  student.name, 
+		sum(score.grade) as grade
+from db1.student as student 
+join db2.score as score on student.id = score.student_id
+where student.id > 0
+group by student.name
+
+
+//========================== Calcite Schema Model如下所示：
+//========================== Calcite Schema Model如下所示：
+{
+  "defaultSchema": "db1",
+  "schemas": [
+
+	//============= 数据库1的连接信息
+	//============= 数据库1的连接信息
+    {
+      "factory": "org.apache.calcite.adapter.jdbc.JdbcSchema$Factory",
+      "name": "db1",
+      "operand": {
+        "jdbcDriver": "com.mysql.cj.jdbc.Driver",
+        "jdbcUrl": "jdbc:mysql://localhost:3306/test_liheng",
+        "jdbcUser": "root",
+        "jdbcPassword": "xxxxxx"
+      },
+      "type": "custom"
+    },
+
+	//============= 数据库2的连接信息
+	//============= 数据库2的连接信息
+    {
+      "factory": "org.apache.calcite.adapter.jdbc.JdbcSchema$Factory",
+      "name": "db2",
+      "operand": {
+        "jdbcDriver": "org.postgresql.Driver",
+        "jdbcUrl": "jdbc:postgresql://localhost:5432/test",
+        "jdbcUser": "postgres",
+        "jdbcPassword": "xxxxxx"
+      },
+      "type": "custom"
+    }
+
+  ],
+  "version": "1.0"
+}
+
+//========================== 查询测试代码如下：
+//========================== 查询测试代码如下：
+
+public static void main(String[] args) throws Exception {
+    String path = MultiDatasourceQuery.class.getResource("/multi-datasource-model.json").toString();
+    Properties properties = new Properties();
+    properties.setProperty("caseSensitive", "false");
+    properties.put("model", path.replace("file:", ""));
+
+    String sql = "select student.name, sum(score.grade) as grade " +
+            "from db1.student as student join db2.score as score on student.id=score.student_id " +
+            "where student.id>0 " +
+            "group by student.name ";
+
+    try (Connection conn = DriverManager.getConnection("jdbc:calcite:",properties)) {
+        // 查询数据
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(sql);
+        ResultSetUtil.printRs(rs);
+    } catch (SQLException exception) {
+        exception.printStackTrace();
+    }
+}
+查询结果为：
+NAME:小明 , GRADE:80
+NAME:小红 , GRADE:90
