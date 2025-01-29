@@ -1,0 +1,64 @@
+
+在 Apache Calcite 中，
+DataContext 主要用于提供查询执行时的上下文，
+包括变量、类型工厂、根 Schema、查询提供者等信息。
+
+
+//=========================== 作用
+//=========================== 作用
+
+（1）存储查询 "运行时环境" 信息。
+（2）提供 SQL 变量的值，例如 ? 参数的解析。
+（3）访问 Schema 和 TypeFactory，支持类型推导和查询执行。
+
+//=========================== 示例：
+//=========================== 示例：
+假设你要执行 SQL 查询：
+	SELECT id, name FROM student WHERE age > ?
+
+其中 ? 代表一个参数，在 Calcite 执行时，
+它需要从 DataContext 中获取 age 的值。
+
+
+class MyDataContext implements DataContext {
+
+    private final Map<String, Object> values;
+    public MyDataContext(Map<String, Object> values) {
+        this.values = values;
+    }
+
+	//========================= 获取对象
+	//========================= 获取对象
+
+    @Override
+    public Object get(String name) {
+        return values.get(name); // 提供查询时的参数值
+
+	//========================= 获取其它对象
+	//========================= 获取其它对象
+
+    @Override
+    public SchemaPlus getRootSchema() {
+        return null; // 这里可以提供 Schema
+    }
+    @Override
+    public JavaTypeFactory getTypeFactory() {
+        return new JavaTypeFactoryImpl(); // 这里提供类型工厂
+    }
+    @Override
+    public QueryProvider getQueryProvider() {
+        return null;
+    }
+}
+
+//=========================== 使用的时候
+//=========================== 使用的时候
+
+
+Map<String, Object> paramMap = new HashMap<>();
+paramMap.put("age", 18);
+DataContext dataContext = new MyDataContext(paramMap);
+
+Object ageValue = dataContext.get("age");
+System.out.println(ageValue); // 输出 18
+

@@ -1,0 +1,23 @@
+
+ConnectionConfig 是 Apache Calcite 中的一个接口，
+用于存储和管理 数据库连接相关的配置信息，
+例如 SQL 兼容性、大小写敏感性、NULL 处理方式等。
+
+
+
+ConnectionConfig 主要用于数据库连接的配置，
+CalciteConnectionConfig 则扩展了 SQL 解析、执行的相关设置。
+
+
+
+//================================================== ConnectionConfig 主要功能
+//================================================== ConnectionConfig 主要功能
+
+ConnectionConfig 定义了一系列配置方法，例如：
+
+sqlConformance() → 获取 SQL 兼容模式（如 默认 Calcite 语法、MySQL 语法、ANSI 语法）。
+caseSensitive() → 是否区分大小写。
+defaultNullCollation() → NULL 值的排序方式（如 NULLS FIRST 或 NULLS LAST）。
+lenientOperatorLookup() → 是否允许宽松的 SQL 操作符查找。
+
+ 

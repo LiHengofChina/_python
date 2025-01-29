@@ -1,0 +1,26 @@
+// 1. 创建 Schema（可选）
+SchemaPlus rootSchema = Frameworks.createRootSchema(true);
+JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();
+
+// 2. 创建 CatalogReader（访问数据库元数据）
+CalciteCatalogReader catalogReader = new CalciteCatalogReader(
+        CalciteSchema.from(rootSchema), 
+        Collections.singletonList("MY_SCHEMA"), 
+        typeFactory, 
+        new CalciteConnectionConfigImpl(new Properties())
+);
+
+// 3. 创建 SQL 解析器
+SqlParser parser = SqlParser.create("SELECT name FROM student WHERE age > 'abc'");
+SqlNode sqlNode = parser.parseStmt();
+
+// 4. 创建 `SqlValidator`
+SqlValidator validator = SqlValidatorUtil.newValidator(
+        SqlStdOperatorTable.instance(),
+        catalogReader,
+        typeFactory,
+        SqlValidator.Config.DEFAULT
+);
+
+// 5. 执行 SQL 校验
+validator.validate(sqlNode);  // 这里会抛出异常，因为 age > 'abc' 类型不匹配

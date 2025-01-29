@@ -1,0 +1,30 @@
+
+//================================================= SqlRexConvertletTable
+//================================================= SqlRexConvertletTable
+
+SqlRexConvertletTable 是 Apache Calcite 中的一个接口，
+主要用于 将 SqlNode 转换为 RexNode，即：
+
+"SQL 抽象语法树 (SqlNode)" →  "计算表达式 (RexNode)"
+
+
+
+//================================================= 主要作用
+//================================================= 主要作用
+
+（1）将  "SQL 表达式 (SqlNode)" 转换为 Calcite "计算表达式 (RexNode)"
+	//例如，把 UPPER(name) 转换为 RexCall，便于执行计算。
+
+（2）支持 SQL 解析后，进行 "计算逻辑优化"
+	// 在 SQL 到 "执行计划的转换" (SqlToRelConverter) 过程中，
+	// Calcite 需要把 SqlNode 变成 RexNode，
+	// 这个过程由 SqlRexConvertletTable 负责。
+
+（2）支持自定义 SQL 函数转换
+	你可以扩展 SqlRexConvertletTable，添加自定义 SQL 函数的转换规则。
+
+//================================================= 标准实现
+//================================================= 标准实现
+
+
+SqlRexConvertletTable convertletTable = StandardConvertletTable.INSTANCE;

@@ -1,0 +1,30 @@
+
+//========================================= RelRoot
+//========================================= RelRoot
+
+RelRoot 是 Calcite 中 SQL 转换后的 "结果封装类"，
+它包含 "RelNode（关系表达式树）" 和 "SqlKind（SQL 类型）"。
+它用于 存储 SQL 转换后的 "逻辑查询计划"。
+
+//========================================= 主要字段：
+//========================================= 主要字段：
+RelNode rel 		 //→ 转换后的查询计划（核心 RelNode）
+SqlKind kind 		 //→ SQL 语句类型（如 SELECT, INSERT, UPDATE, DELETE）
+boolean isRefTrivial //→ 是否是简单引用
+
+//========================================= 主要方法：
+//========================================= 主要方法：
+（1）RelRoot.of(RelNode rel, SqlKind kind)  //→ 创建 RelRoot 实例
+（2）RelRoot withRel(RelNode rel) 			//→ 替换 RelNode
+（3）RelRoot withKind(SqlKind kind) 		//→ 替换 SqlKind
+
+//========================================= 示例：
+//========================================= 示例：
+
+RelNode relNode = ... // 通过 SqlToRelConverter 转换得到
+RelRoot relRoot = RelRoot.of(relNode, SqlKind.SELECT);
+
+👉 作用： 在 SQL 转换为 RelNode 后，RelRoot 作为封装类，
+统一管理转换后的逻辑查询计划，方便后续优化和执行。
+
+

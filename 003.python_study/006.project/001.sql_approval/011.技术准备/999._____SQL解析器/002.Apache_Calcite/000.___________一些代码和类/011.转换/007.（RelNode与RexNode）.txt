@@ -1,0 +1,26 @@
+
+//============================= RelNode 和 RexNode 的关系
+//============================= RelNode 和 RexNode 的关系
+
+（1）RelNode 是 关系表达式（逻辑查询计划），表示 SQL 查询的结构。
+（2）RexNode 是 表达式，表示 SQL 计算逻辑（如 WHERE 条件、计算字段等）。
+
+//=========== 具体关系：RelNode 由多个 RexNode 组成
+//=========== 具体关系：RelNode 由多个 RexNode 组成
+ 
+（1）RelNode 代表 SQL 的查询结构，比如 Filter, Project, Join 这些算子。
+（2）RexNode 主要用于 表达式计算，比如 WHERE 里面的条件，SELECT 里的计算字段。
+
+// RelNode: 表示查询结构（例如 SELECT 语句的逻辑计划）
+RelNode filterNode = new LogicalFilter(..., rexNodeCondition);
+
+// RexNode: 具体的表达式（例如 WHERE age > 18）
+RexNode rexNodeCondition = rexBuilder.makeCall(SqlStdOperatorTable.GREATER_THAN,
+    rexBuilder.makeInputRef(type, 0),
+    rexBuilder.makeLiteral(18)
+);
+
+
+//=========== 示例
+//=========== 示例
+

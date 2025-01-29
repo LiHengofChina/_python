@@ -1,0 +1,58 @@
+
+Schema 在 Calcite 中代表 数据库的 "逻辑结构"，
+
+类似于 SQL 数据库中的 Schema。
+
+它定义了 "数据库的表、视图、函数、数据类型" 等内容。
+
+
+//=============================== 主要作用
+//=============================== 主要作用
+
+（1）提供数据库的 元数据（表、视图、字段类型等）。
+（2）允许 Calcite 通过 Schema 动态查询 数据。
+（3）支持 JDBC 连接、JSON Schema、内存表等不同数据源。
+
+//=============================== Schema 的主要实现
+//=============================== Schema 的主要实现
+
+org.apache.calcite.schema.Schema（接口）
+（1）SchemaPlus 继承了它，提供更多功能。
+（2）它的实现类可以是 JDBC Schema、JSON Schema、内存 Schema 等。
+
+//========================== 示例：JdbcSchema（JDBC 方式）
+//========================== 示例：JdbcSchema（JDBC 方式）
+
+通过 JDBC 访问数据库，如 MySQL、PostgreSQL、Oracle 等。
+DataSource dataSource = JdbcSchema.dataSource(
+	"jdbc:mysql://localhost:3306/test", 
+	"com.mysql.cj.jdbc.Driver", 
+	"root", "password"
+);
+Schema jdbcSchema = JdbcSchema.create(rootSchema, "MY_SCHEMA", dataSource, null, null);
+
+3. AbstractSchema（基类）
+	提供基础 Schema 结构，用于扩展自定义 Schema。
+
+4. MapSchema（基于 Map 的 Schema）
+	适用于 内存表，可以手动创建表。
+
+5. SchemaPlus（增强 Schema）
+	继承 Schema，增加 层级管理、动态扩展 的能力。
+
+//========================== 示例
+//========================== 示例
+创建一个包含表的 Schema
+
+
+SchemaPlus rootSchema = Frameworks.createRootSchema(true);
+SchemaPlus mySchema = rootSchema.add("MY_SCHEMA", new CustomSchema());
+
+System.out.println(mySchema.getTableNames()); // 获取所有表名
+总结
+（1）Schema 代表数据库结构，存储表、视图、函数等信息。
+（2）JdbcSchema 用于 JDBC 数据库，MapSchema 用于内存数据库。
+（3）SchemaPlus 是增强版 Schema，支持动态添加表、视图等。
+
+👉 在 Calcite SQL 解析 时，Schema 负责提供数据库 表结构和数据源，
+帮助 SQL 语句正确解析执行。

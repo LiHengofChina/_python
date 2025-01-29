@@ -1,0 +1,41 @@
+
+//===================================================================== SqlValidator 作用
+//===================================================================== SqlValidator 作用
+
+SqlValidator 主要用于 校验 SQL 语法和结构，
+确保 SQL 语句符合 SQL 规范和数据库规则。
+在 SQL 转换为 RelNode 之前，
+通常会进行 SQL 语法校验、类型检查 等操作。
+
+
+
+//============================ SqlValidator 的主要功能
+//============================ SqlValidator 的主要功能
+
+（1）检查 SQL 语法
+	 确保 SQL 语句的结构合法，例如 SELECT 语句必须包含 FROM。
+
+（2）校验字段和表是否存在
+	 确保查询的表和字段在数据库中是有效的。
+
+（3）检查数据类型是否匹配
+	 例如 SELECT name + 1 FROM student 会报错，
+	 因为 name 是 VARCHAR，不能和 1（INTEGER）相加。
+
+（4）进行 SQL 语法改写（部分优化）
+	 例如 SELECT * FROM (SELECT name FROM student) 
+	 可能会被改写为 SELECT name FROM student。
+
+（5）标识 SQL 语句中的别名和作用域
+	 例如 SELECT a AS col1 FROM student，在后续解析中可以使用 col1 代替 a。
+
+
+//===================================================================== SqlValidator 关键方法
+//===================================================================== SqlValidator 关键方法
+
+
+validate(SqlNode sqlNode)				//校验 SQL 语句是否合法
+getValidatedNodeType(SqlNode sqlNode)	//获取 SqlNode 的数据类型
+getNamespace(SqlNode sqlNode)			//获取 SqlNode 的命名空间信息
+deriveType(SqlNode sqlNode)				//获取 SQL 表达式的类型
+
