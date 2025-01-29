@@ -1,0 +1,136 @@
+
+//================================== SQL校验
+//================================== SQL校验
+
+SQL 解析后会形成一棵 SqlNode 的抽象语法树，下一步我们需要对这棵树进行元数据验证，以校验SQL的合法性。
+
+
+
+验证由 SqlValidatorImpl 类执行，这个类需要几个支持对象。
+
+
+（1）首先，我们创建一个 RelDataTypeFactory 实例， 它提供 "SQL类型定义" 。
+	 我们使用 "内置类型工厂" ， 但如果需要，也可以提供 "自定义实现" 。
+	 RelDataTypeFactory typeFactory = new JavaTypeFactoryImpl();
+
+（2）然后，我们创建一个 Prepare.CatalogReader 对象，提供对数据库对象的访问。
+
+	/**
+		CalciteSchema 本身并不是用来存放数据库连接信息的，
+		它主要是用来 "表示" 和 "管理" 一个逻辑上的 "Schema（模式）"
+	*/
+ 
+
+	//========================= 第一步：方式一：自定义
+	//========================= 第一步：方式一：自定义
+	SimpleSchema schema = ... // Create our custom schema
+
+	CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
+	rootSchema.add(schema.getSchemaName(), schema);
+		/**
+		（1）自定义 SimpleSchema：你需要实现一个 CalciteSchema 的子类（比如 SimpleSchema），
+			 这个类负责定义你的数据模型（比如表和视图等）。
+		（2）创建 CalciteSchema 根目录：通过 CalciteSchema.createRootSchema 创建一个根目录，
+			 通常传入 "参数控制" 是否允许修改 schema。
+		（3）将自定义的 SimpleSchema 加入到 rootSchema 中：
+			 使用 rootSchema.add() 方法将你的 SimpleSchema 加入根 schema，
+			 使其成为查询的一部分。
+		*/
+	//========================= 第一步：方式二：
+	//========================= 第一步：方式二：
+ 
+	CalciteSchema.from(Frameworks.createRootSchema(false)),
+		/**
+		是的，CalciteSchema.from(Frameworks.createRootSchema(false)) 的效果类似，
+		它也是用来创建一个 CalciteSchema 根目录。
+
+		这里的 Frameworks.createRootSchema(false) 是一个便捷方法，
+		它会创建一个空的根 schema，然后可以通过 CalciteSchema.from() 
+		方法将其转换成 CalciteSchema 对象。这种方法通常用于框架级别的处理，
+		创建了一个基础的 schema 结构，
+		之后可以添加你自己的自定义 Schema（例如，通过添加表、视图等）来进行扩展。
+
+		简单来说，使用 CalciteSchema.from(Frameworks.createRootSchema(false)) 
+		是一种快速初始化根 schema 的方式，
+		之后你可以在这个基础上添加自定义的 Schema 内容。
+		*/
+	//========================= 第二步：准备数据库连接配置
+	//========================= 第二步：准备数据库连接配置
+	CalciteConnectionConfig config
+	它用来提供数据库连接配置。
+ 
+	（1）数据库连接配置
+	CalciteConnectionConfigImpl 是 CalciteConnectionConfig 接口的实现类，
+		/**
+		通常用于配置 Calcite 连接的一些特性，
+		比如查询超时、字段名称大小写敏感性等。
+		这里的构造函数使用了一个空的 Properties 对象，
+		它意味着你没有特别配置这些连接特性。
+
+		简单来说，它是用于配置 Calcite 在处理 SQL 查询时的一些行为和选项。
+		*/
+
+	//========================= 第三步：创建：
+	//========================= 第三步：创建：
+	Prepare.CatalogReader catalogReader = new CalciteCatalogReader(
+		rootSchema,
+		Collections.singletonList(schema.getSchemaName()), 
+				//返回一个只包含 schema.getSchemaName() 的不可变列表。
+				/** 示例：
+					List<String> list = Collections.singletonList("test_schema");
+					["test_schema"]
+				*/
+		typeFactory,
+		config
+	);
+
+
+
+
+
+（3）然后，我们定义一个 SqlOperatorTable ，它是SQL函数和操作符库。
+	 我们使用内置库。
+
+	 您还可以为您的实现提供自定义函数。
+	 //============= 方式一：链式操作
+	 //============= 方式一：链式操作
+	 SqlOperatorTable operatorTable = ChainedSqlOperatorTable.of(
+			 SqlStdOperatorTable.instance()
+	 );
+
+	 //============= 方式二：直接返回标准操作符表。
+	 //============= 方式二：直接返回标准操作符表。
+	 SqlOperatorTable opTab = SqlStdOperatorTable.instance();
+
+
+
+（4） 创建了所有必需的支持对象后，实例化内置的 SqlValidatorImpl。
+
+
+（5）通常，如果需要自定义验证行为(比如自定义错误消息)，可以扩展它。
+	SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
+		.withLenientOperatorLookup(config.lenientOperatorLookup())
+		.withSqlConformance(config.conformance())
+		.withDefaultNullCollation(config.defaultNullCollation())
+		.withIdentifierExpansion(true);
+
+	SqlValidator validator = SqlValidatorUtil.newValidator(
+		operatorTable, 
+		catalogReader, 
+		typeFactory,
+		validatorConfig
+	);
+
+（4）最后，执行验证。保留验证器实例，因为我们将需要它进行AST到关系树的转换。
+	SqlNode sqlNode = parse(sqlString);
+	SqlNode validatedSqlNode = validator.validate(node);
+
+
+总结下，在 Calcite 元数据验证阶段，其主要验证三个点：
+1. 对 SQL 语句中的 Table Schema 进行校验，如 Table 存不存在，Column 存不存在；
+		/**
+			 Apache Calcite 会验证 SELECT 语句中的字段部分和 WHERE 条件中的列是否存在于定义的 Schema 中
+			 这时 """并不会连接数据验证实际的字段"""
+		*/
+2. 对 SQL 语句中函数进行校验，如函数是否存在；
+3. 针对数据类型的校验，如函数中的参数数据类型和函数定义是否匹配；

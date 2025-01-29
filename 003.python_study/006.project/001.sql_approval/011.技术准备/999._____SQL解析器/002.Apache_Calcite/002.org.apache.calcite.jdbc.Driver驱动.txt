@@ -1,0 +1,58 @@
+
+
+如果我想要对 mysql、oracle、td-sql、dm数据连接，
+其实我使用 org.apache.calcite.jdbc.Driver 一个驱动就对了是不是
+
+//=====================================================
+//=====================================================
+
+org.apache.calcite.jdbc.Driver 这个驱动可以 "连接多个不同的数据库" ，
+包括 MySQL、Oracle、TDSQL、DM 数据库。
+你只需要通过 Calcite 配置 "相应的数据库连接信息（比如 JDBC URL 和对应的数据库方言）"，
+然后使用 Calcite 的 Driver 来建立连接。
+
+
+
+不过，要确保你已经在 Calcite 配置中指定了正确的方言，
+以便它能够正确解析和执行不同数据库的 SQL 语句。
+每种数据库都有自己的 SQL 方言（比如 MySQL、Oracle、TDSQL、DM 等），
+在 Calcite 中，你需要通过 JdbcSchema 和 JdbcRel 来指定数据源和方言。
+
+//===================================================== 示例
+//===================================================== 示例
+String url = "jdbc:calcite:model=your_model.json";
+Connection connection = DriverManager.getConnection(url);
+
+在 your_model.json 文件中，你可以配置多个数据源，例如：
+{
+  "version": "1.0",
+  "defaultSchema": "mysql",
+  "schemas": [
+    {
+      "name": "mysql",
+      "type": "jdbc",
+      "driver": "com.mysql.cj.jdbc.Driver",
+      "url": "jdbc:mysql://localhost:3306/your_database",
+      "user": "root",
+      "password": "password"
+    },
+    {
+      "name": "oracle",
+      "type": "jdbc",
+      "driver": "oracle.jdbc.OracleDriver",
+      "url": "jdbc:oracle:thin:@localhost:1521:orcl",
+      "user": "oracle_user",
+      "password": "oracle_password"
+    },
+    // 添加更多数据库
+  ]
+}
+
+
+Calcite 会根据数据库的不同配置来解析和执行 SQL，使用 org.apache.calcite.jdbc.Driver 驱动时，
+确保数据库的连接信息和方言正确配置。
+
+总的来说，使用 org.apache.calcite.jdbc.Driver 可以连接多个数据库，
+只要你在模型文件中配置好不同的数据库信息。
+
+
