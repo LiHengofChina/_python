@@ -1,8 +1,0 @@
-
-
-RelDataType 统一表示SQL 数据类型（如 INTEGER、VARCHAR），
-
-无论 "底层数据库" 是什么，Calcite 都用 RelDataType 来表示 "字段" 或 "表达式" 的类型。
-
-
-
