@@ -13,13 +13,16 @@ public class SqlParserExample {
 
         // 1. 配置解析器
         SqlParser.Config config = SqlParser.config()
-                .withUnquotedCasing(Casing.TO_LOWER); // 转换标识符为小写
+                .withUnquotedCasing(Casing.TO_LOWER); 
+				// 转换标识符为小写
+				// 这里还可以有多个配置
 
         // 2. 创建 SQL 解析器
         SqlParser parser = SqlParser.create(sql, config);
 
         // 3. 解析 SQL，生成 `SqlNode` 语法树
-        SqlNode sqlNode = parser.parseQuery();
+        SqlNode sqlNode = parser.parseQuery(); //解析SELECT
+		SqlNode sqlNode = parser.parseStmt();  //解析其它的语法  
 
         // 4. 输出解析后的 SQL 语法树
         System.out.println("Parsed SQL Node: " + sqlNode.toString());

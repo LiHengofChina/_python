@@ -21,6 +21,16 @@ RexNode rexNodeCondition = rexBuilder.makeCall(SqlStdOperatorTable.GREATER_THAN,
 );
 
 
-//=========== 示例
-//=========== 示例
+//=========== 总结
+//=========== 总结
+
+（1）RelNode 负责组织 SQL 查询逻辑
+（2）RexNode 负责表达式计算
+（3）RelNode 内部包含 RexNode，例如：
+	（1）Filter (RelNode) 里面的 WHERE 条件是 RexNode
+	（2）Project (RelNode) 里面的 SELECT 计算字段是 RexNode
+//=========== 类比：
+//=========== 类比：
+RelNode ≈ SQL 查询的结构
+RexNode ≈ SQL 查询中的计算表达式
 

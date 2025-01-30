@@ -1,0 +1,33 @@
+
+
+SqlNode 就是 SQL 语句在程序中的 抽象表示（AST）。
+
+
+它把 SQL 语句的各个部分
+	：（ "查询、表达式、操作符、函数、字面量" 等）都转换为 "对象"，
+方便在程序中 "解析"、"修改"、"校验" 和 "转换"。
+
+
+//===================== 举个例子：
+//===================== 举个例子：
+
+// SQL 语句：
+SELECT name, age + 1 FROM student WHERE id = 10
+
+
+//在程序中解析后会转换为类似结构：
+SqlSelect
+ ├── SqlNodeList  //(字段列表)
+ │     ├── SqlIdentifier (name)
+ │     └── SqlCall //(+ 运算符，age + 1)
+ └── SqlCall (WHERE 条件)
+       └── SqlCall (= 运算符，id = 10)
+
+//这样一来，程序就可以通过 SqlNode 对象树遍历、
+//修改或校验 SQL，而不再需要直接操作 SQL 字符串。
+
+
+//SqlCall 运算符可以出现在 SQL 的各个部分，
+//比如 WHERE 子句、SELECT 字段、JOIN 条件等地方，代表运算符或函数的调用。
+
+
