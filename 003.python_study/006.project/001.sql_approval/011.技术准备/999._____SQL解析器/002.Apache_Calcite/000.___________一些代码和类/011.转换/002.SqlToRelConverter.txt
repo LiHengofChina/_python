@@ -12,6 +12,7 @@ SqlToRelConverter 是 SQL 到 RelNode 的转换器
 
 //============================================================ 核心作用
 //============================================================ 核心作用
+
 （1）解析 SQL 并转换成 RelNode
 	（1）SqlParser 解析 SQL，得到 SqlNode
 	（2）SqlToRelConverter 将 SqlNode 转换为 RelNode
