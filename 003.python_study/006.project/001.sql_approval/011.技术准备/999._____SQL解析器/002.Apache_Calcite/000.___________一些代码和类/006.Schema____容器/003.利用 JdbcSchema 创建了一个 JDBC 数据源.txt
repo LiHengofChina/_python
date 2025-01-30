@@ -1,6 +1,10 @@
 创建 JDBC 数据源（MySQL）
- 
-//（1）使用 JdbcSchema.dataSource(...) 创建 JDBC 数据源，提供数据库连接信息。
+
+//=============================================================================
+//=============================================================================
+
+//（1）使用 JdbcSchema.dataSource(...) 创建 JDBC 数据源，
+// 提供数据库连接信息。
 DataSource dataSource = JdbcSchema.dataSource(
         "jdbc:mysql://192.168.100.231:3306/test_liheng",
         "com.mysql.cj.jdbc.Driver",

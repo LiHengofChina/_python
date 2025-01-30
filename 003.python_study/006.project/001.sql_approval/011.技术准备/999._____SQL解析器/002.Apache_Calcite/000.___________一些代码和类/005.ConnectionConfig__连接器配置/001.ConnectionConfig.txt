@@ -20,4 +20,10 @@ caseSensitive() → 是否区分大小写。
 defaultNullCollation() → NULL 值的排序方式（如 NULLS FIRST 或 NULLS LAST）。
 lenientOperatorLookup() → 是否允许宽松的 SQL 操作符查找。
 
+
+//================================================== 子接口
+//================================================== 子接口
+
+Cinterface CalciteConnectionConfig extends ConnectionConfig
+
  

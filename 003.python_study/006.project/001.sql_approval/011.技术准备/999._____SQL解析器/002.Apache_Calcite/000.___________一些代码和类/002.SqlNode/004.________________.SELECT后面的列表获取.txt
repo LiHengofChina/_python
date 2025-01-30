@@ -33,3 +33,12 @@ for (SqlNode node : selectList) {
 		System.out.println("发现函数或操作符: " + call.getOperator().getName());
 	}
 }
+
+//============ 输出说明
+//============ 输出说明
+
+发现函数或操作符: upper
+发现函数或操作符: +
+
+说明：SqlCall 仅仅表示 SQL 中的 "函数（如 UPPER）" 或 "操作符（如 +）" 本身。
+

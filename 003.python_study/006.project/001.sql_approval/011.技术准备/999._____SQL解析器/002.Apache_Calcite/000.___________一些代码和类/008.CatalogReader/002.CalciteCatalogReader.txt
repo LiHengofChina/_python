@@ -1,8 +1,0 @@
-
-
-
-CatalogReader 的主要实现类是 CalciteCatalogReader，
-
-它基于 SchemaPlus 访问数据库。
-
-
