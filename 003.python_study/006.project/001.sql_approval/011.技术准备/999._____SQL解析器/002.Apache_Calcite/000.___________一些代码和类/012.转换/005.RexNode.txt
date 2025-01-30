@@ -10,11 +10,12 @@ RexNode（Relational Expression Node）是 Calcite 中表示表达式的抽象�
 
 //======================================== RexNode 主要子类
 //======================================== RexNode 主要子类
-（1）RexLiteral → 代表字面值（常量），如 1, 'hello', TRUE
-（2）RexInputRef → 代表表中的字段引用，如 student.name
-（3）RexCall → 代表函数调用或操作符，如 UPPER(name), age + 10
-（4）RexOver → 代表窗口函数，如 SUM(salary) OVER (PARTITION BY dept)
-（5）RexSubQuery → 代表子查询，如 WHERE age IN (SELECT age FROM employees)
+
+（1）RexLiteral   → 代表字面值（常量），如 1, 'hello', TRUE
+（2）RexInputRef  → 代表表中的字段引用，如 student.name
+（3）RexCall 	  → 代表函数调用或操作符，如 UPPER(name), age + 10
+（4）RexOver      → 代表窗口函数，如 SUM(salary) OVER (PARTITION BY dept)
+（5）RexSubQuery  → 代表子查询，如 WHERE age IN (SELECT age FROM employees)
 
 
 // 创建一个布尔类型的字面值表达式 TRUE
