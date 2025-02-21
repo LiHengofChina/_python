@@ -1,0 +1,77 @@
+import org.apache.calcite.sql.*;
+import org.apache.calcite.sql.parser.SqlParseException;
+import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.util.SqlShuttle;
+
+public class SqlTraversalExample {
+
+    public static void main(String[] args) throws SqlParseException {
+        String sql = "SELECT name FROM student LEFT JOIN course ON student.id = course.student_id WHERE age > 20";
+
+        SqlParser parser = SqlParser.create(sql);
+        SqlNode sqlNode = parser.parseQuery();
+
+        // 创建一个访问器，遍历所有节点
+        sqlNode.accept(new SqlVisitor() {
+            @Override
+            public void visit(SqlSelect sqlSelect) {
+                System.out.println("Found SELECT statement");
+                // 访问 SELECT 节点的 FROM 子句
+                SqlNode fromClause = sqlSelect.getFrom();
+                if (fromClause != null) {
+                    System.out.println("FROM clause: " + fromClause);
+                }
+            }
+
+            @Override
+            public void visit(SqlJoin sqlJoin) {
+                // 如果是 JOIN 节点，打印信息
+                System.out.println("Found JOIN statement");
+                // 在这里你可以进一步处理 JOIN 相关的逻辑
+            }
+
+            @Override
+            public void visit(SqlNode sqlNode) {
+                // 默认处理其他类型的节点
+                System.out.println("Found other type of SQL node: " + sqlNode.getClass().getSimpleName());
+            }
+        });
+    }
+}
+
+//====================================================================
+//====================================================================
+
+SqlVisitor 接口：
+	（1）SqlVisitor 接口用于访问 SQL 语法树的 "每个节点"。
+		 在这个接口中，
+		 你可以为 "每种 SQL 节点类型" 实现一个 "visit 方法" 。
+		 //在上述示例中，我们处理了 SqlSelect 和 SqlJoin 节点。
+		 //你可以根据需要增加对 "其他节点类型" 的处理。
+
+	（2）accept 方法：SqlNode 类提供了 accept 方法，
+		 它接受一个 "SqlVisitor 实例" 并 "遍历树中所有的子节点"。
+		 SqlSelect 和 SqlJoin 节点将 "被访问" 并 "执行相应的处理方法"。
+
+	（3）visit 方法：每当访问到 "一个节点" 时，
+		 SqlVisitor 会调用 "对应节点类型" 的 visit 方法（如 visit(SqlSelect)）。
+		 你可以在 "这个方法中获取并处理节" 点的相关信息，
+		 如 FROM 子句、JOIN 等。
+
+	（4）无需关注 "节点的具体位置"：通过这种方式，
+		 你可以统一地 "遍历所有节点" ，
+		 无论它们出现在 SELECT、WHERE 还是其他部分，
+		 简化了 "多表关联子查询" 等复杂结构的处理。
+
+//==================================================================== 优点：
+//==================================================================== 优点：
+（1）遍历完整的 SQL 语法树：
+	   你不需要关心节点具体出现在 SELECT、WHERE 还是其他部分，
+	   SqlVisitor 会遍历所有的节点。
+
+（2）灵活性：可以方便地对不同类型的 SQL 节点进行操作，
+		判断它们的类型并提取你需要的信息。
+
+
+
+

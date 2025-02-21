@@ -1,0 +1,76 @@
+
+
+
+//=========================================================================================================== shell + c代码
+//=========================================================================================================== shell + c代码
+#!/bin/bash
+
+# 定义端口
+PORT=8080
+
+# 编写C代码并保存到临时文件
+cat << 'EOF' > temp_listen.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+
+int main() {
+    int sockfd, newsockfd;
+    struct sockaddr_in server_addr, client_addr;
+    socklen_t client_len;
+    char buffer[256];
+
+    // 创建套接字
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("ERROR opening socket");
+        exit(1);
+    }
+
+    // 设置服务器地址
+    memset((char *)&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(8080); // 使用指定的端口
+
+    // 绑定套接字
+    if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+        perror("ERROR on binding");
+        exit(1);
+    }
+
+    // 监听端口
+    listen(sockfd, 5);
+    client_len = sizeof(client_addr);
+
+    // 接受客户端连接
+    newsockfd = accept(sockfd, (struct sockaddr *)&client_addr, &client_len);
+    if (newsockfd < 0) {
+        perror("ERROR on accept");
+        exit(1);
+    }
+
+    // 向客户端发送消息
+    snprintf(buffer, sizeof(buffer), "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!");
+    write(newsockfd, buffer, strlen(buffer));
+
+    // 关闭连接
+    close(newsockfd);
+    close(sockfd);
+
+    return 0;
+}
+EOF
+
+# 编译并运行C程序
+gcc temp_listen.c -o temp_listen
+./temp_listen
+
+# 清理临时文件
+rm temp_listen.c temp_listen
+

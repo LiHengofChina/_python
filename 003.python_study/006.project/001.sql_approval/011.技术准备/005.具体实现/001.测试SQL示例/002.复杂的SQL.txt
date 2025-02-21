@@ -1,0 +1,35 @@
+SELECT s.name, s.sex, c.course_name, er.score
+FROM student s
+LEFT JOIN enrollment e ON s.id = e.student_id
+LEFT JOIN course c ON e.course_id = c.id
+LEFT JOIN exam_results er ON e.student_id = er.student_id AND e.course_id = er.course_id
+WHERE s.sex = 'Female';
+
+
+
+SELECT s.name, s.sex
+FROM student s
+WHERE s.id IN (
+    SELECT e.student_id
+    FROM enrollment e
+    LEFT JOIN exam_results er ON e.student_id = er.student_id
+    WHERE er.score > 80
+);
+
+
+
+
+
+SELECT `s`.`name`, `c`.`course_name`, `er`.`score`
+FROM `student` `s`
+LEFT JOIN `enrollment` `e` ON `s`.`id` = `e`.`student_id`
+LEFT JOIN `course` `c` ON `e`.`course_id` = `c`.`id`
+LEFT JOIN `exam_results` `er` ON `e`.`student_id` = `er`.`student_id` AND `e`.`course_id` = `er`.`course_id`
+WHERE `er`.`score` > (
+    SELECT AVG(`score`) FROM `exam_results` WHERE `course_id` = `c`.`id`
+)
+
+
+SELECT `s`.`name`, `c`.`course_name`, `er`.`score` FROM `student` `s` LEFT JOIN `enrollment` `e` ON `s`.`id` = `e`.`student_id` LEFT JOIN `course` `c` ON `e`.`course_id` = `c`.`id` LEFT JOIN `exam_results` `er` ON `e`.`student_id` = `er`.`student_id` AND `e`.`course_id` = `er`.`course_id` WHERE `er`.`score` > ( SELECT AVG(`score`) FROM `exam_results` WHERE `course_id` = `c`.`id`)
+
+

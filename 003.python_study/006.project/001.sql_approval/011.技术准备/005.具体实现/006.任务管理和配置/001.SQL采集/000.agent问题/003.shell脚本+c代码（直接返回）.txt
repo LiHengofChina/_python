@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# 编写C代码并保存到临时文件
+cat << 'EOF' > temp_generate_data.c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    // 生成20行数据作为输出
+    for (int i = 0; i < 20; i++) {
+        printf("SQL Query %d: SELECT * FROM table%d;\n", i+1, i+1);
+    }
+    return 0;
+}
+EOF
+
+# 编译并运行C程序，生成数据
+gcc temp_generate_data.c -o temp_generate_data
+./temp_generate_data
+
+# 清理临时文件
+rm temp_generate_data.c temp_generate_data
+
