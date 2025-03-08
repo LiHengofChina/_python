@@ -1,0 +1,38 @@
+ 
+
+（1）机器
+192.168.100.124
+root/age733
+
+
+（2）DM数据库
+	
+    "sourceIp": "192.168.100.124",
+    "sourcePort": 5236,
+    "username": "sysdba",
+    "password": "Oracle123",
+
+
+
+（3）普通用户
+	liheng/Liheng123#!$
+
+
+//======================================= 归档日志
+（2）是否开启 "归档日志" 功能
+	select ARCH_MODE from v$database;
+	输出y表示开启
+
+
+（3）日志路径
+	/home/dmdba/arch
+
+//======================================= 它是二进制的，
+
+（1）用它的命令解析SQL
+	 //但是里面没有查询
+（2）
+
+
+v$sql_history   v$sessions  v$sqltext 三个关联吧。
+

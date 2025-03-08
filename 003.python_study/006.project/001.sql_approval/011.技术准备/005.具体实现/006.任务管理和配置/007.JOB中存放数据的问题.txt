@@ -1,0 +1,75 @@
+
+
+//============================================== （1） new HashMap<>();
+//============================================== （1） new HashMap<>();
+
+//（1）如果是第一次执行任务，初始化 map
+//（2）转成字符串
+//（3）放入job中的数据Map中，key 为 pointerMapJson
+
+if( executionCount == 1 ) {
+	Map<String, String> pointerMap = new HashMap<>();
+	try{
+		String pointerMapJson = objectMapper.writeValueAsString(pointerMap);
+		dataMap.put("pointerMapJson", pointerMapJson);
+	} catch (Exception e) {
+		throw new RuntimeException(e);
+	}
+}
+
+
+//============================================== （2）初始化Map中的 key的值
+//============================================== （2）初始化Map中的 key的值
+
+//（1）在得到文件路径之后，初始化它的值
+//（2）格式：
+//			key为：	   192.168.100.231|/var/lib/mysql/localhost.log		//{机器ip}|{文件路径}
+//			value为：  0|0												//通过双指针，//{读数据的位置}|{读库名的位置}
+
+	if( executionCount == 1 ){// 如果是第一次执行任务，则放入值
+		//获取map
+		String pointerMapJson = dataMap.getString("pointerMapJson");
+		Map<String, String> pointerMap = objectMapper.readValue(
+				pointerMapJson,
+				objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class)
+		);
+		//放入参数
+		pointerMap.put(String.format("%s|%s",machineInfo.getIp(),targetLogFilePath),"0|0");
+
+		//存入job
+		dataMap.put("pointerMapJson", objectMapper.writeValueAsString(pointerMap));
+	}
+
+//============================================== （3）初始化Map中的 key 的值
+//============================================== （3）初始化Map中的 key 的值
+
+
+//（1）在调用脚本之前获取了当前指针的位置
+
+
+ObjectMapper objectMapper = new ObjectMapper();
+String pointerMapJson = dataMap.getString("pointerMapJson");
+Map<String, String> pointerMap = objectMapper.readValue(
+		pointerMapJson,
+		objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class)
+);
+
+String pointerPair =  pointerMap.get(String.format("%s|%s",machineInfo.getIp(),targetLogFilePath));
+//当前文件指针
+long currentFilePointer = Long.valueOf(pointerPair.split("\\|")[0]) ;
+long currentFileDbNamePointer =  Long.valueOf(pointerPair.split("\\|")[1]) ;
+
+
+//============================================== （4）脚本返回的就是 0|0 这样的格式
+//============================================== （4）脚本返回的就是 0|0 这样的格式
+
+
+//（1）最后更新map中的值，
+//（2）更新到jobData中
+
+//更新文件指针
+pointerMap.put(String.format("%s|%s",machineInfo.getIp(),targetLogFilePath),positionStr);
+dataMap.put("pointerMapJson", objectMapper.writeValueAsString(pointerMap));
+
+
+

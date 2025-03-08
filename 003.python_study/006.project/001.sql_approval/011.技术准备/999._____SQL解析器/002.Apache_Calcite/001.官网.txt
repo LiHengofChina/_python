@@ -19,3 +19,8 @@ https://strongduanmu.com/wiki/calcite/background.html#start
 星球社区
 https://wx.zsxq.com/group/51128414222814
 
+
+//SQL参考
+https://calcite.apache.org/docs/reference.html
+
+

@@ -27,12 +27,14 @@
 //================================== 不能为 NULL
 //================================== 不能为 NULL
 
-"sql": "INSERT INTO `student` ( `id`, `name`, `sex`) VALUES ( 1, 'Alice', NULL) ",
-"sql": "INSERT INTO `student` ( `id`, `name`, `sex`) VALUES ( 1, 'Alice', 'S'), ( 1, 'Alicex', NULL)  ",
+"sql": " INSERT INTO `student` ( `id`, `name`, `sex`) VALUES ( 1, 'Alice', NULL) ",
 
-"sql": "INSERT INTO `student` ( `id`, `name`, `sex`) VALUES ( 1, 'Alice', 'S'), ( 1, 'Alicex', 'null')  ",
+"sql": " INSERT INTO `student` ( `id`, `name`, `sex`) VALUES ( 1, 'Alice', 'S'), ( 2, 'Alicex', NULL)  ",
 
-"sql": "INSERT INTO `student` ( `id`, `name`, `sex`) VALUES ( 1, 'Alice', 'S'), ( 1, 'Alicex', 'hr')  ",
+"sql": " INSERT INTO `student` ( `id`, `name`, `sex`) VALUES ( 1, 'Alice', 'S'), ( 2, 'Alicex', 'null')  ",
+
+"sql": " INSERT INTO `student` ( `id`, `name`, `sex`) VALUES ( 1, 'Alice', 'S'), ( 2, 'Alicex', 'hr')  ",
+
 
 //============
 //============
@@ -48,17 +50,19 @@
 //============
 //============
 
-"sql": " SELECT * FROM `student` WHERE `name` = NULL ",
-"sql": " SELECT * FROM `student` WHERE `name` != NULL ",
-"sql": " SELECT * FROM `student` WHERE `name` IS NULL ",
-"sql": " SELECT * FROM `student` WHERE `name` IS NOT NULL ",
+"sql": " SELECT name FROM `student` WHERE `name` = NULL ",     							    //不通过
+"sql": " SELECT name FROM `student` WHERE `name` != NULL ",								    //不通过
+"sql": " SELECT name FROM `student` WHERE `name` <> NULL ",								    //不通过
 
-"sql": " SELECT * FROM `student` WHERE `name` = NULL and `id` = 1 and `sex` = 'x' ",
+"sql": " SELECT name FROM `student` WHERE `name` IS NULL ",								    //不通过
+"sql": " SELECT name FROM `student` WHERE `name` IS NOT NULL ",							    //不通过
+
+"sql": " SELECT name FROM `student` WHERE `name` = NULL and `id` = 1 and `sex` = 'x'  and `name` = 'ss' and `name` IS NULL ",		//不通过
 
 //奇葩SQL
-"sql": " SELECT * FROM `student` WHERE `name` = 'my name is null' and `id` = 1 and `sex` = 'x' ",
+"sql": " SELECT name FROM `student` WHERE `name` = 'my name is null' and `id` = 1 and `sex` = 'x'  ", 	//通过
 
-"sql": " SELECT * FROM `student` WHERE `name` = 'x' ",
+
 
 
 //================================== join 表数量

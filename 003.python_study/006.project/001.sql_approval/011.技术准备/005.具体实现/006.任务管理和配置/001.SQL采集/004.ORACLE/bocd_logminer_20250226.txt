@@ -1,0 +1,52 @@
+
+--生产端
+--将数据字典保存到在线日志并备份成归档日志
+EXECUTE DBMS_LOGMNR_D.BUILD(OPTIONS=>DBMS_LOGMNR_D.STORE_IN_REDO_LOGS);
+--查看字典所在归档文件
+SQL> SELECT NAME FROM V$ARCHIVED_LOG WHERE DICTIONARY_BEGIN='YES';
+NAME
+--------------------------------------------------------------------------------
++FRA/vjs/archivelog/2025_02_26/thread_1_seq_121.264.1194122193
+
+SQL> SELECT NAME FROM V$ARCHIVED_LOG WHERE DICTIONARY_END='YES';
+NAME
+--------------------------------------------------------------------------------
++FRA/vjs/archivelog/2025_02_26/thread_1_seq_122.265.1194122195
+
+SQL> 
+--copy日志文件到本地磁盘
+--rman  copy 归档
+copy archivelog '+FRA/vjs/archivelog/2025_02_26/thread_1_seq_121.264.1194122193' to '/orabak/thread_1_seq_121.264.1194122193';
+copy archivelog '+FRA/vjs/archivelog/2025_02_26/thread_1_seq_122.265.1194122195' to '/orabak/thread_1_seq_122.265.1194122195';
+
+--传输拷贝的日志文件到目标挖掘目录
+--添加归档文件，并进行日志分析
+--字典所在归档文件开始为new
+exec dbms_logmnr.add_logfile(LogFileName=>'/data/bocd_20250226/thread_1_seq_121.264.1194122193',Options=>dbms_logmnr.new);
+exec dbms_logmnr.add_logfile(LogFileName=>'/data/bocd_20250226/thread_1_seq_122.265.1194122195',Options=>dbms_logmnr.ADDFILE);
+exec dbms_logmnr.add_logfile(logfilename=>'/data/bocd_20250226/thread_1_seq_118.261.1194120901',options=>dbms_logmnr.ADDFILE);
+exec dbms_logmnr.add_logfile(LogFileName=>'/data/bocd_20250226/thread_2_seq_65.260.1194120773',Options=>dbms_logmnr.ADDFILE);
+
+execute dbms_logmnr.start_logmnr(OPTIONS => DBMS_LOGMNR.DICT_FROM_REDO_LOGS);
+
+select /*+ parallel(8)*/ TO_CHAR(TIMESTAMP,'YYYY-MM-DD HH24:MI:SS'),TABLE_NAME,OPERATION,USERNAME from v$logmnr_contents where table_name='SALES';
+--将结果并行插入到指定表
+alter session enable parallel dml;
+create table xxxx_xxx as select * from v$logmnr_contents where 1=0;
+insert /*+ parallel(12) */ into xxxx_xxx select /*+ parallel(12)*/ * from v$logmnr_contents;
+
+
+--信息统计语句
+select operation,count(*) from v$logmnr_contents group by operation;
+select seg_owner,operation,sql_redo,sql_undo from v$logmnr_contents;
+select seg_owner,operation,count(*) from v$logmnr_contents group by seg_owner,operation;
+
+
+exec dbms_logmnr.end_logmnr;
+
+
+
+--备注：使用在线日志数据字典启动logminer进行指定时间段分析
+execute dbms_logmnr.start_logmnr(OPTIONS => DBMS_LOGMNR.DICT_FROM_REDO_LOGS, 
+StartTime =>to_date('2025-02-24 00:05:00','YYYY-MM-DD HH24:MI:SS'), 
+EndTime =>to_date('2025-02-24 00:15:00','YYYY-MM-DD HH24:MI:SS));

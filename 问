@@ -201,3 +201,41 @@
 		@Validated
 		要放在类上面才生效
 
+（34）如果没有最新代码，就放根据参数一个一个匹配
+        SqlToRelConverter converter = new SqlToRelConverter(
+                viewExpander,
+                validator,
+                catalogReader,
+                cluster,
+                convertletTable,
+                config
+        );
+
+（35）agent必须安装java，必须安装jdk什么的，要人工参与
+		//为了避免人
+		//解决办法：使用shell嵌入c代码就可以了。
+		//另外不需要通过C提供服务
+		//JSch可以直接返回数据
+
+（36）通过 e.printStackTrace(); 获取更详细的日志信息
+
+	try{
+		jdbcSchema = JdbcSchema.create(rootSchemaPlus, innerName, ds , null, null);
+		rootSchemaPlus.add(innerName, jdbcSchema);
+	} catch (Exception e) {
+		e.printStackTrace();
+		throw new RuntimeException(e);
+	}
+
+（37） mysql 日志解析的时候，
+	   //结束标志 也可能是另一个SQL的开始
+	   //这里使用
+	   while( )去读取后面的内容，判断是否结束
+
+（38）那个for的位置 ，只会记录第一次的位置
+		要放在第3个位置 ，才是每次读取之前记录
+
+		for(previousPosition = file.tellg(); std::getline(file, line);
+		previousPosition = file.tellg()){
+
+
