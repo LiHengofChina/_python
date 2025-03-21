@@ -27,16 +27,26 @@ https://wx.zsxq.com/group/51128414222814/topic/4844182158254588
 				//-parserImpls.ftl（不包括这个文件）
 			templates
 				-Parser.jj
-			-config.fmpp
+			//-config.fmpp（不包括这个文件）
 			-default_config.fmpp
 		//============================= 第二部分
 		CalciteResource.properties
 
-（5）在  parserImpls.ftl 里面添加自己额外的扩展实现
-	
+
+（5）修改代码
+	（1） parserImpls.ftl 
+			//在里面添加自己额外的扩展实现
+	（2） config.fmpp
+			//在是里面添加配置
+			// Freemarker 配置文件。它使用了 Freemarker 模板引擎 来控制如何生成 Java 代码，
+			//特别是与 SQL 解析器相关的代码。
+
 
 （6）javacc Parser.jj 或者在 pom.xml里配置命令
+	//在 pom.xml 中已经配置了 javacc-maven-plugin 插件。
+	//这个插件会在构建时自动下载并运行 JavaCC，无需手动安装 JavaCC。
 
 
-（7）集成代码（完成）
+
+（7）把生成的 "java代码" 放入到项目中集成 集成代码（完成）
 

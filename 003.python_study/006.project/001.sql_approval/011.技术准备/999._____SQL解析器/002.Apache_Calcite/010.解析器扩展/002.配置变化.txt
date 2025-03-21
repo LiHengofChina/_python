@@ -1,0 +1,36 @@
+
+
+//=======================================================================
+//=======================================================================
+
+parser.statementParserMethods 
+//是一个 列表或数组
+
+
+parser.setOptionParserMethod
+
+
+
+
+<#-- Add methods to parse additional statements here -->
+<#list (parser.statementParserMethods!default.parser.statementParserMethods) as method>
+        LOOKAHEAD(2) stmt = ${method}
+    |
+</#list>
+        stmt = ${parser.setOptionParserMethod!default.parser.setOptionParserMethod}(Span.of(), null)
+    |
+        stmt = SqlAlter()
+    |
+<#if (parser.createStatementParserMethods!default.parser.createStatementParserMethods)?size != 0>
+        stmt = SqlCreate()
+    |
+</#if>
+<#if (parser.dropStatementParserMethods!default.parser.dropStatementParserMethods)?size != 0>
+        stmt = SqlDrop()
+    |
+</#if>
+
+setOptionParserMethod
+dropStatementParserMethods
+
+
