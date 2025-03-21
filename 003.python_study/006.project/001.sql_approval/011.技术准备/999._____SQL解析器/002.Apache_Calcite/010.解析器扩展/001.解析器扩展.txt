@@ -8,4 +8,35 @@ https://wx.zsxq.com/group/51128414222814/topic/4844182158254588
 //============================================= 步骤
 //============================================= 步骤
 
-（1）
+（1）使用IDEA导入 calcite-demo
+
+
+（2）更新 pom.xml 的  calcite 版本，
+		如： 1.39.0
+
+
+（3）从官网获取 1.39 对应 的 代码：
+	官网：https://github.com/apache/calcite
+	Tag: 1.39
+
+（4）需要拷贝的文件：
+		//============================= 第一部分
+		codegen
+			includes
+				-compoundIdentifier.ftl
+				//-parserImpls.ftl（不包括这个文件）
+			templates
+				-Parser.jj
+			-config.fmpp
+			-default_config.fmpp
+		//============================= 第二部分
+		CalciteResource.properties
+
+（5）在  parserImpls.ftl 里面添加自己额外的扩展实现
+	
+
+（6）javacc Parser.jj 或者在 pom.xml里配置命令
+
+
+（7）集成代码（完成）
+
