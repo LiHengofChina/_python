@@ -239,3 +239,11 @@
 		previousPosition = file.tellg()){
 
 
+（39）javac 动态编译时 ，要先解压jar包，然后指定依赖
+			javac -cp '/app/BOOT-INF/lib/*' DEMO.JAVA
+
+
+（39）javac 动态编译时 ，要先解压jar包，然后指定依赖
+			javac -cp '/app/BOOT-INF/lib/*' DEMO.JAVA
+
+ 
