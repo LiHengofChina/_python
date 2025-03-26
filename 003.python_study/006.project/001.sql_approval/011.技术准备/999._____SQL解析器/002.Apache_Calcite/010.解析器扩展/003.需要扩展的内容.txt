@@ -1,0 +1,49 @@
+
+ 
+（1）for update
+	 SELECT * FROM employees WHERE department_id = 10 FOR UPDATE;
+
+（2）creae index
+	 CREATE INDEX idx_employee_name ON employees (last_name, first_name)
+
+（3）ALTER TABLE
+	 ALTER TABLE employees ADD COLUMN email VARCHAR(100) 
+
+（4）创建触发器
+	 CREATE TRIGGER update_employee_salary
+	 BEFORE UPDATE ON employees
+	 FOR EACH ROW
+	 BEGIN
+		IF :new.salary > 10000 THEN
+		  SET :new.salary = 10000;
+		END IF;
+	 END;
+（5）GRANT语句
+	 GRANT SELECT, INSERT ON employees TO user1;
+
+
+（6）这种好像也不行的
+	 Rename table `test_liheng`.`exam_results` to `test_liheng`.`tab_exam_results`
+
+（9）CREATE 带有()括号的解析不了
+	   VARCHAR2(100) 
+
+
+
+
+
+
+-- （当日）静态与动态审核次数：审核总次数、静态审核次数、动态审核次数。
+-- （当日）审核成功次数：审核总次数、成功次数、失败次数。
+-- （当日）SQL审核：SQL审核总次数、成功次数、失败次数
+
+-- （当日）任务执行次数：总次数、执行中、成功、失败。
+-- （当日）采集SQL数量
+-- （当日）违反规则列表TOP 10
+
+
+
+
+
+
+

@@ -1,0 +1,100 @@
+
+
+
+//================================================================================ 
+//================================================================================ 
+ 
+-- （当日）静态与动态审核次数
+SELECT IJ.db_type,
+	   SUM(CASE WHEN   ar.audit_status = 1 THEN 1 ELSE 0 END) AS sql_audit_passed_count,
+	   SUM(CASE WHEN   (ar.audit_status = 2 OR ar.audit_status = 3) THEN 1 ELSE 0 END) AS sql_audit_failed_count,
+	   COUNT(1) AS total_audit_count
+FROM audit_result ar
+		 LEFT JOIN
+	 (
+		 SELECT DISTINCT   rta.`template_id` template_id, sar.`audit_mode`  audit_mode, ds.`source_id` source_id, ds.`db_type` db_type
+		 FROM rule_template_association rta
+				  INNER JOIN sql_audit_rule sar ON sar.id = rta.rule_id
+				  INNER JOIN data_source DS ON ds.rule_template_id = rta.template_id
+	 ) IJ ON ar.source_id = IJ.source_id
+WHERE  ar.created_at BETWEEN  #{startDate} AND #{endDate}
+WHERE  ar.created_at BETWEEN '2025-03-20' AND '2025-03-22'
+GROUP BY IJ.db_type
+
+
+ 
+ -- （当日）审核成功次数，与失败次数
+ SELECT  ds.db_type ,
+ 	SUM(CASE WHEN   ar.audit_status = 1 THEN 1 ELSE 0 END) AS sql_audit_passed_count, -- 审核成功次数
+ 	SUM(CASE WHEN   (ar.audit_status = 2 OR ar.audit_status = 3) THEN 1 ELSE 0 END) AS sql_audit_failed_count, -- 审核失败次数
+ 	COUNT(1) AS total_audit_count
+ FROM audit_result ar
+ INNER JOIN data_source ds ON ds.source_id = ar.source_id  -- 数据源表
+ INNER JOIN rule_template_association rta ON rta.template_id = ds.rule_template_id -- 规则模板 与 数据源
+ INNER JOIN sql_audit_rule sar ON sar.id = rta.rule_id -- 规则表
+ WHERE  ar.created_at BETWEEN '2025-03-20' AND '2025-03-22'
+ GROUP BY ds.db_type;
+
+
+
+
+// -- （当日）SQL审核，成功次数和失败次数（仅动态的才有SQL）
+
+SELECT IJ.db_type,
+	SUM(CASE WHEN IJ.audit_mode = 1  AND ar.audit_status = 1 THEN 1 ELSE 0 END) AS audit_passed_count_sql,
+	SUM(CASE WHEN IJ.audit_mode = 1  AND (ar.audit_status = 2 OR ar.audit_status = 3) THEN 1 ELSE 0 END) AS audit_failed_count_sql,
+	SUM(CASE WHEN IJ.audit_mode = 1  THEN 1 ELSE 0 END) AS audit_count_sql
+FROM audit_result ar
+		 LEFT JOIN
+	 (
+		 SELECT DISTINCT   rta.`template_id` template_id, sar.`audit_mode`  audit_mode, ds.`source_id` source_id, ds.`db_type` db_type
+		 FROM rule_template_association rta
+				  INNER JOIN sql_audit_rule sar ON sar.id = rta.rule_id
+				  INNER JOIN data_source DS ON ds.rule_template_id = rta.template_id
+	 ) IJ ON ar.source_id = IJ.source_id
+GROUP BY IJ.db_type
+WHERE  ar.created_at BETWEEN '2025-03-20' AND '2025-03-22'
+GROUP BY ds.db_type;
+
+
+
+-- （当日）运行任务次数，成功次数，失败次数，异常次数
+SELECT 
+	SUM(CASE WHEN  tr.task_result_status =1 THEN 1 ELSE 0 END) AS task_ing,
+	SUM(CASE WHEN  tr.task_result_status =2 THEN 1 ELSE 0 END) AS task_end,
+	SUM(CASE WHEN  tr.task_result_status =3 THEN 1 ELSE 0 END) AS task_fail,
+	COUNT(1) AS task_total
+FROM task_result tr 
+WHERE tr.created_at BETWEEN '2025-03-20' AND '2025-03-22'
+;
+
+
+
+-- （当日）采集SQL的数量
+SELECT tr.task_name ,SUM(tr.sql_count)
+FROM task_result tr
+WHERE tr.created_at BETWEEN '2025-03-20' AND '2025-03-22'
+AND tr.sql_count != 0
+GROUP BY tr.task_name
+
+
+
+--  违反规则 TOP 10， 
+SELECT 
+    arv.violated_rule_name,  -- 违反的规则名称
+    COUNT(*) AS violation_count  -- 违反该规则的次数
+FROM audit_result_violations arv
+WHERE arv.created_at BETWEEN '2025-03-20' AND '2025-03-22'
+GROUP BY arv.violated_rule_name
+ORDER BY violation_count DESC
+LIMIT 10;
+
+
+
+
+
+
+//================================================================================ 维度
+//================================================================================ 维度
+
+ 
