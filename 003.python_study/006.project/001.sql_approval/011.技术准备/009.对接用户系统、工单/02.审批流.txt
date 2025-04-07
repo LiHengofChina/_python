@@ -17,17 +17,7 @@ CREATE TABLE resource_group_approval_flow (
 
 
 （2）
-//存储用户提交的SQL上线工单。
-CREATE TABLE work_order (
-    id INT PRIMARY KEY,
-    user_id INT,  -- 提交工单的用户ID
-    resource_group_id INT,  -- 所属资源组
-    sql_content TEXT,  -- SQL内容
-    status VARCHAR(50),  -- 工单状态，如：待审批、已通过、已拒绝
-    created_at TIMESTAMP, 
-    updated_at TIMESTAMP,
-    FOREIGN KEY (resource_group_id) REFERENCES resource_group(id)
-);
+
 
 
 

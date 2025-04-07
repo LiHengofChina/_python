@@ -8,7 +8,7 @@
 //================================== DELETE 和 UPDATE 必须带有 where
 
 
-"sql": "DELETE FROM `student` where 1 = 2 ",
+"sql": "DELETE FROM `tab_student` where 1 = 2 ",
 
 "sql": "DELETE FROM `student`",
 
@@ -59,7 +59,7 @@
 
 "sql": " SELECT name FROM `student` WHERE `name` = NULL and `id` = 1 and `sex` = 'x'  and `name` = 'ss' and `name` IS NULL ",		//不通过
 
-//奇葩SQL
+
 "sql": " SELECT name FROM `student` WHERE `name` = 'my name is null' and `id` = 1 and `sex` = 'x'  ", 	//通过
 
 
@@ -78,7 +78,7 @@
 //-- from 位置 关联 0张表 
 "sql": "select *,`name` from `student` t",
 
- 
+
 
 //-- from 位置 关联 5张表，其中一个是子查询
 "sql": "   SELECT  `s`.`name`,  `c`.`course_name`,  `er`.`score`  FROM `student` `s` JOIN `enrollment` `e` ON `s`.`id` = `e`.`student_id` RIGHT JOIN `course` `c` ON `e`.`course_id` = `c`.`id`  LEFT JOIN `exam_results` `er` ON `e`.`student_id` = `er`.`student_id` AND `e`.`course_id` = `er`.`course_id`  LEFT JOIN  table3 on table3.id = c.id left join ( SELECT id FROM table1 ) table1 on table1.id = c.id ", 
