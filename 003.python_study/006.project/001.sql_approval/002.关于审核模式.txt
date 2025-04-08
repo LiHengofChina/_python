@@ -1,0 +1,77 @@
+ 
+
+//======================================================================================  怎么知道 "数据源" ————> "模板"  的审核模式
+
+
+
+（1）每个 "数据源" 会对应一个 " 模板id  rule_template_id"
+
+（2）规则 和 模板 存在关联关系
+			// template_id  和  rule_id
+
+（3）但是只有规则里面有 "审核模式"，而模板中只能装入 "相同的审核模式" 的规则
+	 所以：变相的，模板也有了 "审核模式"。
+
+（4）而 "数据源" 也会对应一个 "模板"，
+	 所以 "数据源" 也具有了 "审核模式"。
+
+
+（5）所以通过下面的SQL，可以查询到
+	"数据源" ————> "模板"  的审核模式
+	//======================================= DISTINCT  是关键，一定在去重复
+	 SELECT DISTINCT
+		  ds.`source_id` source_id, 	    		-- 数据源ID
+		  ds.rule_template_id rule_template_id, 	-- 模板ID
+		  rule.`audit_mode`  audit_mode, 			-- 审核模式
+		  ds.`db_type` db_type						-- 数据库类型
+	 FROM rule_template_association temp
+		  INNER JOIN sql_audit_rule rule ON rule.id = temp.rule_id
+		  INNER JOIN data_source ds ON ds.rule_template_id = temp.template_id
+
+
+//======================================================================================  怎么知道 审核结果是来自动态，还是静态？
+
+
+
+（1）审核结果 里面有 "数据源ID  source_id "
+
+（2）所以用 "审核结果" 的数据源ID 关联上面的SQL就好了
+
+        SELECT IJ.db_type,
+               SUM(CASE WHEN ij.audit_mode = 1 THEN 1 ELSE 0 END) AS dynamic_audit_time,  -- 动态审核次数
+               SUM(CASE WHEN ij.audit_mode = 2 THEN 1 ELSE 0 END) AS static_audit_time,   -- 静态审核次数
+               COUNT(1) AS total_audit_time -- 审核总次数
+        FROM audit_result ar
+                 LEFT JOIN
+             (
+                 SELECT DISTINCT   rta.`template_id` template_id, sar.`audit_mode`  audit_mode, ds.`source_id` source_id, ds.`db_type` db_type
+                 FROM rule_template_association rta
+                          INNER JOIN sql_audit_rule sar ON sar.id = rta.rule_id
+                          INNER JOIN data_source DS ON ds.rule_template_id = rta.template_id
+             ) IJ ON ar.source_id = IJ.source_id
+        GROUP BY IJ.db_type
+
+//======================================================================================  怎么知道 任务是动态的，还是静态的
+
+（1）任务本身是具有 "审核模式的"，但它存在于quartz表中，不方便查询。
+
+（2）但是 "任务结果" 表里面，也有存放数据源ID，
+
+（3）所以也是可以拿到 "任务结果"是 来自 动态任务还是静态任务的
+
+
+
+
+SELECT IJ.db_type,
+       SUM(CASE WHEN ij.audit_mode = 1 THEN 1 ELSE 0 END) AS dynamic_task_time,  -- 动态任务次数
+       SUM(CASE WHEN ij.audit_mode = 2 THEN 1 ELSE 0 END) AS static_task_time    -- 静态任务次数
+FROM task_result tr
+	 LEFT JOIN
+     (
+	 SELECT DISTINCT   rta.`template_id` template_id, sar.`audit_mode`  audit_mode, ds.`source_id` source_id, ds.`db_type` db_type
+	 FROM rule_template_association rta
+		  INNER JOIN sql_audit_rule sar ON sar.id = rta.rule_id
+		  INNER JOIN data_source DS ON ds.rule_template_id = rta.template_id
+     ) IJ ON tr.source_id = IJ.source_id
+GROUP BY IJ.db_type
+

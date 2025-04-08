@@ -1,0 +1,67 @@
+OB V3,如果是OB V4，把 gv$sql_audit 换成 gv$ob_sql_audit
+--86400000000  
+--最近一天的时间范围
+--------------------------------------------------------- MySQL租户
+-- SELECT 
+--     sid, 
+--     query_sql AS full_sql_statement, 
+--     FROM_UNIXTIME(request_time/1000000) AS request_time 
+-- 	
+-- FROM 
+--     oceanbase.gv$sql_audit
+-- WHERE 
+--     request_time>(time_to_usec(NOW())-86400000000)
+-- ORDER BY 
+--     request_time DESC;
+		
+ 
+-- 
+
+
+--------------------------------------------------------- ORACLE租户	
+-- SELECT 
+--     sid, 
+--     TO_CHAR(TO_DATE('1970-01-01', 'YYYY-MM-DD') + ((request_time / 1000000) / 86400),'YYYY-MM-DD HH24:MI:SS') AS request_time, 
+--     query_sql 
+-- FROM 
+--     SYS.gv$sql_audit 
+-- WHERE 
+-- 	request_time >=(((sysdate-1/2) - TO_DATE('1970-01-01', 'YYYY-MM-DD'))*86400*1000000)
+-- ORDER BY 
+--     request_time DESC;
+-- 	
+-- --------------------- 这个
+
+
+
+
+SELECT 
+    t.query_sql sql_
+FROM  oceanbase.gv$sql_audit t
+ WHERE  t.request_time >= (time_to_usec(NOW()) - 1 * 60 * 1000000)  
+AND t.request_type = 2
+AND t.DB_NAME = 'test' 
+AND UPPER(T.query_sql) NOT LIKE '%%OCEANBASE.%%' 
+AND UPPER(T.query_sql) NOT LIKE '%%__ALL_OUTLINE%%' 
+AND UPPER(T.query_sql) NOT LIKE '%%DUAL%%' 
+AND UPPER(T.query_sql) NOT LIKE '%%INFORMATION_SCHEMA.%%' 
+AND UPPER(T.query_sql) NOT LIKE 'SET%%' 
+AND UPPER(T.query_sql) NOT LIKE 'USE%%' 
+AND UPPER(T.query_sql) NOT LIKE ' %%' 
+AND UPPER(T.query_sql) NOT LIKE 'SHOW%%' 
+ORDER BY  t. request_time asc;
+
+
+
+SELECT 
+    t.query_sql sql_
+FROM  SYS.gv$sql_audit t
+WHERE   (TO_DATE('1970-01-01', 'YYYY-MM-DD') + ((t.request_time / 1000000) / 86400)) + INTERVAL '8' HOUR>= (SYSDATE - INTERVAL '1' MINUTE)
+AND t.DB_NAME = 'SYS'
+AND t.request_type = 2
+AND UPPER(T.query_sql) NOT LIKE 'SET%%' 
+AND UPPER(T.query_sql) NOT LIKE '%%ALL_OBJECTS%%' 
+AND UPPER(T.query_sql) NOT LIKE '%%DUAL%%' 
+AND UPPER(T.query_sql) NOT LIKE '%%$%%' 
+ORDER BY t.request_time asc
+
