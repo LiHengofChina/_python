@@ -1,74 +1,86 @@
 SELECT 
-	ii.db_type,
-	ii.source_count,
-	ii.work_order_count,
-	ii.dynamics_mode,
-	ii.static_mode,
-	IFNULL(rr.dynamic_audit_time,0) dynamic_audit_time,
-	IFNULL(rr.static_audit_time,0) static_audit_time,
-	IFNULL(tt.dynamic_task_time,0) dynamic_task_time,
-	IFNULL(tt.static_task_time,0) static_task_time
-FROM
+	IFNULL(final.db_type, '合计') AS db_type,
+	SUM(final.source_count) AS source_count, 
+	SUM(final.work_order_count) AS work_order_count,
+	SUM(final.dynamics_mode) AS dynamics_mode,
+	SUM(final.static_mode) AS static_mode,
+	SUM(final.dynamic_audit_time) AS dynamic_audit_time,
+	SUM(final.static_audit_time) AS static_audit_time,
+	SUM(final.dynamic_task_time) AS dynamic_task_time,
+	SUM(final.static_task_time) AS static_task_time
+	
+FROM 
 (
 	SELECT 
-		i.db_type db_type,
-		i.source_count source_count,
-		i.work_order_count work_order_count,
-		COUNT(CASE WHEN sar.audit_mode = 1 THEN 1 END) AS dynamics_mode, -- 动态模式算法数量
-		COUNT(CASE WHEN sar.audit_mode = 2 THEN 1 END) AS static_mode -- 静态模式算法数量
-	FROM (
-		SELECT ds.db_type db_type, 
-			COUNT( DISTINCT ds.source_id) AS source_count,  -- 实例数
-			COUNT( DISTINCT  wo.id) AS work_order_count  -- 工单数
-		FROM data_source ds
-		LEFT JOIN work_order wo ON wo.data_source_id = ds.source_id
+		ii.db_type db_type,
+		ii.source_count source_count,
+		ii.work_order_count work_order_count,
+		ii.dynamics_mode dynamics_mode,
+		ii.static_mode static_mode,
+		IFNULL(rr.dynamic_audit_time,0) dynamic_audit_time,
+		IFNULL(rr.static_audit_time,0) static_audit_time,
+		IFNULL(tt.dynamic_task_time,0) dynamic_task_time,
+		IFNULL(tt.static_task_time,0) static_task_time
+	FROM
+	(
+		SELECT 
+			i.db_type db_type,
+			i.source_count source_count,
+			i.work_order_count work_order_count,
+			COUNT(CASE WHEN sar.audit_mode = 1 THEN 1 END) AS dynamics_mode, -- 动态模式算法数量
+			COUNT(CASE WHEN sar.audit_mode = 2 THEN 1 END) AS static_mode -- 静态模式算法数量
+		FROM (
+			SELECT ds.db_type db_type, 
+				COUNT( DISTINCT ds.source_id) AS source_count,  -- 实例数
+				COUNT( DISTINCT  wo.id) AS work_order_count  -- 工单数
+			FROM data_source ds
+			LEFT JOIN work_order wo ON wo.data_source_id = ds.source_id
 
-		GROUP BY ds.db_type
-	) i
-	LEFT JOIN sql_audit_rule sar ON i.db_type = sar.db_type
-	GROUP BY i.db_type, i.source_count , i.work_order_count
-) ii
-LEFT JOIN 
-(
-	SELECT IJ.db_type db_type,
-	       SUM(CASE WHEN ij.audit_mode = 1 THEN 1 ELSE 0 END) AS dynamic_audit_time,  -- 动态审核次数
-	       SUM(CASE WHEN ij.audit_mode = 2 THEN 1 ELSE 0 END) AS static_audit_time    -- 静态审核次数
-	FROM audit_result ar
-		 LEFT JOIN
-	     (
-		 SELECT DISTINCT
-			  ds.`source_id` source_id, 	 
-			  ds.rule_template_id rule_template_id, 
-			  rule.`audit_mode`  audit_mode, 
-			  ds.`db_type` db_type
-		 FROM rule_template_association temp
-			  INNER JOIN sql_audit_rule rule ON rule.id = temp.rule_id
-			  INNER JOIN data_source ds ON ds.rule_template_id = temp.template_id
-	     ) IJ ON ar.source_id = IJ.source_id
-	GROUP BY IJ.db_type
-	)  rr ON rr.db_type = ii.db_type
-LEFT JOIN 
-(
-	SELECT IJ.db_type,
-	       SUM(CASE WHEN ij.audit_mode = 1 THEN 1 ELSE 0 END) AS dynamic_task_time,  -- 动态任务次数
-	       SUM(CASE WHEN ij.audit_mode = 2 THEN 1 ELSE 0 END) AS static_task_time    -- 静态任务次数
-	FROM task_result tr
-		 LEFT JOIN
-	     (
-		SELECT DISTINCT   
-		ds.`source_id` source_id, 
-		rta.`template_id` template_id,
-		sar.`audit_mode`  audit_mode, 
-		ds.`db_type` db_type
-		FROM rule_template_association rta
-			INNER JOIN sql_audit_rule sar ON sar.id = rta.rule_id
-			INNER JOIN data_source DS ON ds.rule_template_id = rta.template_id
-	     ) IJ ON tr.source_id = IJ.source_id
-	GROUP BY IJ.db_type
-) tt ON tt.db_type = ii.db_type
+			GROUP BY ds.db_type
+		) i
+		LEFT JOIN sql_audit_rule sar ON i.db_type = sar.db_type
+		GROUP BY i.db_type, i.source_count , i.work_order_count
+	) ii
+	LEFT JOIN 
+	(
+		SELECT IJ.db_type db_type,
+		       SUM(CASE WHEN ij.audit_mode = 1 THEN 1 ELSE 0 END) AS dynamic_audit_time,  -- 动态审核次数
+		       SUM(CASE WHEN ij.audit_mode = 2 THEN 1 ELSE 0 END) AS static_audit_time    -- 静态审核次数
+		FROM audit_result ar
+			 LEFT JOIN
+		     (
+			 SELECT DISTINCT
+				  ds.`source_id` source_id, 	 
+				  ds.rule_template_id rule_template_id, 
+				  rule.`audit_mode`  audit_mode, 
+				  ds.`db_type` db_type
+			 FROM rule_template_association temp
+				  INNER JOIN sql_audit_rule rule ON rule.id = temp.rule_id
+				  INNER JOIN data_source ds ON ds.rule_template_id = temp.template_id
+		     ) IJ ON ar.source_id = IJ.source_id
+		GROUP BY IJ.db_type
+		)  rr ON rr.db_type = ii.db_type
+	LEFT JOIN 
+	(
+		SELECT IJ.db_type,
+		       SUM(CASE WHEN ij.audit_mode = 1 THEN 1 ELSE 0 END) AS dynamic_task_time,  -- 动态任务次数
+		       SUM(CASE WHEN ij.audit_mode = 2 THEN 1 ELSE 0 END) AS static_task_time    -- 静态任务次数
+		FROM task_result tr
+			 LEFT JOIN
+		     (
+			SELECT DISTINCT   
+			ds.`source_id` source_id, 
+			rta.`template_id` template_id,
+			sar.`audit_mode`  audit_mode, 
+			ds.`db_type` db_type
+			FROM rule_template_association rta
+				INNER JOIN sql_audit_rule sar ON sar.id = rta.rule_id
+				INNER JOIN data_source DS ON ds.rule_template_id = rta.template_id
+		     ) IJ ON tr.source_id = IJ.source_id
+		GROUP BY IJ.db_type
+	) tt ON tt.db_type = ii.db_type
 
-ORDER BY ii.db_type;
+	ORDER BY ii.db_type
+) final
+GROUP BY final.db_type WITH ROLLUP
 
-
-
- 
