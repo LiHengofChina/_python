@@ -2,7 +2,7 @@
 //======================================= RelOptTable 简介
 //======================================= RelOptTable 简介
 
-RelOptTable 是 Apache Calcite 中用于 表示数据库表的优化器接口，
+RelOptTable 是 Apache Calcite 中用于 表示数据库表的 "优化器接口"，
 它主要用于 查询优化阶段，
 帮助 执行计划 (RelNode) 获取表的相关信息，如：
 

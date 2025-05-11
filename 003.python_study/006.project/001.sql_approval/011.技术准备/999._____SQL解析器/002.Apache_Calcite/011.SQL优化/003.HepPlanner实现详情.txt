@@ -1,0 +1,35 @@
+
+
+//=======================================================================
+//=======================================================================
+
+HepPlanner 中的基本概念
+		   //这里先看下 HepPlanner 的一些基本概念，对于后面的理解很有帮助。
+	（1）HepRelVertex
+			HepRelVertex 是对 RelNode 进行了简单封装。
+			HepPlanner 中的所有节点都是 HepRelVertex，
+			每个 HepRelVertex 都指向了一个真正的 RelNode 节点。
+
+	（2）HepInstruction
+			HepInstruction 是 HepPlanner 对一些内容的封装，具体的子类实现比较多，
+			其中 RuleInstance 是 HepPlanner 中对 Rule 的一个封装，
+			注册的 Rule 最后都会转换为这种形式。
+
+
+
+HepPlanner 处理流程
+		HepProgramBuilder builder = new HepProgramBuilder();
+		builder.addRuleInstance(FilterJoinRule.FilterIntoJoinRule.FILTER_ON_JOIN); //note: 添加 rule
+		HepPlanner hepPlanner = new HepPlanner(builder.build());
+		hepPlanner.setRoot(relNode);
+		relNode = hepPlanner.findBestExp();
+
+上面的代码总共分为三步：
+	（1）初始化 HepProgram 对象；
+	（2）初始化 HepPlanner 对象，并通过 setRoot() 方法将 RelNode 
+		 树转换成 HepPlanner 内部使用的 Graph；
+	（3）通过 findBestExp() 找到最优的 plan，规则的匹配都是在这里进行。
+
+
+
+

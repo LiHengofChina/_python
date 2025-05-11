@@ -1,0 +1,39 @@
+
+//======================================================= 详细实现建议
+//======================================================= 详细实现建议
+
+//
+//（1）准备静态 report.html
+//				//1）设计好样式和交互（如果要图表，可用 ECharts/Chart.js 并内联）
+//				//2）所有资源要么内联，要么可 CDN 访问；避免相对路径引用外部文件
+//				/**
+//					把所有 <link rel="stylesheet"> 里的 CSS 复制到 <style> 里
+//					把所有 <script src="…"> 的 JS 复制到 <script> 里
+//					把图片、字体等资源用 Base64 内联或放到 Data URI
+//				*/
+
+
+（2）设计模板的内容
+
+
+（3）改为 Freemarker 模板
+				//1）把静态数据替换为 ${field}、<#list list as row> 等
+				//2）注意对特殊字符做 Escape，防 XSS
+
+
+（4）设计接口
+		4）实现内容相关的后端数据
+        后端渲染
+		//1）Controller 调用 Service 拿到统计数据，组装 Map<String,Object> Freemarker 渲染成字符串
+		//2）Spring Boot 示例：FreeMarkerConfigurer#getConfiguration().getTemplate("report.html.ftl").process(dataModel, writer);
+
+
+（6）下载/预览接口
+				//1）提供两个端点：
+					– /report/html：返回 HTML 供预览
+					– /report/download：设置 Content-Disposition: attachment 强制下载
+
+				//2）也可一个端点，前端通过 ?download=true 切换响应头
+
+
+

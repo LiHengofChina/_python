@@ -16,9 +16,6 @@ http://192.168.100.244/
 
 
 
-条件字段做函数操作
-检查 INSERT 语句是否未指定字段
-
 
 
 root
@@ -27,4 +24,6 @@ Rklink_1024
 
 
 
+
+String auditModeName = AuditMode.fromCode(dataSource.getAuditMode()).getDescription();
 

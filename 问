@@ -252,3 +252,13 @@
 
 （41）乱码的问题，网关的原因
 
+（42）它有返回值的
+	 sqlNode = validator.validate(sqlNode);
+
+（43）power shell 中的判断不能有中文
+	if ($content -match "Service Pack" -or $content -match "安全服务包" ) 
+
+（44）在使用 SFTP  的时候
+		windows 上面要删除 /
+		而SFTP 本身的其它命令需要添加上它
+
