@@ -1,0 +1,111 @@
+
+//==============================================（1）定义toggle文件
+//==============================================（1）定义toggle文件
+//==== 不同环境各自定义一个toggle.js 文件
+//==== 不同环境各自定义一个toggle.js 文件
+
+toggles/localhost/toggle.js //本地运行
+toggles/xyjt/toggle.js	  //xyjt环境
+toggles/cqyh/toggle.js	  //cqyh环境
+
+//=============== localhost的 toggle.js
+//=============== localhost的 toggle.js
+{
+   "showNewBanner": true,
+   "enableBetaChat": true,
+   "useDarkModeByDefault": true,
+   "enabledFeatures": ["a", "b", "c"],
+   "defaultVisibleMenus": ["home", "dashboard"]
+
+    "titles": {
+	  "home": "首页",
+	  "dashboard": "仪表盘"
+	}
+}
+//=============== cqyh 的 toggle.js
+//=============== cqyh 的 toggle.js
+{
+   "showNewBanner": true,
+   "enableBetaChat": false,
+   "useDarkModeByDefault": true,
+   "enabledFeatures": ["a", "b"],
+   "defaultVisibleMenus": ["home", "dashboard"]
+
+    "titles": {
+	  "home": "首页",
+	  "dashboard": "仪表盘"
+	}
+}
+//=============== xyjt 的 toggle.js
+//=============== xyjt 的 toggle.js
+{
+   "showNewBanner": false,
+   "enableBetaChat": false,
+   "useDarkModeByDefault": true,
+   "enabledFeatures": ["b", "c"],
+   "defaultVisibleMenus": ["home", "dashboard"]
+
+    "titles": {
+	  "home": "首页",
+	  "dashboard": "仪表盘"
+	}
+}
+
+
+//==============================================（2）Webpack 配置（简化）
+//==============================================（2）Webpack 配置（简化）
+
+//============== webpack.config.js
+//============== webpack.config.js
+const path = require('path');
+const webpack = require('webpack');
+
+module.exports = (env) => {
+  // env.TOGGLE_ENV 就是通过命令行 --env TOGGLE_ENV=xxx 传进来的值
+  const folder = env && env.TOGGLE_ENV ? env.TOGGLE_ENV : 'localhost';
+  // 根据传过来的 folder 名称去 require 对应目录下的 toggle.js/json
+  const toggles = require(path.resolve(__dirname, `${folder}/toggle.json`));
+
+  return {
+		// …其他配置…
+		plugins: [
+			  new webpack.DefinePlugin({
+				__FEATURE_TOGGLE__: JSON.stringify(toggles)
+			  })
+		]
+  };
+};
+
+//============== package.json
+//============== package.json
+{
+  "scripts": {
+    "build:localhost": "webpack --env TOGGLE_ENV=localhost",
+    "build:cqyh":      "webpack --env TOGGLE_ENV=cqyh",
+    "build:xyjt":      "webpack --env TOGGLE_ENV=xyjt"
+  }
+}
+运行 npm run build:localhost 时，env.TOGGLE_ENV === 'localhost'，就会加载 ./localhost/toggle.json。
+
+运行 npm run build:cqyh 时，env.TOGGLE_ENV === 'cqyh'，就会加载 ./cqyh/toggle.json。
+
+
+
+//==============================================（3）前端代码中使用
+//==============================================（3）前端代码中使用
+
+
+// src/App.jsx
+import React from 'react';
+
+export default function App() {
+  return (
+    <div>
+      {__FEATURE_TOGGLE__.showNewBanner && (
+        <Banner>欢迎体验新功能！</Banner>
+      )}
+      {/* … */}
+    </div>
+  );
+}
+

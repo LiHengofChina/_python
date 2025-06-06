@@ -1,0 +1,84 @@
+
+
+（1）首先，为每一种审核类型定义一个统一的接口：
+
+
+	public interface IAuditService {
+		AuditResult audit(AuditRequest request);
+		boolean supports(AuditType type);
+	}
+
+	 然后针对 "对象审核"、"SQL 审核"、"中间件审核" 分别提供实现：
+	 @Service
+	 public class SqlAuditServiceImpl implements IAuditService {
+	 	public boolean supports(AuditType type) { return type == AuditType.SQL; }
+	 	public AuditResult audit(AuditRequest request) { /* ... */ }
+	 }
+
+	 @Service
+	 public class ObjectAuditServiceImpl implements IAuditService {
+	 	public boolean supports(AuditType type) { return type == AuditType.OBJECT; }
+	 	public AuditResult audit(AuditRequest request) { /* ... */ }
+	 }
+
+	// …其他实现…
+
+
+（2）用工厂/策略模式来选择实现
+	 在 Application 层再提供一个 "快速审核" 服务，它 注入所有 IAuditService：
+	 @Service
+	 public class FastAuditService {
+	 	
+			private final List<IAuditService> strategies;
+			
+			public FastAuditService(List<IAuditService> strategies) {
+				this.strategies = strategies;
+			}
+			
+			@Transactional  // 一次调用包裹整个快速审核
+			public AuditResult fastAudit(AuditRequest request) {
+				// 根据请求里的类型或条件，挑选具体实现
+				IAuditService svc = strategies.stream()
+					.filter(s -> s.supports(request.getType()))
+					.findFirst()
+					.orElseThrow(() -> new IllegalArgumentException("不支持的审核类型"));
+				
+				return svc.audit(request);
+			}
+	 }
+    
+
+
+
+//============================================ 为什么 Service 调用 Service 没问题
+//============================================ 为什么 Service 调用 Service 没问题
+
+（1）在 DDD 分层里，Application 层的服务互相调用，
+	 只要它们都在同一层（都不直接依赖 Web 层，也不进到基础设施层细节），是允许的。
+（2）关键是：不要把 "领域逻辑" 散落在 Controller 里，
+	 也不要在底层 Service 里去做跨场景协调。
+
+//============================================ 进阶——用 Mediator / Command Bus
+//============================================ 进阶——用 Mediator / Command Bus
+
+
+如果未来用例越来越多、审核流程越来越复杂，
+可以考虑引入一个轻量的 Mediator 或 Command Bus，
+把每一次审核请求封装成命令（Command），然后根据类型分发给不同的 Handler，
+设计思路跟上面 Strategy 类似，但更加解耦，
+也方便做日志、审计、异步、限流等横切关注点。
+
+
+
+//============================================ 这样会有两个事务
+//============================================ 这样会有两个事务
+
+但默认情况下两者都会用同一个事务
+（@Transactional 的默认 Propagation.REQUIRED 会让子调用加入父事务），
+不会真正 "嵌套" 开启新事务。
+
+如果你希望子服务也复用同一事务，保持默认即可；
+如果你想让每个审核类独立提交，
+给它们加上 @Transactional(propagation = Propagation.REQUIRES_NEW) 即可。
+
+

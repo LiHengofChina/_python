@@ -79,3 +79,21 @@
 	http://192.168.100.102:30111/user/login
 	admin/123456
 
+
+//=============================================================================== 本地运行
+//=============================================================================== 本地运行
+
+
+
+（1） 用户服务：
+		（1）修改 rkzl-user-auth-server 的 application.yaml 文件中的   name 为  rkzl-sqlaudit-liheng
+		（2）拷贝nacos中的 rkzl-user-auth-server 为 rkzl-user-auth-server-liheng
+		（3）启动用户服务
+
+（2） sql审核服务：
+		（1）修改 ServerNameConstants 类
+				public class ServerNameConstants {
+				public static final String USER_AUTH = "rkzl-user-auth-liheng";
+				}
+		（2）启动sql审核服务
+
