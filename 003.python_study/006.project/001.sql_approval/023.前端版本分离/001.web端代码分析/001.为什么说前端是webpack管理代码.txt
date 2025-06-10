@@ -1,0 +1,20 @@
+
+
+（1）为什么说前端是webpack管理代码
+		有 src/、public/、config/ 目录，
+		这是典型的 Webpack 构建结构。
+
+
+（2）存在以下文件说明使用了 Webpack：
+		.eslintrc.js、.prettierrc.js：
+				//说明项目用了 ESLint + Prettier 做代码规范。
+		jest.config.ts：
+				//使用了 Jest 单元测试。
+		tsconfig.json：
+				//说明是 TypeScript 项目。
+		Dockerfile：
+				//说明项目可能会被容器化部署。
+		.gitlab-ci.yml：
+				//GitLab CI/CD 自动化部署。
+
+

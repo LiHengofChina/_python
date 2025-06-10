@@ -5,6 +5,7 @@
 		#include <librdkafka/rdkafka.h>
 		//指定路径时，就要少指定一层
 		如：/usr/local/include
+
 （2）proC中使用SCN查询的时候，
 		要使用动态SQL，才能识别 SCN 字符串
 （3）线程中的参数传递问题，
@@ -261,4 +262,40 @@
 （44）在使用 SFTP  的时候
 		windows 上面要删除 /
 		而SFTP 本身的其它命令需要添加上它
+
+（45）前面删除了数据没有提交，后面又在删除
+
+	### Error updating database.  Cause: com.mysql.cj.jdbc.exceptions.MySQLTransactionRollbackException: Deadlock found when trying to get lock; try restarting transaction
+	### The error may exist in com/rkzl/sqlaudit/infrastructure/mapper/scrutiny/OriginalSqlMapper.java (best guess)
+	### The error may involve com.rkzl.sqlaudit.infrastructure.mapper.scrutiny.OriginalSqlMapper.deleteOriginalSqlBySourceIdAndSqlSha256-Inline
+	### The error occurred while setting parameters
+	### SQL: DELETE FROM original_sql WHERE source_id = ? AND sql_sha256 = ?
+	### Cause: com.mysql.cj.jdbc.exceptions.MySQLTransactionRollbackException: Deadlock found when trying to get lock; try restarting transaction
+	; Deadlock found when trying to get lock; try restarting transaction
+
+
+		第一次删了数据但没提交，拿着行锁不放，第二次再删就堵在锁上，
+		最终导致死锁。
+		//======================== 解决办法
+		（1） 简化业务逻辑（直接操作数据库）
+		（2） 单独开启事务
+		（2） 设置隔离级别
+
+		//======================== 最终解决
+		重新设计表，
+		像计数那样的功能，就就通过关联表统计的办法
+		不要写在字段中，反复调用数据库去计算
+
+（46）优化
+		在大量执行规则时报报错如何快速定位到它，通过日志观察，
+		进调反射调用的代码单独捕获异常信息，并添加日志
+
+（47）基线审核的时候使用了多个线程 "同时执行验证"，注意事项
+		（1）公共对象
+		（2）多个线程脚本命令冲突。
+		（3）还有就是 windows 和 linux换行符号 
+
+
+（48）windwos脚本要在windows运行，但是
+		windwos要使用gbk系编码，所以代码是使用gbk系
 
