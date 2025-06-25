@@ -1,0 +1,42 @@
+
+
+
+
+//==========================================（1）
+//==========================================（1）
+config.plugin('define').tap(([definitions]: any[]) => {
+	  return [
+			{
+			  ...definitions,
+			  __FEATURE_TOGGLE__: JSON.stringify(toggles),	//“编译期常量替换”，可以用来做“打包时条件控制”的关键工具。
+			  __ENABLE_DYNAMIC_AUDIT__: JSON.stringify(toggles.supportedAuditType.includes(1)),
+			},
+	  ];
+});
+
+
+//==========================================（2）
+//==========================================（2）
+
+__ENABLE_DYNAMIC_AUDIT__: JSON.stringify(toggles.supportedAuditType.includes(1)),
+__ENABLE_DYNAMIC_AUDIT__ 会在构建时被替换为 true 或 false
+如果是 false，这段 <Button> JSX 代码 不会被打进最终产物（配合 webpack 的 Tree Shaking 和压缩器如 Terser）
+
+
+//==========================================（3）
+//==========================================（3）
+
+（3.1）  
+	declare const __ENABLE_DYNAMIC_AUDIT__: boolean;
+	在  typings.d.ts 里面声明
+	这是 TS 类型声明，只是让 TS 编译器不报错，不会参与打包或运行时逻辑。
+
+（3.2）
+	__ENABLE_DYNAMIC_AUDIT__: JSON.stringify(toggles.supportedAuditType.includes(1)),
+	这是 webpack 的 DefinePlugin 插件注入的编译时变量，
+	会在打包时把代码中出现的 __ENABLE_DYNAMIC_AUDIT__ 替换成 true 或 false（字符串化后的布尔值）。
+
+（3.3） 总结
+	声明是为 TypeScript 服务的，DefinePlugin 是为打包阶段服务的，两者配合起来才是完整方案。
+
+

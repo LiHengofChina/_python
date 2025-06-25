@@ -1,0 +1,39 @@
+
+//==============================================（1）配置后台地址：
+//==============================================（1）配置后台地址：
+config/defaultSettings.ts 文件
+
+const defaultSettings: ProLayoutProps & {
+
+	} = {
+  API_ADDRESS: 'http://192.168.100.102:32388',
+  REQUEST_ADDRESS: 'http://192.168.100.102:30111',
+
+};
+
+
+/**
+
+请求的是 http://192.168.100.102:32388/v3/api-docs
+
+//会根据 "这个地址" 生成 "前端接口代码"
+//返回的是一个json
+
+*/
+
+
+
+//============================================== config/config.ts
+//============================================== config/config.ts
+
+文件顶部导入了：import defaultSettings from './defaultSettings';
+import defaultSettings, { isMicroservice } from './defaultSettings';
+
+export default defineConfig({
+
+	
+});
+
+//============================================== defaultSettings
+//============================================== defaultSettings
+

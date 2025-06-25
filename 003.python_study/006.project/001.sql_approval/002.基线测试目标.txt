@@ -1,0 +1,34 @@
+环境准备:测试目标准备
+
+
+(1)Windows系统
+192.168.100.7
+rklink  Rklink_1024
+
+(2)Linux
+192.168.100.231
+root Rklink_1024
+
+(3)Oracle
+192.168.35.25
+root P@ssw0rd@123
+
+(4)DM 数据库
+192.168.100.124
+root age733
+
+(5)Tomcat中间件
+192.168.81.20
+root Rklink_1024
+
+(6)Nginx中间件
+192.168.81.20
+root Rklink_1024
+
+
+(7)Redis中间件
+192.168.81.20
+root Rklink_1024
+
+
+

@@ -1,0 +1,156 @@
+
+//==============================================（1）定义toggle文件
+//==============================================（1）定义toggle文件
+//==== 不同环境各自定义一个toggle.js 文件
+//==== 不同环境各自定义一个toggle.js 文件
+
+toggles/localhost/toggle.js //本地运行
+toggles/xyjt/toggle.js	  //xyjt环境
+toggles/cqyh/toggle.js	  //cqyh环境
+
+//=============== localhost的 toggle.js
+//=============== localhost的 toggle.js
+{
+   "showNewBanner": true,
+   "enableBetaChat": true,
+   "useDarkModeByDefault": true,
+   "enabledFeatures": ["a", "b", "c"],
+   "defaultVisibleMenus": ["home", "dashboard"]
+
+    "titles": {
+	  "home": "首页",
+	  "dashboard": "仪表盘"
+	}
+}
+//=============== cqyh 的 toggle.js
+//=============== cqyh 的 toggle.js
+{
+   "showNewBanner": true,
+   "enableBetaChat": false,
+   "useDarkModeByDefault": true,
+   "enabledFeatures": ["a", "b"],
+   "defaultVisibleMenus": ["home", "dashboard"]
+
+    "titles": {
+	  "home": "首页",
+	  "dashboard": "仪表盘"
+	}
+}
+//=============== xyjt 的 toggle.js
+//=============== xyjt 的 toggle.js
+{
+   "showNewBanner": false,
+   "enableBetaChat": false,
+   "useDarkModeByDefault": true,
+   "enabledFeatures": ["b", "c"],
+   "defaultVisibleMenus": ["home", "dashboard"]
+
+    "titles": {
+	  "home": "首页",
+	  "dashboard": "仪表盘"
+	}
+}
+
+
+
+//==============================================（2）Webpack 配置（简化）
+//==============================================（2）Webpack 配置（简化）
+
+DefinePlugin（插件） 把 __FEATURE_TOGGLE__ 编译进打包后的运行时代码里，让浏览器里 window.__FEATURE_TOGGLE__ 实际存在。
+是在 打包阶段（Webpack 构建时）把你的 toggles 对象注入到前端代码里，让浏览器端能够通过 __FEATURE_TOGGLE__ 直接访问这些配置值。
+
+    //====================== 读取环境变量，保证前端代码能使用 __FEATURE_TOGGLE__
+    //====================== 读取环境变量，保证前端代码能使用 __FEATURE_TOGGLE__
+ 
+    //====================== 读取环境变量
+    //====================== 读取环境变量
+	   const toggleEnv = process.env.TOGGLE_ENV || 'localhost';
+		console.log('🔧 TOGGLE_ENV is', process.env.TOGGLE_ENV);
+		const path = require('path');
+		const togglePath = path.resolve(
+		  process.cwd(),
+		  'config',
+		  'toggle',
+		  toggleEnv,
+		  'toggle.js',
+		);
+		console.log('🔧 togglePath iss', togglePath);    
+		const toggles = require(togglePath);
+
+
+		config.plugin('define').tap(([definitions]: any[]) => {
+		  return [
+			{
+			  ...definitions,
+			  __FEATURE_TOGGLE__: JSON.stringify(toggles),
+			},
+		  ];
+		});
+  
+//==============================================（3）补充
+//==============================================（3）补充
+
+
+由于  config.ts 引入了 defaultSettings.ts
+
+
+import defaultSettings, { isMicroservice } from './defaultSettings';
+
+而 defaultSettings 里面也需要使用 toggle 的内容
+
+所以在 defaultSettings.ts 里面，但要给默认值，因为它先执行
+
+declare const __FEATURE_TOGGLE__: any; 
+const toggles =
+  typeof __FEATURE_TOGGLE__ !== 'undefined'
+    ? __FEATURE_TOGGLE__
+    : {
+        navBarTitle: '默认标题'  //但要给默认值，因为它先执行
+      };
+
+
+
+//==============================================（4）使用
+//==============================================（4）使用
+
+
+title:  __FEATURE_TOGGLE__.navBarTitle,
+
+
+
+
+// src/App.jsx
+import React from 'react';
+
+export default function App() {
+  return (
+    <div>
+      {__FEATURE_TOGGLE__.showNewBanner && (
+        <Banner>欢迎体验新功能！</Banner>
+      )}
+      {/* … */}
+    </div>
+  );
+}
+
+
+
+
+//==============================================（5）给启动加入参数
+//==============================================（5）给启动加入参数
+
+//============== package.json
+//============== package.json
+{
+  "scripts": {
+    "build:localhost": "webpack --env TOGGLE_ENV=localhost",
+    "build:cqyh":      "webpack --env TOGGLE_ENV=cqyh",
+    "build:xyjt":      "webpack --env TOGGLE_ENV=xyjt"
+  }
+}
+运行 npm run build:localhost 时，env.TOGGLE_ENV === 'localhost'，就会加载 ./localhost/toggle.json。
+
+运行 npm run build:cqyh 时，env.TOGGLE_ENV === 'cqyh'，就会加载 ./cqyh/toggle.json。
+
+
+

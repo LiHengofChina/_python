@@ -1,0 +1,7 @@
+
+utils/access.ts
+
+Umi 插件 @umijs/plugin-access 的机制，手动编写的权限定义文件 ✅。
+
+
+

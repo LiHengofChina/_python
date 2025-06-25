@@ -299,3 +299,19 @@
 （48）windwos脚本要在windows运行，但是
 		windwos要使用gbk系编码，所以代码是使用gbk系
 
+（49）前端某些代码要剪切掉重写才能触发编译
+
+
+（50）在toggle文件加载之前就先引用 ，先给默认值 
+	由于  config.ts 引入了 defaultSettings.ts
+	import defaultSettings, { isMicroservice } from './defaultSettings';
+	而 defaultSettings 里面也需要使用 toggle 的内容
+	所以在 defaultSettings.ts 里面，但要给默认值，因为它先执行
+	declare const __FEATURE_TOGGLE__: any; 
+	const toggles =
+	  typeof __FEATURE_TOGGLE__ !== 'undefined'
+		? __FEATURE_TOGGLE__
+		: {
+			navBarTitle: '默认标题'  //但要给默认值，因为它先执行
+		  };
+
