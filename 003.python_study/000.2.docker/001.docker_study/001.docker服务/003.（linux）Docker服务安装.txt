@@ -121,21 +121,22 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 //=========================================== （10）启动并验证 Docker
 //=========================================== （10）启动并验证 Docker
 
-//启动 Docker 服务：
+// 启动 Docker 服务：
 sudo systemctl start docker
 
-//停止 Docker 服务：
+// 停止 Docker 服务：
 sudo systemctl stop docker
 
 // 设置 Docker 开机自启：
 sudo systemctl enable docker
 
-// 验证 Docker 是否安装成功：
+// 验证 Docker 是否安装成功：//查看docker版本
 docker --version
 
-//=========================================== （11）
-//=========================================== （11）
+//=========================================== （11）查看docker服务状态
+//=========================================== （11）查看docker服务状态
 
 // 检查 Docker 状态
 sudo systemctl status docker
 
+ 
