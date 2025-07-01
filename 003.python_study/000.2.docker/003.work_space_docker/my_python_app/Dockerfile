@@ -1,3 +1,4 @@
+
 # 使用官方的Python 3镜像作为基础镜像
 FROM python:3.8-slim
 
@@ -9,3 +10,5 @@ COPY . /app
 
 # 运行Python程序
 CMD ["python", "app.py"]
+
+
