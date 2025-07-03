@@ -315,3 +315,15 @@
 			navBarTitle: '默认标题'  //但要给默认值，因为它先执行
 		  };
 
+
+（51）ssh Administrator@172.24.1.101
+	Connection reset by 172.24.1.101 prot 22
+
+	原因系： windows版本的 sshd安装目录不正确，当时安装在桌面的
+	//换到C盘的一个可靠的目录
+
+
+
+
+
+
