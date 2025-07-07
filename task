@@ -65,9 +65,9 @@
 
 
 
-feat(core):   切换到重庆银行
-fix(login):   切换到重庆银行
-docs(toggle): 切换到重庆银行
+feat(core):   动态审核有检测到SQL，才能出报告
+fix(login):   动态审核有检测到SQL，才能出报告
+docs(toggle): 动态审核有检测到SQL，才能出报告
 
 
 
