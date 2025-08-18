@@ -1,0 +1,142 @@
+//=========================== 输出方式：
+//=========================== 输出方式：
+
+（1）人工执行shell，输出到文件，获取文件上传
+（2）脚本直接输出到控制台，程序执行脚本的时候，会获取数据
+
+//=========================== 输出格式
+//=========================== 输出格式
+
+├── 配置项：
+	key_1: value_1
+	key_2: value_2
+├── 用户对象
+	user1
+	user3
+	user2
+	user3
+	...
+├── 表结构
+	ower.tab_user:  列名,字段类型,字段长度,是否可为空,注释,默认值
+					|列名,字段类型,字段长度,是否可为空,注释,默认值
+					|....
+	ower.tab_order: 列名,字段类型,字段长度,是否可为空,注释,默认值, 
+	ower.tab_dept: 列名,字段类型,字段长度,是否可为空,注释,默认值,
+	...
+├── 索引
+	ower.index_1: 索引类型,是否唯一,a@b@c,
+	ower.index_2: 索引类型,是否唯一,a@b@c,
+	ower.index_3: 索引类型,是否唯一,a@b@c,
+├── 视图
+	ower.viwe1
+	ower.viwe2
+	ower.viwe3
+	...
+├── 存储过程
+	ower.prod_1
+	ower.prod_1
+	ower.prod_1
+	...
+├── 触发器
+	ower.tigger_1
+	ower.tigger_2
+	ower.tigger_3
+	...
+├── 函数
+	ower.func_1
+	ower.func_2
+	ower.func_3
+	...
+├── 序列
+	ower.seq_1
+	ower.seq_1
+	ower.seq_1
+	...
+├── 约束
+	ower.txx_1 :主键,外键,唯一约束,检查约束
+	ower.txx_2 :主键,外键,唯一约束,检查约束
+	ower.txx_3 :主键,外键,唯一约束,检查约束
+	...
+├── 同义词
+	ower.syn_1
+	ower.syn_2
+	ower.syn_3
+	...
+
+//=========================== 脚本参数
+//=========================== 脚本参数
+
+
+//================== 单独执行
+//================== 单独执行
+bash /tmp/script.sh {true} {sid|serverName} {ipsuffix}
+
+//================== 平台后端执行
+//================== 平台后端执行
+bash /tmp/script.sh {false} {sid|serverName}
+
+
+//=========================== 文件名后缀
+//=========================== 文件名后缀
+
+
+// 配置项
+fileSuffix: '.oracle_config' 
+
+// 用户对象
+fileSuffix: '.oracle_user'
+
+// 表结构
+fileSuffix: '.oracle_table' 
+
+// 索引
+fileSuffix: '.oracle_index'  
+
+// 视图
+fileSuffix: '.oracle_view' 
+
+// 存储过程
+fileSuffix: '.oracle_procedure'   
+
+// 触发器
+fileSuffix: '.oracle_trigger'  
+
+// 函数
+fileSuffix: '.oracle_function' 
+
+// 序列
+fileSuffix: '.oracle_sequence'  
+
+// 约束
+fileSuffix: '.oracle_constraint' 
+
+// 同义词
+fileSuffix: '.oracle_synonym'  
+
+//=========================== 文件前缀
+//=========================== 文件前缀
+ 
+//=================== 格式
+//=================== 格式
+ 
+{机器ip}_{服务名}.{对比项}
+
+//=================== 示例
+//=================== 示例
+192.168.1.31_oracl.oracle_sequence
+192.168.1.31_oracl.oracle_trigger
+192.168.1.31_oracl.oracle_function
+192.168.1.31_oracl.oracle_view
+
+
+//=========================== 机器信息文件格式
+//=========================== 机器信息文件格式
+//=================== 格式
+//=================== 格式
+ 
+机器ip:
+
+//=================== 示例
+//=================== 示例
+
+ 

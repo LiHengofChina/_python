@@ -1,10 +1,12 @@
 
 
-find /tmp/liheng/base_line -type f -name "*.sh" -exec dos2unix {} \;
+find /tmp/xx/base_line -type f -name "*.sh" -exec dos2unix {} \;
 
 
 
 
-find /tmp/liheng/base_line/oracle_security -type f -name "*.sh" -exec dos2unix {} \;
+find /tmp/xx/base_line/oracle_security -type f -name "*.sh" -exec dos2unix {} \;
+
+
 
 
