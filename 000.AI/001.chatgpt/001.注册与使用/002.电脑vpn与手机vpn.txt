@@ -27,7 +27,7 @@
 	（1）登陆一个appStore 账号 
 			//要北美账号
 	（2）下载 Shadowrocket 软件
-			//要给钱2.99美元
+			//要给钱2.99美元（只给一次）
 	（3） 手机登陆0dcloud 官网 ：
 			https://lingdianyun7.xyz/user
 	（4）用户中心：

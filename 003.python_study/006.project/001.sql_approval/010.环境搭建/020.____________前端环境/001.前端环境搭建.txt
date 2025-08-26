@@ -23,13 +23,24 @@ D:\workspace_2025_05\rkink-sql-guard-web
 //===================== 安装 yarn
 
 npm install yarn --force
+npm install -g yarn
+
 
 
 //===================== 第一次 安装依赖
 //===================== 第一次 安装依赖
 
+//设置镜像
+yarn config set registry https://registry.npmmirror.com
 
 yarn install
+
+
+yarn install --check-files
+
+yarn install --ignore-engines
+
+
 
 //===================== 有新接口的时候
 //===================== 有新接口的时候

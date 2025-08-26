@@ -239,17 +239,13 @@
 		for(previousPosition = file.tellg(); std::getline(file, line);
 		previousPosition = file.tellg()){
 
-
 （39）javac 动态编译时 ，要先解压jar包，然后指定依赖
 			javac -cp '/app/BOOT-INF/lib/*' DEMO.JAVA
 
-
 （39）javac 动态编译时 ，要先解压jar包，然后指定依赖
 			javac -cp '/app/BOOT-INF/lib/*' DEMO.JAVA
-
 
 （40）根据ID排序，不要根据时间排序，因为时间可能相同
-
 
 （41）乱码的问题，网关的原因
 
@@ -295,12 +291,10 @@
 		（2）多个线程脚本命令冲突。
 		（3）还有就是 windows 和 linux换行符号 
 
-
 （48）windwos脚本要在windows运行，但是
 		windwos要使用gbk系编码，所以代码是使用gbk系
 
 （49）前端某些代码要剪切掉重写才能触发编译
-
 
 （50）在toggle文件加载之前就先引用 ，先给默认值 
 	由于  config.ts 引入了 defaultSettings.ts
@@ -315,15 +309,60 @@
 			navBarTitle: '默认标题'  //但要给默认值，因为它先执行
 		  };
 
-
 （51）ssh Administrator@172.24.1.101
 	Connection reset by 172.24.1.101 prot 22
 
 	原因系： windows版本的 sshd安装目录不正确，当时安装在桌面的
 	//换到C盘的一个可靠的目录
 
+//=====================================================
+//=====================================================
+
+（52）产品定位，不是所有
+
+（53）
+	mybatis 分页 多表时，
+	当右边的表数据多时，为了避免重复记录，
+	通常需要加 DISTINCT，
+	确保左边表的记录不被重复计算。
+	SELECT COUNT(DISTINCT  sp.id) 
+	SELECT DISTINCT SP.*
+
+//=====================================================
+//=====================================================
+
+For input string: \"undefined\"
+
+//=====================================================
+
+（56）
+React 规定不能在 render 流程中调用 setState，
+否则会造成无限循环渲染或性能问题。
+
+fieldProps 是在渲染时执行的 —— 每次渲染都会执行一次它。
+而你在里面调用了 setState，就会触发重新渲染，
+结果又执行 fieldProps，就死循环了！
 
 
+fieldProps: (form, { rowKey }) => {
 
+	const options = auditStrategicList.map((item) => ({
+	  label: item.strategicName,
+	  value: item.id,
+	}));
 
+	//设置数据到Map
+	setStrategyOptionsMap((prev) => ({
+	  ...prev,
+	  [String(rowKey)]: options,
+	}));
+
+（57）nodejs依赖导致的版本变化
+	（1）查看有哪些库依赖它
+		 yarn why minimatch
+	（2） 原因：
+	我本地升级 nodejs 20.13.1
+	我本地之前是：18.19.1
+	这导致 生成的 yarn.lock 内容有些变化
+	而CI上面的版本低，所以CI使用 yarn.lock 跑不过
 
