@@ -366,3 +366,15 @@ fieldProps: (form, { rowKey }) => {
 	这导致 生成的 yarn.lock 内容有些变化
 	而CI上面的版本低，所以CI使用 yarn.lock 跑不过
 
+（58）模板不处理
+	<noparse>
+	<script>
+	...
+	</script>
+	</#noparse>
+
+（59）样式不居中
+	margin: 12px auto; display: block;
+	或 
+	padding-left: 30px !important; 
+	padding-right: 0px !important;
