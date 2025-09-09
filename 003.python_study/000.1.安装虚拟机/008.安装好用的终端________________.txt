@@ -1,6 +1,0 @@
-
-
-（1）sudo apt install terminator
-
-（2）显示应用程序 ---> 搜索 terminator ---> 右击 选择 添加到收藏夹
-
