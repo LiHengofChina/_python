@@ -1,0 +1,15 @@
+
+
+def fib(n: int) -> int:
+    ...
+
+//==========
+n: int ：这是 参数注解，表示参数 n 预期是 int 类型。
+-> int ：这是 返回值注解（return type annotation），
+		 表示这个函数返回值预期是 int。
+
+Python 不会强制检查类型，它只是提示，
+方便 IDE（比如 PyCharm）和工具（如 mypy）做类型检查。
+
+所以 -> int 叫：函数返回值类型注解。
+
