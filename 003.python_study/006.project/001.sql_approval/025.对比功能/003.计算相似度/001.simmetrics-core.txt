@@ -1,0 +1,35 @@
+
+
+simmetrics-core 是 Java 里一个常用的 字符串相似度计算库，
+	它提供了很多不同的相似度算法，
+
+
+//================================== 多种相似度 / 距离算法：
+//================================== 多种相似度 / 距离算法：
+
+
+编辑距离类：	Levenshtein、Damerau-Levenshtein、NeedlemanWunsch、SmithWaterman
+集合/词频类：	Jaccard、Cosine、OverlapCoefficient
+语言学类：		Jaro、JaroWinkler
+
+//================================== 统一接口：
+//================================== 统一接口：
+
+StringMetric metric = StringMetrics.levenshtein();
+float result = metric.compare("hello", "hallo"); // 0.8
+
+//==================================
+//==================================
+
+所有 compare(s, t) 的返回值都是 0.0 ~ 1.0：
+
+simmetrics-core 里的 Levenshtein 之类方法，
+	内部确实是算 编辑距离，但对外统一返回的是 归一化后的相似度（0~1）。
+	它的定位是 相似度衡量，不是判断 "完全相同"。
+
+
+如果你要判断文本是否完全相同：
+	用 Objects.equals(s, t) 或直接比较字符串。
+	如果要判断 "相似程度" 才用 simmetrics-core。
+
+
