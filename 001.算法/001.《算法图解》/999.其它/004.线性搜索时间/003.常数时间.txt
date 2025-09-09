@@ -1,0 +1,30 @@
+
+
+"constant time" 指的是 "不管数组的大小" 如何，操作 "所需的时间" 都是固定的。
+这种操作的时间复杂度是  O(1)
+
+
+
+//======================== 示例
+//======================== 示例
+
+[
+    {"id": 1, "name": "Alice"},
+    {"id": 2, "name": "Bob"},
+    {"id": 3", "name": "Charlie"}
+]
+
+// 示例函数，返回数组的第一个元素
+const yyjson_val *get_first_element(const yyjson_val *array) {
+    // 检查输入是否为数组以及数组是否为空
+    if (!yyjson_is_arr(array) || yyjson_arr_size(array) == 0) {
+        return NULL;
+    }
+    // 返回第一个元素（常数时间）
+    return yyjson_arr_get_first(array);
+}
+
+constant time（常数时间）：表示操作所需的时间与输入数据的大小无关，时间复杂度为 O(1)。
+
+通过这种方式，可以高效地获取数组中的第一个元素。
+

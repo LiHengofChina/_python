@@ -1,0 +1,55 @@
+//==================================== JSON Array
+//==================================== JSON Array
+
+Note that accessing elements by index may take a linear search time. 
+//注意：通过索引访问元素，可能需要线性搜索时间
+
+
+//=================== 线性搜索时间
+//=================== 线性搜索时间
+
+是指在 "最坏情况下"，访问元素需要遍历 "数组中的所有元素"，直到找到所需的元素。
+
+因此，如果数组中有  n 个元素，最坏情况下的时间复杂度是 O(n)。
+
+//=================== 线性搜索时间（Linear Search Time）
+//=================== 线性搜索时间（Linear Search Time）
+
+（1）这是指 "搜索操作的时间-复杂度" 与 "数组的大小" 成 "线性关系"。
+	 在 "最坏情况" 下，可能需要检查 "数组中的每一个元素" 才能找到 "目标元素"。
+
+（2）对于一个包含 n 个元素的数组，线性搜索的时间复杂度是O(n)
+
+//=================== 示例
+//=================== 示例
+
+
+假设有一个 JSON 数组：
+[
+    {"id": 1, "name": "Alice"},
+    {"id": 2, "name": "Bob"},
+    {"id": 3, "name": "Charlie"}
+]
+
+
+如果要通过索引访问第三个元素：
+yyjson_val *array = ...; // 假设 array 是一个 JSON 数组
+yyjson_val *element = yyjson_arr_get(array, 2); // 通过索引 2 访问第三个元素
+
+
+
+虽然 "通过索引访问数组元素" 在很多情况下是高效的，
+但在某些实现中可能需要进行线性搜索，这样在 "大型数组" 上会比较耗时。
+因此，如果需要遍历整个数组，使用迭代器 API 更为高效。
+
+//=================== 迭代器 API 示例
+//=================== 迭代器 API 示例
+yyjson_val *array = ...; // 假设 array 是一个 JSON 数组
+size_t idx, max;
+yyjson_val *value;
+
+yyjson_arr_foreach(array, idx, max, value) {
+    // 处理每个元素 value
+    printf("Element %zu: %s\n", idx, yyjson_get_str(yyjson_obj_get(value, "name")));
+}
+

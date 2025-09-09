@@ -1,0 +1,110 @@
+
+//==============================================  Patience Diff 算法
+//==============================================  Patience Diff 算法
+
+
+Patience Diff 算法 更适合处理你的场景，尤其是在对比文件差异时，
+它比 Levenshtein 距离和 LCS 更高效，特别是在处理大型文本时。
+
+
+
+如果文件数量较多但每个文件较小，
+Patience Diff 算法 会更适合处理这种情况。
+它在多个小文件之间比较差异时表现较好
+，可以高效处理多个文件的差异，而不容易被小的变化所影响。
+因此，对于这种场景，Patience Diff 更为合适。
+
+
+//============================================== 源代码
+//============================================== 源代码
+
+
+// 假设 source 和 target 是字符串数组，一行为一项
+const getCompareData = (sourceLines: string[], targetLines: string[]): CompareRow[] => {
+  const maxLength = Math.max(sourceLines.length, targetLines.length);
+  const data: CompareRow[] = [];
+  for (let i = 0; i < maxLength; i++) {
+	data.push({
+	  key: i,
+	  lineNumber: i + 1,
+	  sourceLine: sourceLines[i] ?? '',
+	  targetLine: targetLines[i] ?? '',
+	});
+  }
+  return data;
+};
+
+const dataSource = getCompareData(sourceContent.split('\n'), targetContent.split('\n'));
+
+
+//============================================== 开始集成 Patience Diff 算法
+//============================================== 开始集成 Patience Diff 算法
+
+
+（1）安装
+
+npm install diff
+
+yarn add diff
+
+（2）导入
+
+import * as Diff from 'diff';
+
+
+（3） 使用 diff 库的 diffLines 方法
+	diffLines 是最常用的方法，适用于逐行对比文本。它会使用 Patience Diff 算法。
+
+	修改你的 getCompareData 函数来利用该方法：
+
+const getCompareData = (sourceLines: string[], targetLines: string[]): CompareRow[] => {
+  const diffResult = Diff.diffLines(sourceLines, targetLines); 
+  const data: CompareRow[] = [];
+
+  let lineNumber = 1; // 用于设置行号
+  diffResult.forEach((part) => {
+    if (part.added) {
+      data.push({
+        key: lineNumber,
+        lineNumber: lineNumber++,
+        sourceLine: '', // 目标文件有此行，源文件没有
+        targetLine: part.value,
+      });
+    } else if (part.removed) {
+      data.push({
+        key: lineNumber,
+        lineNumber: lineNumber++,
+        sourceLine: part.value,
+        targetLine: '', // 源文件有此行，目标文件没有
+      });
+    } else {
+      data.push({
+        key: lineNumber,
+        lineNumber: lineNumber++,
+        sourceLine: part.value,
+        targetLine: part.value,
+      });
+    }
+  });
+
+  return data;
+};
+
+ 
+
+（4） 步骤 4: 使用 getCompareData 函数
+
+const dataSource = getCompareData(sourceContent.split('\n'), targetContent.split('\n'));
+
+
+//============================================== “目标文件有此行，源文件没有” 和 "源文件有此行，目标文件没有"它内部是如何判定的呢
+//============================================== “目标文件有此行，源文件没有” 和 "源文件有此行，目标文件没有"它内部是如何判定的呢
+
+Diff.diffLines 根据行内容的差异来判定：
+
+added：如果目标文件有一行，而源文件中没有相同的行，就标记为 added。
+
+removed：如果源文件有一行，而目标文件中没有相同的行，就标记为 removed
+、
+//==============================================
+//==============================================
