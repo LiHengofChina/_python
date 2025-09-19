@@ -391,3 +391,14 @@ fieldProps: (form, { rowKey }) => {
 		只不要添加和删除元素，就可以只使用普通循环修改它
 		
 		
+（63）调样式绝招
+		.td-table-center table.sub_table {
+			width: 100% !important;
+		}
+		.sub_table td > span {
+			padding-left: 0 !important;
+			text-align: left !important;
+		}
+		
+		
+CompareBusinessException
