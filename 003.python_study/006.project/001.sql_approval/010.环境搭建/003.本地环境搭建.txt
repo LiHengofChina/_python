@@ -91,9 +91,14 @@
 		（3）启动用户服务
 
 （2） sql审核服务：
-		（1）修改 ServerNameConstants 类
+
+		（1）修改 ServerNameConstants 类//公共库
 				public class ServerNameConstants {
-				public static final String USER_AUTH = "rkzl-user-auth-liheng";
+						public static final String USER_AUTH = "rkzl-user-auth-liheng";
 				}
+
+
+
+
 		（2）启动sql审核服务
 
