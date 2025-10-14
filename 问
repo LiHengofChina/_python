@@ -401,4 +401,17 @@ fieldProps: (form, { rowKey }) => {
 		}
 		
 		
-CompareBusinessException
+（64）不铺满，通过外层添加DIV，然后指定样式，就可以解决
+
+	  <style>
+		{`
+		  .baseline-list-wrapper .ant-pro-form-list-item {
+			display: block !important;
+			align-items: initial !important;
+			width: 100% !important;
+		  }
+		`}
+	  </style>
+	  <div className="baseline-list-wrapper">
+	  
+	  

@@ -1,0 +1,81 @@
+
+
+<PageContainer>
+	<ProForm onFinish= >
+				<ProFormList
+
+				initialValue={[ //有了 initialValue{[ {},... ]} //默认才会显示第1行
+					{
+					  base_line_requirement: '',
+					  base_line_standard_point: '',
+					  description: '',
+					  script_path: defaultScript   //有了 script_path: defaultScript 这个第一行直接提交时，对应的from中才有值
+					}
+				]}
+				creatorRecord={{
+					base_line_requirement: '',
+					base_line_standard_point: '',
+					description: '',
+					script_path: defaultScript, //有了 script_path: defaultScript 让新加的行，在不编辑时，对应的from中也有值
+				}}				
+
+				> //基线要求明细//列表
+						.....
+						<Row>
+							 <ProFormText		name="base_line_requirement"	/>	//基线要求
+							 <ProFormText 		name="base_line_standard_point" /> //标准点（参数）
+							 <ProFormTextArea	name="description" /> //要求描述
+								  <ProFormItem
+									  name="script_path"
+									  rules={[{ required: true, message: '请输入脚本内容' }]}
+									  label={`脚本内容-${index + 1}（说明：Linux 目标请使用 Shell 编写，Windows 目标请使用 PowerShell 编写）`}
+
+									  valuePropName="value" //让表单把 value 传给 Editor
+											//告诉 ProFormItem：我要把 "表单" 里的值，
+											//用 value 这个 prop 传给子组件（Editor）。
+											
+											/**
+											ProFormItem 本身并不知道里面是什么组件（它可以包 Input、Select、Editor 都行），
+											但它会自动把这三个属性作用在 "第一个子节点" 上。
+
+											也就是说：										
+														<ProFormItem
+														  valuePropName="value"
+														  trigger="onChange"
+														  getValueFromEvent={(value) => value}
+														>
+														  <Editor />
+														</ProFormItem>
+
+											等价于运行时由 Ant Design Pro 自动生成：
+														<Editor
+														  value={当前表单字段的值}             // 来自 valuePropName
+														  onChange={(value) => {               // 来自 trigger
+															const newVal = getValueFromEvent(value); 
+															表单.setFieldValue(当前字段名, newVal);
+														  }}
+														/>
+
+											
+
+											*/
+
+									  trigger="onChange"    //让表单接收 Editor 的 onChange
+											//告诉 ProFormItem：我 "从子组件拿值" 的 "事件" 叫 onChange。
+											//等价于：监听 <Editor onChange={...} />
+
+									  getValueFromEvent={(value) => value} //onChange 的第一个参数就是字符串
+											//告诉 ProFormItem：onChange 触发时，把事件入参里的哪个值当成 "新值" 存回表单。
+											//Monaco 的 onChange 第一个参数就是文本字符串，所以直接返回 value 即可。
+
+								  >
+									<Editor>
+									</Editor>
+								  </ProFormItem>
+						</Row>
+						.....
+						//
+				</ProFormList>
+			 }
+	</ProForm>
+</PageContainer>

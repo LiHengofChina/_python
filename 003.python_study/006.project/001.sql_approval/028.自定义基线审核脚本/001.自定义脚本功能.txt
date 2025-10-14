@@ -1,0 +1,43 @@
+
+
+//==================================================================== 当前规则
+//==================================================================== 当前规则
+
+
+
+（1）加入一条规则
+
+
+	INSERT INTO `audit_rule`
+	(`id`,`rule_name`, `description`, `real_type`, `alert_level`, `rule_type`, `applicable_scene`, `applicable_sql_type`,`rule_targets`, `rule_script`, `rule_resource`, `threshold_param_key`,`created_at`, `updated_at`, `audit_purpose`, `inner_code`, `inner_code_detail`, `audit_sub_type`)
+	VALUES
+
+	-- linux
+	('3020001','设备管理', '应配置系统安全管理工具，预防远程访问服务攻击或非授权访问，提高主机系统远程管理安全。 ',302, 3, 301, 2, 99,99, '', 1, NULL,NOW(), NOW(),99,'com.rkzl.sqlaudit.application.audit.sys_rule.baseline.system_audit.linux.LinuxBaselineAuditProcessor.auditLinuxAuditing','', 3);
+
+		//关联策略——这一步通过界面完成
+
+
+（2）加入基线要求
+	-- （技术要求详情）
+	INSERT INTO `audit_rule_baseline_definition` ( `id`, `rule_id`, `base_line_requirement`, `base_line_standard_point`, `description`, `created_at`, `updated_at`, `script_path`)
+	VALUES
+
+	-- linux（基线要求）
+	('3020001_001', '3020001','访问控制','/etc/hosts.allow,/etc/hosts.deny', '配置本机访问控制列表，提高主机系统安全访问', NOW(), NOW(),
+	 'base_line/system/linux_security/001/check-access-control.sh');
+
+
+	//这时，"基线要求" 就和 "基线规则" 进行了绑定
+
+//==================================================================== shell编辑器
+//==================================================================== shell编辑器
+
+npm install @monaco-editor/react
+
+
+yarn add @monaco-editor/react
+
+
+
+import Editor from '@monaco-editor/react';
