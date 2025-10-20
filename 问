@@ -414,4 +414,14 @@ fieldProps: (form, { rowKey }) => {
 	  </style>
 	  <div className="baseline-list-wrapper">
 	  
-	  
+
+（65）@monaco-editor/react 与 monaco-editor 的问题
+		
+	  @monaco-editor/react 内部 在线引入  monaco-editor 库
+	  在内网运行时这样就不行了， 
+		
+	  所以需要导入单独安装 monaco-editor 
+	  并在代码中导入，这样webpack就会把它打进去。
+	  //它们其实是两个库
+
+
