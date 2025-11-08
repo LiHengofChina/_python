@@ -1,0 +1,99 @@
+
+
+HikariCP
+
+“Hikari” 是日语单词 ひかり（光），意思是“光”或“光速”。
+“CP” 就是 “Connection Pool” 的缩写。
+
+作者是 Brett Wooldridge，是一位美国工程师，不是日本人。
+他给项目取“日语名 Hikari”，是为了表达**“极快、轻盈”**的含义（像光一样快）。
+
+//============================================== 介绍
+//============================================== 介绍
+
+
+HikariCP 是一个高性能的数据库连接池库
+
+它负责：
+	创建、复用和管理数据库连接；
+	控制最大最小连接数；
+	提供超时、检测、回收等机制；
+	被 Spring Boot 默认使用（从 2.x 起）。
+
+//============================================== 进一步介绍
+//============================================== 进一步介绍
+
+其实 HikariCP 现在是业界最主流、最出名的连接池之一。
+
+
+//（1） 对比其它连接池
+//（1） 对比其它连接池
+
+早期 Java 里常见的连接池是
+	DBCP（Apache Commons DBCP）
+	C3P0
+	Tomcat JDBC Pool
+但这些老牌连接池存在性能较低、锁竞争严重、参数复杂等问题。
+
+//（2）HikariCP 的出现
+//（2）HikariCP 的出现
+HikariCP（Hikari Connection Pool） 诞生于 2012～2015 年左右；
+作者 Brett Wooldridge 设计它的初衷是：
+"做一个更快、更轻量、更安全的连接池"；
+"Hikari" 在日语里是 "光" 的意思 —— 表示它 "快得像光一样"。
+
+//==============================================
+//==============================================
+
+HikariCP 是目前最主流、最高性能的 Java 数据库连接池库。
+它取代了旧的 C3P0 和 DBCP，性能快、延迟低、资源占用小。
+
+//============================================== HikariDataSource
+//============================================== HikariDataSource
+
+是的，Spring Boot 默认就使用 HikariCP 作为连接池。
+
+一个 "HikariDataSource 实例" 就是一个 "连接池"。
+
+//============================================== 配置方式
+//============================================== 配置方式
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.100.102:30999/sqlaudit_microservice_lihengx?serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    # url: jdbc:mysql://192.168.100.244:3306/sqlaudit_microservice_development?serverTimezone=Asia/Shanghai
+    # username: root
+    # password: Rklink_1024
+    hikari:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      minimum-idle: 5
+      maximum-pool-size: 20
+
+
+
+
+//============================================================================= 打印下连接池情况
+//============================================================================= 打印下连接池情况
+
+（开发环境打印）（生产环境 要使用log.info）
+
+private final DataSource dataSource; // ✅ 注入 Spring Boot 默认的数据源
+
+你打印 Hikari 的 runtime stats（比如空闲连接数、活动连接数、总连接数）：
+
+HikariDataSource ds = (HikariDataSource) dataSource;
+System.out.println(ds.getHikariPoolMXBean().getActiveConnections());
+System.out.println(ds.getHikariPoolMXBean().getIdleConnections());
+System.out.println(ds.getHikariPoolMXBean().getTotalConnections());
+
+====== HikariCP Pool Info ======
+Active Connections : 1
+Idle Connections   : 5
+Total Connections  : 6
+
+

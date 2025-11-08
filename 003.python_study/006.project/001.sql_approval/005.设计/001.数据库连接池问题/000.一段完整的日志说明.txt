@@ -1,0 +1,58 @@
+
+[2025-11-08 09:18:09.413] INFO  [http-nio-8082-exec-10] [TID: N/A] c.r.c.a.c.RoleModulePermissionAuthorizationChecker : 当前用户: UserDetailsVO(id=1, username=admin, phone=123@qq.com, email=13745678858, enabled=true, password=$2a$10$wv3BfGRhRQj5tdTO5rk9ouWejiQ0t1oWI2jm4GqzbkJ6c1duzXjz2, authorities=[ROLE_USER, ROLE_ADMIN], roles=[RoleVO(id=2, name=USER, modules=[ModuleVO{name='rkzl-user-auth', id='1'}, ModuleVO{name='rkzl-auto-deployment', id='6'}, ModuleVO{name='rkzl-operations-platform', id='5'}, ModuleVO{name='rkzl-union-monitor-platform', id='10'}, ModuleVO{name='rkzl-knowledge', id='3'}, ModuleVO{name='rkzl-gateway', id='4'}, ModuleVO{name='rkzl-data-sentinel', id='11'}, ModuleVO{name='rkzl-microservices-auto-inspect-report', id='8'}, ModuleVO{name='rkzl-microservices-example', id='7'}, ModuleVO{name='rkzl-sqlaudit', id='9'}, ModuleVO{name='rkzl-console', id='2'}]), RoleVO(id=1, name=ADMIN, modules=[ModuleVO{name='rkzl-user-auth', id='1'}, ModuleVO{name='rkzl-auto-deployment', id='6'}, ModuleVO{name='rkzl-operations-platform', id='5'}, ModuleVO{name='rkzl-union-monitor-platform', id='10'}, ModuleVO{name='rkzl-knowledge', id='3'}, ModuleVO{name='rkzl-gateway', id='4'}, ModuleVO{name='rkzl-data-sentinel', id='11'}, ModuleVO{name='rkzl-microservices-auto-inspect-report', id='8'}, ModuleVO{name='rkzl-microservices-example', id='7'}, ModuleVO{name='rkzl-sqlaudit', id='9'}, ModuleVO{name='rkzl-console', id='2'}])])
+[2025-11-08 09:18:09.414] INFO  [http-nio-8082-exec-10] [TID: N/A] c.r.c.a.c.RolePermissionPathAuthorizationChecker : 当前用户: UserDetailsVO(id=1, username=admin, phone=123@qq.com, email=13745678858, enabled=true, password=$2a$10$wv3BfGRhRQj5tdTO5rk9ouWejiQ0t1oWI2jm4GqzbkJ6c1duzXjz2, authorities=[ROLE_USER, ROLE_ADMIN], roles=[RoleVO(id=2, name=USER, modules=[ModuleVO{name='rkzl-user-auth', id='1'}, ModuleVO{name='rkzl-auto-deployment', id='6'}, ModuleVO{name='rkzl-operations-platform', id='5'}, ModuleVO{name='rkzl-union-monitor-platform', id='10'}, ModuleVO{name='rkzl-knowledge', id='3'}, ModuleVO{name='rkzl-gateway', id='4'}, ModuleVO{name='rkzl-data-sentinel', id='11'}, ModuleVO{name='rkzl-microservices-auto-inspect-report', id='8'}, ModuleVO{name='rkzl-microservices-example', id='7'}, ModuleVO{name='rkzl-sqlaudit', id='9'}, ModuleVO{name='rkzl-console', id='2'}]), RoleVO(id=1, name=ADMIN, modules=[ModuleVO{name='rkzl-user-auth', id='1'}, ModuleVO{name='rkzl-auto-deployment', id='6'}, ModuleVO{name='rkzl-operations-platform', id='5'}, ModuleVO{name='rkzl-union-monitor-platform', id='10'}, ModuleVO{name='rkzl-knowledge', id='3'}, ModuleVO{name='rkzl-gateway', id='4'}, ModuleVO{name='rkzl-data-sentinel', id='11'}, ModuleVO{name='rkzl-microservices-auto-inspect-report', id='8'}, ModuleVO{name='rkzl-microservices-example', id='7'}, ModuleVO{name='rkzl-sqlaudit', id='9'}, ModuleVO{name='rkzl-console', id='2'}])])
+[2025-11-08 09:18:09.414] INFO  [http-nio-8082-exec-10] [TID: N/A] c.r.c.a.c.RolePermissionPathAuthorizationChecker : 用户 admin 有权访问路径: /api/v1/sqlaudit/notification/my/new/notification
+[2025-11-08 09:18:09.415] INFO  [http-nio-8082-exec-10] [TID: N/A] c.rkzl.common.log.interceptor.LoggingInterceptor : Request URL: http://localhost:8082/api/v1/sqlaudit/notification/my/new/notification
+[2025-11-08 09:18:09.415] INFO  [http-nio-8082-exec-10] [TID: N/A] c.rkzl.common.log.interceptor.LoggingInterceptor : Method: GET
+[2025-11-08 09:18:09.415] INFO  [http-nio-8082-exec-10] [TID: N/A] c.rkzl.common.log.interceptor.LoggingInterceptor : Request Parameters: {}
+
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@30b50a65] was not registered for synchronization because synchronization is not active
+JDBC Connection [HikariProxyConnection@1200946980 wrapping com.mysql.cj.jdbc.ConnectionImpl@4ce66169] will not be managed by Spring
+
+==>  Preparing: SELECT ns.* FROM notification_system ns LEFT JOIN notification n ON ns.notification_id = n.id WHERE n.recipient_user_id = ? AND ns.is_read = ? ORDER BY ns.create_time DESC
+==> Parameters: 1(String), false(Boolean)
+<==      Total: 0
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@30b50a65]
+
+
+
+
+
+[2025-11-08 09:18:09.452] INFO  [http-nio-8082-exec-10] [TID: N/A] c.rkzl.common.log.interceptor.LoggingInterceptor : Response Status: 200
+[2025-11-08 09:18:12.666] INFO  [http-nio-8082-exec-9] [TID: N/A] c.r.c.a.c.RoleModulePermissionAuthorizationChecker : 当前用户: UserDetailsVO(id=1, username=admin, phone=123@qq.com, email=13745678858, enabled=true, password=$2a$10$wv3BfGRhRQj5tdTO5rk9ouWejiQ0t1oWI2jm4GqzbkJ6c1duzXjz2, authorities=[ROLE_USER, ROLE_ADMIN], roles=[RoleVO(id=2, name=USER, modules=[ModuleVO{name='rkzl-user-auth', id='1'}, ModuleVO{name='rkzl-auto-deployment', id='6'}, ModuleVO{name='rkzl-operations-platform', id='5'}, ModuleVO{name='rkzl-union-monitor-platform', id='10'}, ModuleVO{name='rkzl-knowledge', id='3'}, ModuleVO{name='rkzl-gateway', id='4'}, ModuleVO{name='rkzl-data-sentinel', id='11'}, ModuleVO{name='rkzl-microservices-auto-inspect-report', id='8'}, ModuleVO{name='rkzl-microservices-example', id='7'}, ModuleVO{name='rkzl-sqlaudit', id='9'}, ModuleVO{name='rkzl-console', id='2'}]), RoleVO(id=1, name=ADMIN, modules=[ModuleVO{name='rkzl-user-auth', id='1'}, ModuleVO{name='rkzl-auto-deployment', id='6'}, ModuleVO{name='rkzl-operations-platform', id='5'}, ModuleVO{name='rkzl-union-monitor-platform', id='10'}, ModuleVO{name='rkzl-knowledge', id='3'}, ModuleVO{name='rkzl-gateway', id='4'}, ModuleVO{name='rkzl-data-sentinel', id='11'}, ModuleVO{name='rkzl-microservices-auto-inspect-report', id='8'}, ModuleVO{name='rkzl-microservices-example', id='7'}, ModuleVO{name='rkzl-sqlaudit', id='9'}, ModuleVO{name='rkzl-console', id='2'}])])
+[2025-11-08 09:18:12.667] INFO  [http-nio-8082-exec-9] [TID: N/A] c.r.c.a.c.RolePermissionPathAuthorizationChecker : 当前用户: UserDetailsVO(id=1, username=admin, phone=123@qq.com, email=13745678858, enabled=true, password=$2a$10$wv3BfGRhRQj5tdTO5rk9ouWejiQ0t1oWI2jm4GqzbkJ6c1duzXjz2, authorities=[ROLE_USER, ROLE_ADMIN], roles=[RoleVO(id=2, name=USER, modules=[ModuleVO{name='rkzl-user-auth', id='1'}, ModuleVO{name='rkzl-auto-deployment', id='6'}, ModuleVO{name='rkzl-operations-platform', id='5'}, ModuleVO{name='rkzl-union-monitor-platform', id='10'}, ModuleVO{name='rkzl-knowledge', id='3'}, ModuleVO{name='rkzl-gateway', id='4'}, ModuleVO{name='rkzl-data-sentinel', id='11'}, ModuleVO{name='rkzl-microservices-auto-inspect-report', id='8'}, ModuleVO{name='rkzl-microservices-example', id='7'}, ModuleVO{name='rkzl-sqlaudit', id='9'}, ModuleVO{name='rkzl-console', id='2'}]), RoleVO(id=1, name=ADMIN, modules=[ModuleVO{name='rkzl-user-auth', id='1'}, ModuleVO{name='rkzl-auto-deployment', id='6'}, ModuleVO{name='rkzl-operations-platform', id='5'}, ModuleVO{name='rkzl-union-monitor-platform', id='10'}, ModuleVO{name='rkzl-knowledge', id='3'}, ModuleVO{name='rkzl-gateway', id='4'}, ModuleVO{name='rkzl-data-sentinel', id='11'}, ModuleVO{name='rkzl-microservices-auto-inspect-report', id='8'}, ModuleVO{name='rkzl-microservices-example', id='7'}, ModuleVO{name='rkzl-sqlaudit', id='9'}, ModuleVO{name='rkzl-console', id='2'}])])
+[2025-11-08 09:18:12.667] INFO  [http-nio-8082-exec-9] [TID: N/A] c.r.c.a.c.RolePermissionPathAuthorizationChecker : 用户 admin 有权访问路径: /api/v1/sqlaudit/audit_parameter/listParameter
+[2025-11-08 09:18:12.668] INFO  [http-nio-8082-exec-9] [TID: N/A] c.rkzl.common.log.interceptor.LoggingInterceptor : Request URL: http://localhost:8082/api/v1/sqlaudit/audit_parameter/listParameter
+[2025-11-08 09:18:12.668] INFO  [http-nio-8082-exec-9] [TID: N/A] c.rkzl.common.log.interceptor.LoggingInterceptor : Method: GET
+[2025-11-08 09:18:12.668] INFO  [http-nio-8082-exec-9] [TID: N/A] c.rkzl.common.log.interceptor.LoggingInterceptor : Request Parameters: {pageNum=[1], pageSize=[10], auditSubType=[1], realType=[101]}
+
+Creating a new SqlSession
+Registering transaction synchronization for SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27071996]
+JDBC Connection [HikariProxyConnection@219651289 wrapping com.mysql.cj.jdbc.ConnectionImpl@4ce66169] will be managed by Spring
+
+==>  Preparing: SELECT COUNT(*) AS total FROM audit_parameter WHERE (real_type = ? AND audit_sub_type = ? AND audit_sub_type IN (?, ?, ?, ?, ?))
+==> Parameters: 101(Integer), 1(Integer), 1(Integer), 2(Integer), 3(Integer), 4(Integer), 5(Integer)
+<==    Columns: total
+<==        Row: 15
+<==      Total: 1
+==>  Preparing: SELECT id,param_key,param_value,description,param_value_type,real_type,created_at,updated_at,audit_sub_type FROM audit_parameter WHERE (real_type = ? AND audit_sub_type = ? AND audit_sub_type IN (?,?,?,?,?)) ORDER BY param_key ASC LIMIT ?
+==> Parameters: 101(Integer), 1(Integer), 1(Integer), 2(Integer), 3(Integer), 4(Integer), 5(Integer), 10(Long)
+<==    Columns: id, param_key, param_value, description, param_value_type, real_type, created_at, updated_at, audit_sub_type
+<==        Row: 15, mysql_db_engine_d, InnoDB, 数据库名称后缀, 2, 101, 2025-11-08 09:13:19, 2025-11-08 09:13:19, 1
+<==        Row: 14, mysql_db_suffix_d, _DB, 数据库名称后缀, 2, 101, 2025-11-08 09:13:19, 2025-11-08 09:13:19, 1
+<==        Row: 7, mysql_index_prefix_d, idx_, 普通索引必须使用固定前缀, 2, 101, 2025-11-08 09:13:19, 2025-11-08 09:13:19, 1
+<==        Row: 10, mysql_insert_batch_max_column_d, 3, 建议批量插入不超过设定阈值, 1, 101, 2025-11-08 09:13:19, 2025-11-08 09:13:19, 1
+<==        Row: 11, mysql_max_bind_var_d, 100, 绑定变量数量上限, 1, 101, 2025-11-08 09:13:19, 2025-11-08 09:13:19, 1
+<==        Row: 12, mysql_max_char_count_d, 1000, char、varchar字段长度总和, 1, 101, 2025-11-08 09:13:19, 2025-11-08 09:13:19, 1
+<==        Row: 5, mysql_max_column_limit_d, 20, 表最大字段, 1, 101, 2025-11-08 09:13:19, 2025-11-08 09:13:19, 1
+<==        Row: 6, mysql_max_compound_index_d, 3, 索引个数不建议超过阈值, 1, 101, 2025-11-08 09:13:19, 2025-11-08 09:13:19, 1
+<==        Row: 4, mysql_max_in_clause_items_d, 10, 最大 IN 列表元素的阈值, 1, 101, 2025-11-08 09:13:19, 2025-11-08 09:13:19, 1
+<==        Row: 1, mysql_max_join_table_count_d, 5, 单次最多关联表数量, 1, 101, 2025-11-08 09:13:19, 2025-11-08 09:13:19, 1
+<==      Total: 10
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27071996]
+Transaction synchronization committing SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27071996]
+Transaction synchronization deregistering SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27071996]
+Transaction synchronization closing SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27071996]
+
+[2025-11-08 09:18:12.797] INFO  [http-nio-8082-exec-9] [TID: N/A] c.rkzl.common.log.interceptor.LoggingInterceptor : Response Status: 200

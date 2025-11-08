@@ -1,0 +1,84 @@
+
+
+//=============================================================================
+//=============================================================================
+JDBC Connection [HikariProxyConnection@219651289 wrapping com.mysql.cj.jdbc.ConnectionImpl@4ce66169]
+
+/**
+	HikariProxyConnection → 这是 HikariCP 连接池中的代理连接对象。
+
+	com.mysql.cj.jdbc.ConnectionImpl → 实际底层 MySQL JDBC 连接对象。
+
+	所以这里是 HikariCP 在 "包装" 真实 MySQL 连接，这就是连接池的典型表现。
+	当 MyBatis（通过 Spring 管理）要获取连接时，它会从 Hikari 池里 "借出" 一个代理连接。
+
+*/
+
+//============================================================================= 第一个请求
+//============================================================================= 第一个请求
+
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@30b50a65] was not registered for synchronization because synchronization is not active
+JDBC Connection [HikariProxyConnection@1200946980 wrapping com.mysql.cj.jdbc.ConnectionImpl@4ce66169] will not be managed by Spring
+
+//	was not registered for synchronization
+//	表示非事务操作，但仍使用池连接
+
+//============================================================================= 第二个请求
+//============================================================================= 第二个请求
+
+
+Creating a new SqlSession
+Registering transaction synchronization for SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27071996]
+JDBC Connection [HikariProxyConnection@219651289 wrapping com.mysql.cj.jdbc.ConnectionImpl@4ce66169] will be managed by Spring
+
+//will be managed by Spring
+//表示连接纳入 Spring 事务管理
+
+
+
+Registering transaction synchronization for SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27071996]
+
+//（1）当前 SqlSession 已被 Spring 事务管理器接管；
+//（2）当事务提交或关闭时，Spring 会自动同步关闭或归还连接；
+//（3）即表示这是在 Spring + MyBatis + HikariCP 的标准集成路径上。
+
+
+
+//============================================================================= 关注点
+//============================================================================= 关注点
+
+这里虽然有两次 Creating a new SqlSession ，但是HikariProxyConnection（一次为1200946980，另一次为219651289）
+里面包裹的是同一个 ConnectionImpl 对象（hash都为4ce66169），所以底层用的是同一个连接
+
+HikariProxyConnection@1200946980  和 HikariProxyConnection@219651289 是两个代理对象
+HikariCP 给每次借出的连接创建的“代理对象”（包装层，不同请求各自有一层）
+
+com.mysql.cj.jdbc.ConnectionImpl@4ce66169 	//真实的 JDBC 连接对象（底层物理连接
+
+//每次你执行 SQL 时，池会借出一个连接；
+//Hikari 为这次借出的连接包装一个新的 代理对象 (HikariProxyConnection)；
+//代理对象负责追踪状态（比如 autoCommit, rollback, close()）；
+//执行完 SQL 后归还连接；
+//下次请求再来时，池中正好有一个空闲连接 → 复用；
+//因此，不同代理包装的底层 ConnectionImpl 是同一个物理连接对象。
+
+//=================== Hikari 这么做是为了：
+//=================== Hikari 这么做是为了：
+
+线程隔离：每个请求拿到的 Connection 对象看似唯一；
+状态封装：代理层可以拦截 close()、setAutoCommit() 等操作；
+性能最优：不重新创建 JDBC 连接，直接复用底层 socket。
+
+
+
+//============================================================================= 
+//============================================================================= 
+（1）两个 Creating a new SqlSession			//MyBatis 每次执行 Mapper 都会新建一个会话
+（2）不同 HikariProxyConnection				//不同 SqlSession 拿到的代理连接
+（3）相同 ConnectionImpl					//底层同一物理连接被池复用
+（3）没有 “Opening new connection” 日志		//连接池没有真正新建连接，只是复用
+Hikari 每次都会生成新的代理层对象（HikariProxyConnection），
+但底层的 ConnectionImpl（hash 一样）正是同一个连接被反复借出与归还。
+
+Spring Boot 会自动加载这些默认值（例如最大连接数默认 10）。
