@@ -15,7 +15,7 @@ pQ6K3ZuzBy6T7fL
 //=================================================================== （后端）微服务
 //=================================================================== （后端）微服务
 
-rkzl-dependencis				//其它服务：
+rkzl-dependencis				// 其它服务：
 rkzl-parent						// 父组件管理所有依赖
 rkzl-common						// 通用函数等功能
 rkzl-user-auth  				// 用户授权、登陆、
@@ -28,7 +28,7 @@ rkzl-user-auth  				// 用户授权、登陆、
 
 rkzl-gateway					// 网关
 rkzl-knowledge-repository		// 知识库
-rkzl-union-monitor-platform		//其它服务：
+rkzl-union-monitor-platform		// 其它服务：
 
 
 //===================================================================（前端） 
