@@ -59,7 +59,6 @@
 		}
 	},
 
-
 （16）快速定位到页面，找到JS前端的逻辑：
 		（1）在 "标题文字" 后面添加数字，这样就可以快速定位到了。
 		（2）根据api调用来反推 + 排除法。
@@ -399,8 +398,7 @@ fieldProps: (form, { rowKey }) => {
 			padding-left: 0 !important;
 			text-align: left !important;
 		}
-		
-		
+
 （64）不铺满，通过外层添加DIV，然后指定样式，就可以解决
 
 	  <style>
@@ -413,7 +411,6 @@ fieldProps: (form, { rowKey }) => {
 		`}
 	  </style>
 	  <div className="baseline-list-wrapper">
-	  
 
 （65）@monaco-editor/react 与 monaco-editor 的问题
 		
@@ -424,4 +421,7 @@ fieldProps: (form, { rowKey }) => {
 	  并在代码中导入，这样webpack就会把它打进去。
 	  //它们其实是两个库
 
-
+（66）
+	外键小技巧：
+	（1）系统数据加外键
+	（2）业务数据不加外键
