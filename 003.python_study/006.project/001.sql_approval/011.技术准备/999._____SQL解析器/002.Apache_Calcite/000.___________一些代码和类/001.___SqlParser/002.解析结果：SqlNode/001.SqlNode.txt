@@ -1,0 +1,34 @@
+
+SqlNode 就是 SQL 语句在程序中的 抽象表示（AST）。
+
+它把 SQL 语句的各个部分
+	：（ "查询、表达式、操作符、函数、字面量" 等）都转换为 "对象"，
+方便在程序中 "解析"、"修改"、"校验" 和 "转换"。
+
+//============================================================ SqlNode 类（Apache Calcite）
+//============================================================ SqlNode 类（Apache Calcite）
+
+SqlNode 是 Apache Calcite 中 SQL 语法树（AST，Abstract Syntax Tree）的 "基础抽象类"，
+表示 SQL 解析后的结构。
+
+它是所有 SQL 语法元素（查询、表达式、操作符等）的父类。
+
+//============================================================ 核心作用
+//============================================================ 核心作用
+
+（1）SQL 解析结果的表示
+			//SqlParser 解析 SQL 语句后，返回 SqlNode。
+（2）SQL 结构的抽象：
+			//它表示 SQL 语法树的各个部分（如 SELECT 语句、WHERE 子句、JOIN 操作等）。
+（3）统一处理 SQL 语法：不同 SQL 类型（SELECT、UPDATE、INSERT 等）继承它，
+			//形成对应的子类。
+
+//================================== SqlNode 的关键方法
+//================================== SqlNode 的关键方法
+
+toString()						//返回 SQL 结构的字符串表示
+getKind()						//获取 SQL 类型（如 SELECT、UPDATE）
+clone()							//复制 SqlNode
+unparse(SqlWriter writer, int leftPrec, int rightPrec)	//将 SqlNode 转换回 SQL 语句
+accept(SqlVisitor<R> visitor)							//访问 SQL 语法树（用于遍历和修改）
+														//

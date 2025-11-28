@@ -1,0 +1,287 @@
+
+
+//====================================== 解析器配置
+//====================================== 解析器配置
+//（3）解析器配置
+SqlParser.Config config = SqlParser.Config.DEFAULT
+		.withCaseSensitive(false)  // 标识符 不区分大小写
+		.withUnquotedCasing(Casing.UNCHANGED)  // 非引用标识符保持不变
+		.withQuotedCasing(Casing.UNCHANGED)   // 引用标识符保持不变
+		.withParserFactory(SqlDdlParserImpl.FACTORY)
+		.withConformance(SqlConformanceEnum.LENIENT)  // 允许解析CREATE TABLE等DDL语句
+		.withQuoting(Quoting.BACK_TICK) // 使用反引号 (`) 作为标识符引用符号
+		;
+
+
+//======================================================================================================================== 第一部分
+//======================================================================================================================== 第一部分
+ 
+
+
+
+//====================================== .withCaseSensitive(false)
+//====================================== .withCaseSensitive(false)
+
+意思：SQL 解析时对「标识符」不区分大小写。
+		//Calcite 的大小写敏感只影响 SQL“解析过程”，不会影响你“数据库中实际表名能不能找到”。
+
+标识符包括：
+	表名
+	字段名
+	别名
+	数据库名 / schema
+	函数名（部分情况下）
+	关键字（始终不区分）
+
+
+
+.withCaseSensitive(false)
+
+			/**
+				INSERT INTO cOurseX (id, course_name) VALUES (34,'ddd');
+				INSERT INTO coursex (id, course_name) VALUES (34,'ddd');
+
+				✔ 当 withCaseSensitive(true) 时：
+				解析出的 AST 中：
+				"cOurseX" 与 "coursex" 被认为是 两个不同的表名
+
+				✔ 当 withCaseSensitive(false) 时：
+				"cOurseX" 与 "coursex" 被认为是 同一个表名
+
+			*/
+
+会影响 SQL 审核、字段校验、权限校验等所有后续逻辑。
+认为同一个表（大小写不敏感）→ SQL 审核更宽松，不容易报错
+
+//======================================================================================================================== 第二部分
+//======================================================================================================================== 第二部分
+
+//====================================== .withUnquotedCasing(Casing.UNCHANGED) 
+//====================================== .withUnquotedCasing(Casing.UNCHANGED) 
+
+控制未加引号的标识符（表名、字段名）的大小写是否要自动转换。
+UNCHANGED = 保持用户写的样子，不自动转大写也不自动转小写。
+
+//=============== 示例 完全保留用户输入的大小写格式
+//=============== 示例 完全保留用户输入的大小写格式
+用户写：
+	select ID, userName from coursex;
+
+如果设置：
+	.withUnquotedCasing(UNCHANGED)
+
+解析后 AST 中仍然是：
+	ID
+	userName
+	coursex
+
+//===============
+//===============
+（1）Casing.UPPER（全部转大写）
+	id → ID
+	userName → USERNAME
+	coursex → COURSEX
+
+（2）Casing.LOWER（全部转小写）
+	ID → id
+	userName → username
+	coursex → coursex
+//======================================  withQuotedCasing  ：注意：单引号引起来的是字符串，不是标识符
+//======================================  withQuotedCasing  ：注意：单引号引起来的是字符串，不是标识符
+
+withQuotedCasing 与 withUnquotedCasing 类似，只是
+
+控制 加引号（如 xxx 或 "xxx"）的表名/字段名 的大小写是否自动转换
+
+withCaseSensitive 决定：
+👉 标识符比较时是否区分大小写（A 和 a 是否视为同一个）
+
+
+//====================================== 总结
+//====================================== 总结
+
+（1）withCaseSensitive 决定：
+👉 标识符比较时是否区分大小写（A 和 a 是否视为同一个）
+
+
+（2）withUnquotedCasing / withQuotedCasing 决定：
+👉 标识符在“进入 AST 前”是否自动转换大小写（转大写/小写/保持不变）
+
+
+
+
+
+//======================================================================================================================== 第三部分
+//======================================================================================================================== 第三部分
+
+.withParserFactory(SqlDdlParserImpl.FACTORY)
+
+Calcite 默认只能很好地解析：
+	SELECT
+	INSERT
+	UPDATE
+	DELETE
+
+但对于 DDL 语句（建表、删表、修改表结构等），就会：
+	不支持
+	解析失败
+	或者识别不完整、丢失语法元素
+
+
+
+//======================================================================================================================== 第四部分
+//======================================================================================================================== 第四部分
+
+
+.withConformance(SqlConformanceEnum.LENIENT) //开启宽松模式，
+
+
+
+LENIENT = 宽松容忍模式，能让更多非标准 SQL 被解析成功。
+
+//====================================== ❌ 没有 LENIENT（严格模式）时：
+//====================================== ❌ 没有 LENIENT（严格模式）时：
+
+这些语句可能报错：
+	INSERT INTO t VALUES(1,2,3)  -- 有些场景要求指定字段
+	WHERE 1=1                    -- 标准里不能单独使用 WHERE 1=1
+	LIMIT 10                     -- ANSI SQL 不支持 LIMIT
+
+//====================================== ✔ 有 LENIENT（宽松模式）之后：
+//====================================== ✔ 有 LENIENT（宽松模式）之后：
+上述语句：
+	不会报错
+	更符合 MySQL、Postgres、Hive 等“更宽松”的 SQL 风格
+	兼容 DDL、DML 中的非标准语法
+
+//====================================== 📌 『LENIENT』主要放宽哪些限制？
+//====================================== 📌 『LENIENT』主要放宽哪些限制？
+
+1）允许非标准关键字和语法
+
+如 MySQL 的：
+	LIMIT
+	OFFSET
+	USING
+	RENAME
+	ENUM（部分允许）
+
+//====================================== SqlConformanceEnum 的取值
+//====================================== SqlConformanceEnum 的取值
+
+
+这些 SqlConformanceEnum 的取值确实跟“SQL 标准”有关，但它们 不仅仅是 SQL 标准，
+还包括 各种数据库方言规则（MySQL / Oracle / BigQuery / Presto / SQL Server 等）。
+
+//========= 结论（最简版）
+//========= 结论（最简版）
+
+SqlConformanceEnum 是 Calcite 用来模拟/兼容不同 SQL 语法规则的“模式开关”。
+它包含：
+✔ SQL 标准（92/99/2003）
+✔ 数据库方言（MySQL/Oracle/BigQuery/Presto/SQLServer）
+✔ 宽松模式（LENIENT/BABEL）
+
+所以它不仅是 SQL 标准，也包含主流数据库的 SQL 方言规则。
+
+
+//========= 换句话说：
+//========= 换句话说：
+“我想让 Calcite 按 MySQL 规则解析”
+→ 用 MYSQL_5
+
+“我想让 Calcite 按 Oracle 规则解析”
+→ 用 ORACLE_10 / ORACLE_12
+
+“我想让它按 ANSI SQL-92 的严格标准解析”
+→ 用 STRICT_92
+
+//========= 宽松模式
+//========= 宽松模式
+
+
+
+ 
+DEFAULT		默认（中等严格）
+LENIENT		宽松容忍模式（你现在用的，非常适合审核系统）
+BABEL		超级宽松，能解析大量不同方言，包括 Hive/Presto 等
+
+		/**
+
+		BABEL 比 LENIENT 更宽松在哪里？
+		你可以理解为：
+			LENIENT = 宽松的 ANSI SQL
+			BABEL = “几乎所有数据库方言的杂交语法”，超级宽松
+
+		*/
+
+		/*
+			BABEL更宽松，为什么它还是不支持 COMMENT 和  AUTO_INCREMENT呢
+
+			**BABEL 的“更宽松”是针对 表达式 / DML（SELECT/INSERT） / 函数 / 关键字，
+			不是针对 DDL（CREATE TABLE）语法扩展。
+
+			MySQL DDL（AUTO_INCREMENT、COMMENT、ENGINE）不在 BABEL 的支持范围里。**
+		*/
+
+SqlConformanceEnum.BABEL = 解析模式（最宽松的通用 SQL 模式）
+	主要作用：让 SELECT/INSERT/表达式更宽松，允许多种数据库方言混用。
+	✦ 不是 MySQL 模式，也不会支持 MySQL DDL。
+
+qlConformanceEnum.MYSQL_5 = 模拟 MySQL 规则的模式
+	✦ 主要作用：让 Calcite 在表达式、关键字、函数行为上更接近 MySQL。
+	✦ 但同样 不支持 MySQL 的 CREATE TABLE 扩展语法（AUTO_INCREMENT/COMMENT 等）。
+
+//========================
+//========================
+
+BABEL = 最宽松的通用 SQL 模式
+MYSQL_5 = 接近 MySQL 风格的 SQL 行为模式
+
+它俩影响都是"解析行为"，而不是 "语法支持范围"。
+
+
+//======================================================================================================================== 第五部分
+//======================================================================================================================== 第五部分
+.withQuoting(Quoting.BACK_TICK)  
+什么是“标识符引用符号（Quoting）”？
+
+它的作用就是：
+	✅ **告诉 Calcite：
+	SQL 中使用哪种符号作为“标识符引用符号”（identifier quoting）。**
+
+也就是说：
+	表名、列名如果被引用，应该用什么符号括起来？
+
+//================ 什么是“标识符引用符号（Quoting）”？
+//================ 什么是“标识符引用符号（Quoting）”？
+比如你要引用一个表名或列名：
+
+因为它是 关键字
+或者名字中有 特殊字符
+或者大小写需要保留
+这时必须用“引用符号”包起来。
+
+//================ 不同数据库用不同符号：
+//================ 不同数据库用不同符号：
+
+MySQL		`user`	BACK_TICK（反引号）
+PostgreSQL	"user"	DOUBLE_QUOTE
+SQL Server	[user]	BRACKET
+ANSI SQL	"User"	DOUBLE_QUOTE
+
+//================
+//================
+你设置了：
+ .withQuoting(Quoting.BACK_TICK)
+
+Calcite 使用反引号 ` 作为标识符的引用符号
+也就是说：
+		`user`
+		`order-detail`
+		`SELECT`（关键字作为列名时）
+Calcite 都能解析。
+
+
+//================ Calcite 没有“通用引用符模式”，你几乎必须明确指定。
+//================ Calcite 没有“通用引用符模式”，你几乎必须明确指定。
