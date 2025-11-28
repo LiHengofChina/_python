@@ -1,0 +1,79 @@
+ 
+SqlValidator.Config 和 SqlParser 的配置确实 "看起来很像"，但它们的作用完全不同。
+下面我给你一个 最简单、最清晰、最容易区分的解释。
+
+
+//============================================================ 一句话区分
+//============================================================ 一句话区分
+
+Parser.Config → 控制 "语法" 怎么解析（SQL → SqlNode）
+Validator.Config → 控制 "语义" 怎么校验（SqlNode → 合法 SQL）
+
+
+它们是两个完全独立阶段，只是配置项看上去有点相似。
+
+//============================================================ 验证器配置详解
+//============================================================ 验证器配置详解
+SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
+	.withSqlConformance(SqlConformanceEnum.LENIENT) // 允许某些 SQL 语法和操作，在标准 SQL 中可能是无效的。
+	.withConformance(SqlConformanceEnum.LENIENT)  // 允许解析CREATE TABLE等DDL语句
+	.withDefaultNullCollation(connectConfig.defaultNullCollation()) // NULL 排序 //在某些数据库中，NULL 可能会被认为是最大值或最小值，具体行为取决于配置。
+
+	.withIdentifierExpansion(false)
+	.withLenientOperatorLookup(true)// 宽松操作符查找
+
+	;
+
+//============================================================ withSqlConformance(SqlConformanceEnum.LENIENT)
+//============================================================ withSqlConformance(SqlConformanceEnum.LENIENT)
+
+withSqlConformance(SqlConformanceEnum.LENIENT) // 允许某些 SQL 语法和操作，在标准 SQL 中可能是无效的。
+
+✔ 宽松 SQL 语义规范
+允许一些“不标准”的 SQL 语义通过校验。
+
+例如：
+	某些数据库方言的特殊函数
+	非严格 SQL 类型转换
+	不完全符合 SQL 标准的语法
+	这是 Validator 阶段的 语义层 "放宽"。
+
+
+//============================================================ .withConformance(SqlConformanceEnum.LENIENT)
+//============================================================ .withConformance(SqlConformanceEnum.LENIENT)
+
+✔ 扩大允许的 SQL 类型（比如 DDL 的校验）
+区别不大，一般与上面保持一致就行。
+
+
+//============================================================ .withDefaultNullCollation(...)
+//============================================================ .withDefaultNullCollation(...)
+
+✔ 控制 NULL 排序方式（NULLS FIRST / LAST）
+
+不同数据库行为不同，例如：
+MySQL			最小
+Oracle			最大
+
+Validator 需要知道 正确的排序规则 才能生成合理的 RelNode 排序信息。
+
+//============================================================ .withIdentifierExpansion(false)
+//============================================================ .withIdentifierExpansion(false)
+✔ 是否自动展开字段
+例子：
+	select * from user
+展开后可能变成：
+	select user.id, user.name, user.age ...
+
+你设置成 false = 不要自动展开星号、别名、前缀补全。
+这点非常关键，如果你后面要做 SqlNode 重写，保持结构不变会更方便。
+
+
+//============================================================ .withLenientOperatorLookup(true)
+//============================================================ .withLenientOperatorLookup(true)
+
+✔ 操作符查找宽松
+比如：
+	函数大小写问题（ABS abs Abs 都能匹配）
+	某些 SQL 方言里的特殊函数
+	严格模式下 Validator 会认为找不到函数；宽松模式允许更多匹配。
