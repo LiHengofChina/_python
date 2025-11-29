@@ -17,7 +17,7 @@
 （2）协助部署。
 
 （3）SQL审核
-		（1）从 Schema 继续整理
+		（1）继续从 Schema 继续整理
 		（2）研究一下apacle calcite
 			 Calcite Schema 体系中表结构、字段、
 			 函数等元数据的适配器
@@ -34,6 +34,8 @@
 		（6）AUTO_INCREMENT
 			 和
 			 COMMENT
+		（7）扩展解析器
+
 
 （4）考试上课
 
