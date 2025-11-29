@@ -1,0 +1,35 @@
+
+
+//==============================================================
+//==============================================================
+
+Calcite 不直接连数据库，一切都从它自己的 Schema 体系里取 "世界观"。
+
+也就是：
+	Schema = 数据库 / 命名空间
+	Schema 里有 Table / View / Function 等
+	Validator、SqlToRel、Planner 全部只相信 Schema 提供的元数据
+
+
+//============================================================== 接口层 
+//============================================================== 接口层 
+
+Calcite 的 Schema 核心接口是：
+	org.apache.calcite.schema.Schema
+
+它告诉 Calcite：
+	你有哪些 表？getTable(String name)
+	你有哪些 子 schema？getSubSchema(String name)
+	你有哪些 函数？getFunctions(String name)
+	你支持哪些 类型？（配合 typeFactory）
+
+//==================== 使用
+//==================== 使用
+
+绝大多数时候，你不会直接实现 Schema，而是继承它的一个默认实现：
+org.apache.calcite.schema.impl.AbstractSchema
+
+这个类已经把很多方法帮你默认实现成“空”，
+你只需要按需 override 一两个就行。
+
+

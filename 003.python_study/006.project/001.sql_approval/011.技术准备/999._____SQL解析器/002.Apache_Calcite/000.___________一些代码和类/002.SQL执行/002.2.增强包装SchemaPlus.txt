@@ -1,0 +1,37 @@
+
+
+//==============================================================  SchemaPlus = 可操作的 Schema
+//==============================================================  SchemaPlus = 可操作的 Schema
+在实际代码里，你几乎总是看到的是：
+	org.apache.calcite.schema.SchemaPlus
+
+它是对 Schema 的一层 "增强包装"，提供：
+	（1）add(name, table)：往 Schema 里动态添加表
+	（2）add(name, schema)：添加子 schema
+	（3）getSubSchema(name)：取子 schema
+	（4）能挂在一棵树上（root → 子 schema → 子子 schema）
+
+//======================= 常见用法
+//======================= 常见用法
+
+SchemaPlus root = Frameworks.createRootSchema(true);
+			//true → 可变 Schema（Mutable）
+
+
+SchemaPlus mySchema = root.add("MY_SCHEMA", new AbstractSchema());
+
+
+之后所有的 CatalogReader / Validator 都是基于这个 root schema。
+
+
+
+Schema 树的层级结构（先有根）
+
+//==============================================================
+//==============================================================
+
+Calcite 所有 "世界观" 都来自 Schema 树（SchemaPlus）。
+Schema 里注册 Table / View / Function，Validator 只信它说的。
+CalciteCatalogReader 只是去 Schema 树里“读信息”，不连真实库。
+
+

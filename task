@@ -14,22 +14,26 @@
 	导出docker-compose.yaml的所有镜像
 	...
 
-
 （2）协助部署。
 
 （3）SQL审核
-		研究一上apacle calcite
-
-		（1）执行SQL可以不使用JDBC
-			而是使用
-				apache calcite
-
-		（2）
-			AUTO_INCREMENT
-			和
-			COMMENT
-
-
+		（1）从 Schema 继续整理
+		（2）研究一下apacle calcite
+			 Calcite Schema 体系中表结构、字段、
+			 函数等元数据的适配器
+		（3）执行SQL可以不使用JDBC
+			 而是使用
+			 apache calcite
+		（4）JdbcSchema 只调用一次
+		（5）JdbcSchema 里面的数据库，
+			 使用之前我的连接池中的连接。
+			 验证：
+				（1）新创建对象审核
+				（2）已有对象审核
+				（3）提交代码
+		（6）AUTO_INCREMENT
+			 和
+			 COMMENT
 
 （4）考试上课
 

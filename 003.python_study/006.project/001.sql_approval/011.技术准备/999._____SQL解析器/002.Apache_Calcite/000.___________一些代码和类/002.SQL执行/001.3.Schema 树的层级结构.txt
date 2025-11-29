@@ -1,0 +1,44 @@
+
+
+//============================================================== Schema 树的层级结构（先有根）
+//============================================================== Schema 树的层级结构（先有根）
+
+Calcite 里整体是一个 Schema 树：
+
+RootSchema (SchemaPlus)
+ ├── sys             (系统 schema)
+ ├── INFORMATION_SCHEMA
+ └── your_schema     (你加的)
+      ├── user_info  (Table)
+      ├── order      (Table)
+      └── view_xxx   (View)
+
+根节点一般是 RootSchema（通过 Frameworks.createRootSchema(true) 创建）
+你往里加自己的 schema + table
+CalciteCatalogReader 就沿着这棵树去找表、字段
+
+//============================================================== 示例
+//============================================================== 示例
+
+一个最简单的例子（先感受一下）
+比如你想让 Calcite 知道有个 user_info 表：
+
+	SchemaPlus root = Frameworks.createRootSchema(true);
+
+	// 1. 创建一个空的 schema
+	SchemaPlus mySchema = root.add("APP", new AbstractSchema());
+
+	// 2. 给这个 schema 加一张表（先用一个简单 Table 实现占位）
+	mySchema.add("USER_INFO", new MyUserInfoTable());
+
+后面 Validator 校验 SQL：
+
+	select * from APP.USER_INFO
+
+它会通过 CatalogReader 从这个树里找：
+	有没有 APP 这个 schema？
+	APP 里面有没有 USER_INFO 这张表？
+	这张表有哪些字段？类型是什么？
+这些信息都来自你定义的 MyUserInfoTable。
+
+ 
