@@ -3,6 +3,18 @@
 //========================================================================= RelNode
 
 RelNode 就是 Calcite 中的“关系代数树”，代表 SQL 的逻辑执行计划。
+		/**
+			RelNode 不是最终执行计划，它是“逻辑执行计划”。
+
+			数据库里还有一层：
+				RelNode = 逻辑计划（Logical Plan）
+				数据库内部还有物理执行计划（Physical Plan）
+
+			但是在 Calcite 世界里：
+				RelNode 就是 Calcite 的 "执行计划表示形式"。
+
+		*/
+
 
 （1）Parser 产生的是 SqlNode（语法树）
 
