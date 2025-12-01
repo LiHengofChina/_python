@@ -1,0 +1,28 @@
+
+
+//=================================================== 得到 RelNode
+//=================================================== 得到 RelNode
+
+SqlToRelConverter → 整体 SQL 转换器（SqlNode → RelNode）
+
+//=================================================== 得到 RexNode
+//=================================================== 得到 RexNode
+
+
+SqlRexConvertletTable → 只负责表达式部分的转换（SqlNode 中的表达式 → RexNode）
+
+
+
+//===================================================
+//===================================================
+
+
+SqlRexConvertletTable 就是 Calcite 用来把 SqlNode → RexNode 的转换接口。
+
+SqlRexConvertletTable 是 SqlToRelConverter 的 "表达式转换器"
+
+
+SqlToRelConverter 负责把 SqlNode → RelNode
+但 RelNode 里的表达式（WHERE、计算字段）必须转换成 RexNode
+这一步就是 SqlRexConvertletTable 做的
+所以它是 "Sql → Rel 转换链条" 中的 "表达式级别转换器"。

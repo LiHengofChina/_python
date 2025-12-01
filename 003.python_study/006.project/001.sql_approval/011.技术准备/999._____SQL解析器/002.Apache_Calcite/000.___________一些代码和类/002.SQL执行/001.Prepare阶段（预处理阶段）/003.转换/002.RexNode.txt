@@ -1,9 +1,11 @@
 
+RelNode = 关系代数树（查询结构）
+RexNode = 表达式树（计算逻辑）
 
 //======================================== RexNode 简介
 //======================================== RexNode 简介
 
-RexNode（Relational Expression Node）是 Calcite 中表示表达式的抽象类，
+RexNode（Relational Expression Node）是 Calcite 中"表示表达式的抽象类"，
 用于关系代数表达式（Relational Expression）。
 它是 Calcite 查询优化 和 执行 过程中最核心的表达式表示方式。
 
@@ -32,8 +34,8 @@ RexNode rexCall = rexBuilder.makeCall(
 
 //======================================== 总结
 //======================================== 总结
-RexNode 是 Calcite 计算表达式的抽象类。
-RexNode 主要用于 关系代数 计算，与 SQL 解析后的 SqlNode 结构不同。
+RexNode 是 Calcite 计算 "表达式的抽象类"。
+RexNode 主要用于 "关系代数" 计算，与 SQL 解析后的 SqlNode 结构不同。
 主要有 字面值（RexLiteral）、列引用（RexInputRef）、函数/运算符（RexCall） 等子类。
 SqlNode 是 SQL 解析的 AST，RexNode 是 SQL 转换后的关系代数表达式！
 

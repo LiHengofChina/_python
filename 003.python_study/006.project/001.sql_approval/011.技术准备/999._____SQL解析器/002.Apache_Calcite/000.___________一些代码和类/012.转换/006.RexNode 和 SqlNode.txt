@@ -1,8 +1,0 @@
-
-
-RexNode 和 SqlNode 都有大量子类。
-SqlNode 主要用于解析 SQL 语法（AST），而 RexNode 主要用于表达计算逻辑（关系代数）。
-它们像平行宇宙，SqlNode 负责 SQL 解析，RexNode 负责计算执行，中间通过 SqlToRelConverter 转换。
-
-
-
