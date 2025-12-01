@@ -1,0 +1,90 @@
+
+VolcanoPlanner
+
+
+介绍完 HepPlanner 之后，接下来再来看下基于成本优化（CBO）模型在 Calcite 中是如何实现、
+如何落地的，关于 Volcano 理论内容建议先看下相关理论知识，
+否则直接看实现的话可能会有一些头大。从 Volcano 模型的理论落地到实践是有很大区别的，
+这里先看一张 VolcanoPlanner 整体实现图，
+
+//================================
+//================================
+
+
+上面基本展现了 VolcanoPlanner 内部实现的流程，
+也简单介绍了 VolcanoPlanner 在实现中的一些关键点（有些概念暂时不了解也不要紧，后面会介绍）：
+
+（1）Add Rule matches to Queue：
+				向 Rule Match Queue 中添加相应的 Rule Match；
+
+（2）Apply Rule match transformations to plan gragh：
+				应用 Rule Match 对 plan graph 做 transformation 
+				优化（Rule specifies an Operator sub-graph to match and logic to generate equivalent better sub-graph）；
+
+（3）Iterate for fixed iterations or until cost doesn’t change：
+				进行相应的迭代，直到 cost 不再变化或者 Rule Match Queue 中 rule match 已经全部应用完成；
+
+（4）Match importance based on cost of RelNode and height：
+				Rule Match 的 importance 依赖于 RelNode 的 cost 和深度。
+
+
+//================================ VolcanoPlanner 中的基本概念
+//================================ VolcanoPlanner 中的基本概念
+
+VolcanoPlanner 在实现中引入了一些基本概念，先明白这些概念对于理解 VolcanoPlanner 的实现非常有帮助。
+
+//================= RelSet
+//================= RelSet
+
+关于 RelSet，源码中介绍如下：
+RelSet is an equivalence-set of expressions that is, a set of expressions which have identical semantics.
+We are generally interested in using the expression which has the lowest cost.
+All of the expressions in an RelSet have the same calling convention.
+
+它有以下特点：
+
+（1）描述一组等价 Relation Expression，所有的 RelNode 会记录在 rels 中；
+（2）have the same calling convention；
+（3）具有相同物理属性的 Relational Expression 会记录在其成员变量 List<RelSubset> subsets 中.
+
+RelSet 中比较重要成员变量如下：
+
+
+//================= RelSubset
+//================= RelSubset
+//关于 RelSubset，源码中介绍如下：
+Subset of an equivalence class where all relational expressions have the same physical properties.
+它的特点如下：
+
+（1）描述一组物理属性相同的等价 Relation Expression，即它们具有相同的 Physical Properties；
+（2）每个 RelSubset 都会记录其所属的 RelSet；
+（3）RelSubset 继承自 AbstractRelNode，它也是一种 RelNode，物理属性记录在其成员变量 traitSet 中。
+
+RelSubset 一些比较重要的成员变量如下：
+
+每个 RelSubset 都将会记录其最佳 plan（best）和最佳 plan 的 cost（bestCost）信息。
+
+//================= RuleMatch
+//================= RuleMatch
+RuleMatch 是这里对 Rule 和 RelSubset 关系的一个抽象，它会记录这两者的信息。
+
+A match of a rule to a particular set of target relational expressions, frozen in time.
+
+
+//================= importance
+//================= importance
+
+importance 决定了在进行 Rule 优化时 Rule 应用的顺序，它是一个相对概念，
+在 VolcanoPlanner 中有两个 importance，
+分别是 RelSubset 和 RuleMatch 的 importance，这里先提前介绍一下。
+
+
+//================= RelSubset 的 importance
+//================= RelSubset 的 importance
+
+RelSubset importance 计算方法见其 api 定义（图中的 sum 改成 Math.max{}这个地方有误）：
+
+
+
+
+

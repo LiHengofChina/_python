@@ -1,0 +1,22 @@
+
+SqlCall：主要出现在 解析阶段（Parser 输出的 SqlNode 树里）
+
+//=============================================================
+//=============================================================
+
+当 SQL 被解析成语法树 SqlNode 时：
+
+		函数调用
+		运算符调用
+		表达式调用
+
+都会变成 SqlCall，例如：
+	SELECT UPPER(name)
+
+Parser 会生成：
+	SqlCall(operator=UPPER, operands=[SqlIdentifier(name)])
+
+所以：
+	SqlCall = "SqlNode 中表示函数/操作符调用的节点"
+	属于解析阶段产物
+

@@ -1,0 +1,51 @@
+
+//=====================================================================
+//=====================================================================
+
+
+SqlOperatorTable 主要用于 管理 "SQL 运算符和函数" ，它的作用包括：
+
+
+（1）存储 SQL 运算符和函数（如 +, -, COUNT, UPPER 等）。
+（2）查找 SQL 运算符，例如解析 SQL 时，需要根据名称找到对应的 SqlOperator。
+（3）扩展运算符，可以自定义 SQL 函数并添加到 SqlOperatorTable。
+
+
+//============================ 主要实现类：
+//============================ 主要实现类：
+
+（1）SqlStdOperatorTable：标准 SQL 运算符表（包含大多数常见运算符）。
+（2）ChainedSqlOperatorTable：支持多个 SqlOperatorTable 组合使用，允许扩展。
+
+SqlOperatorTable operatorTable = SqlStdOperatorTable.instance();
+SqlOperator plusOperator = operatorTable.lookupOperatorOverloads(
+        new SqlIdentifier("+", SqlParserPos.ZERO), SqlFunctionCategory.SYSTEM, null)
+        .get(0); 
+System.out.println(plusOperator.getName()); // "+"
+
+//=====================================================================
+//=====================================================================
+
+SqlOperatorTable —— 验证阶段（Validator 阶段）
+
+Validator 在处理 SqlCall 时，需要知道：
+
+	UPPER 是什么函数？
+	是什么操作符？
+	COUNT 是聚合吗？
+	EXISTS 属于什么类型？
+
+这些都来自：
+	SqlOperatorTable（操作符表/函数表）
+
+SqlOperatorTable opTab = SqlStdOperatorTable.instance();
+
+Validator 会用它来：
+	检查函数/操作符是否存在
+	检查参数个数是否正确
+	决定返回类型（由 SqlOperator 内部实现）
+
+一句话总结
+	SqlCall → 解析阶段产物（Parser）
+	SqlOperatorTable → 验证阶段工具（Validator）
+
