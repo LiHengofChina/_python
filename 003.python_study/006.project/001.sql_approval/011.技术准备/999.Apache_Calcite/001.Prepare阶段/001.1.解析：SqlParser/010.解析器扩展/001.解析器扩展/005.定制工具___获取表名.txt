@@ -1,0 +1,93 @@
+
+
+
+这里，我们定制一个工具：获取表名。
+思考下，有两种方式，要么是在生成语法树的过程中获取，要么是在语法树生成后获取。
+		//这里，选择 "生成后" 再去获取更方便些，获取表名逻辑如下：
+
+
+
+//========================================================================================= 示例1
+//========================================================================================= 示例1
+ 
+
+public class TableNameExtractor {
+
+    private static final List<String> tables = new ArrayList<>();
+
+    public static List<String> extractTableName(SqlNode node) {
+        node = ((SqlSelect) node).getFrom();
+        if (node == null) {
+            return tables;
+        }
+
+        if (node.getKind() == SqlKind.IDENTIFIER){
+            tables.add(node.toString());
+        }
+        return tables;
+    }
+}
+/**
+
+Apache Calcite 提供了 SQL 解析和操作的基础设施，
+但它没有专门名为 TableNameExtractor 的类。
+你可以根据自己的需求，基于 Calcite 提供的 API（比如 SqlSelect, SqlNode 等）来编写类似的提取逻辑。
+
+*/
+
+SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
+parserConfig.setCaseSensitive(false);
+
+String sql = "select * from test where id=1";
+
+SqlParser parser = SqlParser.create(sql, parserConfig.build());
+SqlNode sqlNode = parser.parseQuery();
+
+List<String> tables = TableNameExtractor.extractTableName(sqlNode);
+
+
+//========================================================================================= 示例2
+//========================================================================================= 示例2
+
+如果SQL中包含JOIN，那么则稍微麻烦点，逻辑如下：
+public class TableNameExtractor {
+
+    private static final List<String> tables = new ArrayList<>();
+
+    public static List<String> extractTableName(SqlNode node) {
+        node = ((SqlSelect) node).getFrom();
+        if (node == null) {
+            return tables;
+        }
+
+        if (node.getKind() == SqlKind.IDENTIFIER){
+            tables.add(node.toString());
+        }
+
+        if (node.getKind() == SqlKind.JOIN){
+            SqlNode left = ((SqlJoin)node).getLeft();
+            if (left.getKind() == SqlKind.IDENTIFIER){
+                tables.add(left.toString());
+            }
+            SqlNode right = ((SqlJoin)node).getRight();
+            if (right.getKind() == SqlKind.IDENTIFIER){
+                tables.add(right.toString());
+            }
+        }
+        return tables;
+    }
+}
+测试代码如下：
+
+SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
+parserConfig.setCaseSensitive(false);
+
+String sql = "select * from test1 join test2 on test1.id= test2.id where test1.name='pioneeryi'";
+
+SqlParser parser = SqlParser.create(sql, parserConfig.build());
+SqlNode sqlNode = parser.parseQuery();
+
+List<String> tables = TableNameExtractor.extractTableName(sqlNode);
+
+最终获得表名：TEST1，TEST2。
+
