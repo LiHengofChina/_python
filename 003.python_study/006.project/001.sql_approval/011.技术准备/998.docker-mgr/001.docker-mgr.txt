@@ -37,6 +37,11 @@ http://192.168.100.16/develop/docker-mgr.git
 	 cd .\docker-mgr\
 
 （3）输入命令
-	.build.bat
+	//=============== x86 的包
+	.build.bat amd64
+
+	//=============== arm 的包
+	.build.bat arm64
+
 
 
