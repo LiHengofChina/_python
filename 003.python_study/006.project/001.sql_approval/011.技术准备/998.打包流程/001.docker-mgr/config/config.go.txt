@@ -1,9 +1,0 @@
-package config
-
-var (
-	ComposeFile = "docker-compose.yaml"
-	LogFile     = "dockermgr.log"
-	Arch        = "amd64"
-)
-
-
