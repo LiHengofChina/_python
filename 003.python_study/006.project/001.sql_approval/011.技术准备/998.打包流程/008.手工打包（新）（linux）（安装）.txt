@@ -1,0 +1,173 @@
+
+（1）确定操作系统版本
+
+	 命令：cat /etc/os-release
+	 输出：Red Hat Enterprise Linux Server 7.9 (Maipo)
+
+（2）查看docker版本 ： docker --version
+
+	 Docker version 20.10.9, build c2ea9bc
+
+（3）查看docker状态 ：sudo systemctl status docker
+
+
+（4）安装 docker //（由于它已经安装），所以我确认它的安装方式
+
+	 // 系统用户为 rkzl
+
+	（1）步骤 1：下载二进制包（docker-20.10.9.tgz）
+			 wget https://download.docker.com/linux/static/stable/x86_64/docker-20.10.9.tgz
+
+	（2）步骤 2：解压
+			tar xzvf docker-20.10.9-amd64.tgz
+
+	（3）步骤 3：复制到系统目录
+			cp docker/ * /usr/bin/
+
+	（4）步骤 4：创建 systemd 服务文件
+			/etc/systemd/system/docker.service
+
+	（5）步骤 5：启动 Docker 服务
+			systemctl daemon-reload
+			systemctl start docker
+			systemctl enable docker
+
+	（6）步骤 6：配置 insecure-registries（可选）
+			/etc/docker/daemon.json
+			{
+				"insecure-registries": ["192.168.100.16:18888"]
+			}
+			//docker login 192.168.100.16:18888
+
+			//cat /root/.docker/config.json  // Docker 客户端登录凭证文件（用户级别）
+
+			// /etc/docker/daemon.json —— 守护进程配置文件（系统级别，影响所有用户）
+
+			//============================================ 给rkzl配置镜像地址
+			//============================================ 给rkzl配置镜像地址
+
+			docker login 192.168.100.16:18888
+			/**
+			（7）普通用户增加 docker镜像仓库权限的问题
+
+				sudo groupadd docker
+
+				sudo usermod -aG docker rkzl
+
+				sudo chgrp docker /var/run/docker.sock
+
+				ls -l /var/run/docker.sock
+			*/
+
+
+
+
+（5）安装 buildx
+	  // Docker 20.10.x 已经内置 BuildKit，但 buildx 插件需要单独安装。
+
+	 （1）su - rkzl
+
+	 （2）mkdir -p ~/.docker/cli-plugins
+
+	 （3）下载 buildx 二进制文件
+			下载安装包
+			VERSION=v0.10.5
+			curl -L https://github.com/docker/buildx/releases/download/${VERSION}/buildx-${VERSION}.linux-amd64 -o ~/.docker/cli-plugins/docker-buildx
+
+			//下载 https://github.com/docker/buildx/releases/download/v0.10.5/buildx-v0.10.5.linux-amd64保存到 ~/.docker/cli-plugins 目录，同时命名为 docker-buildx
+
+
+	 （4）chmod +x ~/.docker/cli-plugins/docker-buildx
+
+
+
+	 （6）启用 BuildKit（可选，但强烈建议）
+			 编辑 /etc/docker/daemon.json —— 守护进程配置文件（系统级别，影响所有用户）
+
+			 {
+			   ,"features": {
+				"buildkit": true
+			   }
+			 }
+			sudo systemctl daemon-reload
+			sudo systemctl restart docker
+
+	 （5）验证是否安装成功
+			docker buildx version
+			docker info | grep -i buildkit
+
+
+
+（6）上传安装依赖的文件
+		将  sql-audit-package 项目 上传到 /home/rkzl/ 下面
+
+		/home/rkzl/sql-audit-package
+		chown -R rkzl:rkzl /home/rkzl/*
+
+（7）从默认的 docker builder 切换到 buildx 的 container 模式，
+    使其支持多架构构建（arm64/amd64）并启用 BuildKit。
+
+	（1）docker buildx ls
+
+		/**
+			[rkzl@localhost images]$ docker buildx ls
+			NAME/NODE DRIVER/ENDPOINT STATUS  BUILDKIT PLATFORMS
+			default * docker                           
+			  default default         running 20.10.9  linux/amd64, linux/386
+		*/
+
+	（2）创建新的 builder（container 模式）
+		 docker buildx create --name mybuilder --use
+
+	（3）引导 buildkit（非常关键）
+		 docker buildx inspect mybuilder --bootstrap
+
+	（4）再次查看 builder
+		 docker buildx ls
+
+
+
+（8）buildx 需要一个 buildx-stable-1 镜像
+
+	（1）在能联网的电脑拉取 BuildKit 镜像	
+		 docker pull moby/buildkit:buildx-stable-1
+		 // 确认已下载：docker images | grep buildkit
+
+	（2）保存为 tar 文件
+		 docker save -o buildkit.tar moby/buildkit:buildx-stable-1
+		 // 得到：buildkit.tar
+
+	（3）上传 buildkit.tar 到目标 linux机器
+
+	（4）在目标机器加载镜像
+		 docker load -i buildkit.tar
+
+（9）解决 https 的问题
+ 
+
+		（1）创建文件
+				/etc/buildkitd.toml
+
+				[registry."192.168.100.16:18888"]
+				  http = true
+				  insecure = true
+
+		（2）删除旧 builder
+
+		docker buildx rm mybuilder
+
+
+		（3）用配置文件重新创建 builder
+			docker buildx create \
+				--name mybuilder \
+				--driver docker-container \
+				--driver-opt network=host \
+				--config /etc/buildkitd.toml \
+				--use
+
+		（4）启动 buildkit
+				docker buildx inspect mybuilder --bootstrap
+
+		（5）验证是否生效
+				docker buildx ls
+

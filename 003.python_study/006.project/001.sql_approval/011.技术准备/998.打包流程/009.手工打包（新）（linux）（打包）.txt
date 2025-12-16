@@ -1,0 +1,49 @@
+
+（1）让流水线顺序通过
+
+
+（2）出包脚本代码库
+
+http://192.168.100.16/rkzl-microservices/sql-audit-package.git
+
+（3）登陆231机器
+		192.168.100.231
+		root
+		Rklink_1024
+
+
+
+（4）前端 和 后端 自动获取tag
+
+
+（5）打包命令（安装包）：
+
+		//======================X86
+		su - rkzl
+		cd /home/rkzl/sql-audit-package/AMD\(X86\)/install/images/
+		sh package_install_amd64.sh
+
+		//======================ARM
+		su - rkzl
+		cd /home/rkzl/sql-audit-package/ARM/install/images
+		sh package_install_arm64.sh
+
+（6）升级包：
+		//======================X86
+		su - rkzl
+		cd /home/rkzl/sql-audit-package/AMD\(X86\)/install/images/
+		sh package_upgrade_amd64.sh
+
+		//======================ARM
+		su - rkzl
+		cd /home/rkzl/sql-audit-package/ARM/install/images
+		sh package_upgrade_arm64.sh
+
+
+（7）直接传包：
+
+scp -r /home/rkzl/sql-audit-package/sqlaudit-images-20251211182556-amd64.zip root@192.168.100.61:/home/docker/
+
+scp -r /home/rkzl/sql-audit-package/sqlaudit-upgrade-images-20251212110346-amd64.zip root@192.168.100.61:/home/docker/
+
+

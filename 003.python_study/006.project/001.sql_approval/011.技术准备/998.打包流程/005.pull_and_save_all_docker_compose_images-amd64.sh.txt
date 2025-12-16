@@ -1,0 +1,28 @@
+
+
+
+#!/bin/bash
+
+//================================================== 基础镜像
+//================================================== 基础镜像
+
+echo "开始拉取基础镜像"
+sh ./pull_and_save_images.sh ../../docker-compose/docker-compose-base-env.yaml amd64
+
+		参数1：../../docker-compose/docker-compose-base-env.yaml
+		参数2：amd64
+
+
+//================================================== 应用镜像
+//================================================== 应用镜像
+ 
+
+
+echo "开始拉取应用镜像"
+sh ./pull_and_save_images.sh ../../docker-compose/docker-compose-application.yaml amd64
+
+		参数2：../../docker-compose/docker-compose-application.yaml
+		参数2：amd64
+
+ 
+

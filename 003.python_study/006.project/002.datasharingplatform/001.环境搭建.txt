@@ -1,0 +1,32 @@
+
+//======================================================== 后端
+//======================================================== 代码库
+
+（1）代码库地址：
+	后端：http://192.168.100.16/develop/datasharingplatform
+	分支：gy_bank
+
+（2）导入后端项目
+	D:\___workspace\workspace_2025_13\datasharingplatform
+
+	//1）Maven编译、运行
+	//2）数据库配置：\src\main\resources\application.yml
+	//3）datasharingplatform\config 下面放入 log4j2.xml 文件
+
+（3）后端，运行：Application
+
+
+//======================================================== 前端
+//======================================================== 前端
+
+
+http://localhost:8000/dsg-platform-web
+
+
+D:\___workspace\workspace_2025_13_web\dsg-platform-web
+yarn config set registry https://registry.npmmirror.com
+yarn install
+
+
+yarn start
+

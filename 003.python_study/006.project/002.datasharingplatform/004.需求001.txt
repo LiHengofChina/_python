@@ -1,0 +1,71 @@
+
+需求就是把右边这个列表展示成一个“带层级的树形（两层：1.shcem或数据库名 2.数据表名）”，用户可以选择chema 或者 只选数据库下的表
+
+
+//======================================================================================== （1）接口1：获取Schema + 表名
+//======================================================================================== （1）接口1：获取Schema + 表名
+（1）请求地址：
+
+  	 dbId=83&pageNum=1&pageSize=20&whereCluster=
+
+（2）查询字符串
+
+	 http://192.168.100.102:30555/api/db/fetchSchemaAndTables?dbId=83&pageNum=1&pageSize=20&whereCluster=
+
+（3）响应
+	{
+		"code": 100,
+		"message": "操作成功！",
+		"data": {
+			"records": [
+				{
+					"schema": "CTISYS",
+					"table_name": "SYSCONTEXTINDEXES"
+				},
+				{
+					"schema": "DMHR",
+					"table_name": "EMPLOYEE"
+				},
+				........................
+				{
+					"schema": "OTHER",
+					"table_name": "DEPTTAB"
+				}
+			],
+			"total": 109,
+			"size": 20,
+			"current": 1,
+			"orders": [],
+			"optimizeCountSql": true,
+			"searchCount": true,
+			"maxLimit": null,
+			"countId": null,
+			"pages": 6
+		}
+	}
+//======================================================================================== （2）新建 "数据扫描" 提交
+//======================================================================================== （2）新建 "数据扫描" 提交
+
+通过schema批量选择表
+
+（1）主要是 达梦 和 高斯
+	 //========================== 
+	 //他这里的数据库实际上不包括：schema 或 数据库
+	 //它只是一个实例
+
+
+//========================== 请求示例 
+//========================== 请求示例 
+请求：http://192.168.100.102:30555/api/scanSensitive/addScanSensitive
+
+参数：{"dbType":"DM","scanName":"task_003",
+	   "recognizeRulesIds":"0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31",
+	   "dataSourceType":"db","dbId":83,
+	   "tables":"CTISYS.SYSCONTEXTINDEXES,DMHR.EMPLOYEE",
+	   "filePath":null}
+
+响应：{"code":100,"message":"操作成功！","data":null}
+
+
+
+
