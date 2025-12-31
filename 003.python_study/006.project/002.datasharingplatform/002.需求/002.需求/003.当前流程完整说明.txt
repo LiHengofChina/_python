@@ -1,0 +1,32 @@
+
+
+
+//executeMaskConfig 接口
+
+
+Controller
+		-> server
+			-> Strategy
+				-> scanResultMaskExecuteStrategy.execute
+					 //=============== 这里面出现了 3选一，因为扫描有3种来源
+					 switch (type) {
+							case FILE:
+								return fileScanResultSource.deal(maskConfig, scanSensitive, maskRuleVos, maskConfigInfo, userId);
+							case SQL:
+								return sqlScanResultSource.deal(maskConfig, scanSensitive, maskRuleVos, maskConfigInfo, userId);
+							case DB:
+								return dbScanResultSource.deal(maskConfig, scanSensitive, maskRuleVos, maskConfigInfo, userId);
+							default:
+								return false;
+					 }
+					 ->  FileScanResultSource implements ScanResultSource{
+						 
+						 
+							private final MaskTaskManager maskTaskManager;
+							//这里通过任务管理器发起了，任务
+							 
+							 ->
+							
+						 }
+ 
+
