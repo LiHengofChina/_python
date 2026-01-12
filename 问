@@ -425,3 +425,7 @@ fieldProps: (form, { rowKey }) => {
 	外键小技巧：
 	（1）系统数据加外键
 	（2）业务数据不加外键
+（67）
+	Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
+
+
