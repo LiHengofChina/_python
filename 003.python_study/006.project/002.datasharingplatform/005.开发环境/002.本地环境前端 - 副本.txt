@@ -1,0 +1,151 @@
+
+//======================================================== 代码库
+//======================================================== 代码库
+
+（1）代码
+
+ 
+http://192.168.100.16/develop/data-share-platform-web
+
+//======================================================== 分支
+//======================================================== 分支
+ 
+
+main_guiyang_bank
+
+
+//======================================================== VSCode
+//======================================================== VSCode
+
+
+
+VSCode 导入 
+
+D:\___workspace\workspace_2025_13_web\dsg-platform-web
+
+
+
+//======================================================== 前端：说明
+//======================================================== 前端：说明
+
+（1）技术：NodeJs + TypeScript
+
+
+一个基于 Umi 的 React 项目
+
+Umi 4（@umijs/max）+ Ant Design Pro 体系
+
+"@umijs/max": "^4.0.83"
+
+
+
+//======================================================== 命令
+//========================================================
+
+//==================================================== 启动
+//==================================================== 启动
+
+//===================== （1）安装nodejs
+//===================== （1）安装nodejs
+
+
+
+
+//===================== （2）命令行窗口
+//===================== （2）命令行窗口
+
+
+使用 git 命令行窗口
+
+
+//===================== （3）安装 yarn
+//===================== （3）安装 yarn
+
+
+npm install yarn --force
+npm install -g yarn
+
+
+//===================== （4）第一次 安装依赖
+//===================== （4）第一次 安装依赖
+
+
+
+（1）设置镜像 仓库
+yarn config set registry https://registry.npmmirror.com
+
+（2）
+yarn install --ignore-scripts
+
+
+
+//===================== （5）配置后端地址
+//===================== （5）配置后端地址
+
+
+
+文件：	env.ts
+
+
+位置：
+
+	// API 配置
+	API_BASE_URL: getEnvVar('REACT_APP_API_BASE_URL', 'http://localhost:9999'),
+	REQUEST_BASE_URL: getEnvVar('REACT_APP_REQUEST_BASE_URL', 'http://localhost:9999'),
+
+	// API 配置
+	// API_BASE_URL: getEnvVar('REACT_APP_API_BASE_URL', 'http://localhost:8000'),
+	// REQUEST_BASE_URL: getEnvVar('REACT_APP_REQUEST_BASE_URL', 'http://localhost:8000'),
+
+
+
+//===================== （6）登陆地址修改
+//===================== （6）登陆地址修改
+
+
+
+// /** 登录 POST /api/v1/data-sentinel/user/login */
+// export async function userLogin(body: API.LoginRequest, options?: { [key: string]: any }) {
+//   return request<API.ResultLoginVO>('/api/v1/data-sentinel/user/login', {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json',
+//     },
+//     data: body,
+//     ...(options || {}),
+//   });
+// }
+/** 登录 POST /api/user/login */
+export async function userLogin(body: API.LoginRequest, options?: { [key: string]: any }) {
+  return request<API.ResultLoginVO>('/api/user/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+
+
+//===================== （7）开发启动
+//===================== （7）开发启动
+
+
+yarn start:dev
+
+
+//===================== （8）访问
+//===================== （8）访问
+
+
+http://192.168.56.1:8000/dsg-platform-web/user/login
+
+
+http://localhost:8000/dsg-platform-web/user/login
+
+
+
+
+
