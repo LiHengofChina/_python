@@ -1,6 +1,0 @@
-
-
-http://192.168.100.102:32388/swagger-ui/index.html
-
-
-
