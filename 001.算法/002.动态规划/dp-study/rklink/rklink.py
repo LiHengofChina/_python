@@ -1,18 +1,28 @@
-# 必须放在最前面：使用无 GUI 后端（不依赖 Tk）
 import matplotlib
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.image as mpimg
 
-# 中文支持
-plt.rcParams['font.sans-serif'] = ['SimHei']   # Windows 常见中文字体
+plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 
-# 创建图形
 fig, ax = plt.subplots(figsize=(15, 10))
 
-# 标题
+# ===== 1️⃣ 加载中国地图背景 =====
+china_img = mpimg.imread('china_map.jpg')
+
+
+ax.imshow(
+    china_img,
+    extent=[76, 138, 18, 54],
+    aspect='auto'
+)
+
+
+
+# ===== 2️⃣ 标题 =====
 plt.title(
     '四川融科智联科技有限公司全国分支机构分布图',
     fontsize=20,
@@ -21,19 +31,23 @@ plt.title(
     pad=20
 )
 
-# 城市坐标（经度, 纬度）
+# ===== 3️⃣ 城市坐标 =====
 cities = {
-    '成都': (104.06, 30.67),
-    '北京': (116.41, 39.91),
-    '上海': (121.47, 31.23),
-    '深圳': (114.07, 22.55),
-    '广州': (113.23, 23.16),
-    '武汉': (114.31, 30.52),
-    '西安': (108.95, 34.27),
-    '杭州': (120.19, 30.26)
+    '成都': (103.6, 30.),
+    '北京': (115., 38.5),
+    '上海': (121.0, 31.230416),
+
+    '深圳': (114.057868, 22.543099),
+    '重庆': (105.8, 29.1),
+    '贵阳': (106.1, 26.2),
+    '兰州': (103.2, 35.0),
+    '西安': (108.939621, 34.343147),
+    '昆明': (101.5, 24.880095)
 }
 
-# 绘制城市点
+
+
+# ===== 4️⃣ 画点 =====
 for city, (lon, lat) in cities.items():
     ax.plot(
         lon, lat, 'o',
@@ -42,15 +56,17 @@ for city, (lon, lat) in cities.items():
         markeredgecolor='white',
         markeredgewidth=3
     )
+
     ax.text(
-        lon + 0.5,
-        lat + 0.5,
-        f'融科智联·{city}',
+        lon - 0.6,  # ← 向左
+        lat + 0.2,  # 轻微上移，防止压住点
+        f'{city}',
         fontsize=12,
-        fontweight='bold'
+        fontweight='bold',
+        ha='right'  # ← 文字右对齐，更贴合点
     )
 
-# 图例
+# ===== 5️⃣ 图例 =====
 legend_elements = [
     mpatches.Circle(
         (0, 0),
@@ -61,15 +77,15 @@ legend_elements = [
         label='分支机构'
     )
 ]
-ax.legend(handles=legend_elements, loc='upper right', fontsize=12)
+ax.legend(handles=legend_elements, loc='lower left', fontsize=12)
 
-# 样式
-ax.set_facecolor('#f8f9fa')
-ax.grid(True, alpha=0.3)
-ax.set_xlabel('经度', fontsize=12)
-ax.set_ylabel('纬度', fontsize=12)
+# ===== 6️⃣ 坐标范围 & 样式 =====
+ax.set_xlim(76, 138)
+ax.set_ylim(18, 54)
+ax.set_xlabel('经度')
+ax.set_ylabel('纬度')
+ax.grid(False)
 
-# 保存图片（关键）
 plt.tight_layout()
-plt.savefig('branches.png', dpi=300)
-print('✅ 图片已生成：branches.png')
+plt.savefig('branches_with_china_map.png', dpi=300)
+print('✅ 已生成：branches_with_china_map.png')
