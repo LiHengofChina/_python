@@ -1,0 +1,63 @@
+
+
+unbuntu 24.10自带 3.11
+
+
+//==========================（1）更新 apt 包管理器
+//==========================（1）更新 apt 包管理器
+
+sudo apt update
+
+//==========================（2）安装 Python  
+//==========================（2）安装 Python  
+
+
+//低版本的20.4版本的ubuntu需要配置这部分
+# 添加 deadsnakes PPA
+sudo add-apt-repository ppa:deadsnakes/ppa
+		//遇到错误的解决办法
+		sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 7EA0A9C3F273FCD8
+		curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+sudo apt update
+
+
+# 安装 Python 3.11
+sudo apt install python3.11
+
+
+# 安装 Python 3.8
+sudo apt install python3.8
+
+
+//卸载
+sudo apt remove python3.11
+
+
+
+//==========================（3）更新 python3 默认版本（可选）
+//==========================（3）更新 python3 默认版本（可选）
+
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
+
+//==========================（4）如果你有多个 Python 版本，使用以下命令选择默认版
+//==========================（4）如果你有多个 Python 版本，使用以下命令选择默认版
+
+sudo update-alternatives --config python3
+	会弹出一个选项，选择对应的编号
+	python3 -V 就变成默认的了
+
+python3.8 -V
+python3.11 -V
+
+
+
+
+//==========================（5）查看ptyon的版本
+//==========================（5）查看ptyon的版本
+
+python3 --version
+python3 -V
+

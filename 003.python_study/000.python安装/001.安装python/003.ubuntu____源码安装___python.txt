@@ -1,0 +1,37 @@
+
+//====================  安装 python3.12 ，并启用 ensurepip 功能。
+//====================  安装 python3.12 ，并启用 ensurepip 功能。
+
+python3.12 是 ensurepip 是 Python 的内置模块，用于初始化和安装 pip。   setuptools 是一个外部工具，用于构建和分发 Python 包，比 distutils 功能更强大。
+
+（1）下载 Python 3.12 的源码：
+wget https://www.python.org/ftp/python/3.12.0/Python-3.12.0.tgz
+
+
+（2）解压文件：
+tar -xvzf Python-3.12.0.tgz
+cd Python-3.12.0
+
+
+（3）清理旧的构建文件（如果存在）
+make clean
+
+
+（4）配置并启用 ensurepip
+./configure --enable-optimizations --with-ensurepip=install
+make
+sudo make altinstall
+
+// 安装目录是：/usr/local/bin/ 
+//该目录默认在系统的 PATH 环境变量中
+
+
+
+
+（5）验证安装
+python3.12 -m ensurepip --upgrade
+
+
+
+（6）如果pip命令不正确，可以使用python安装它
+python3.12 -m pip install --upgrade pip
