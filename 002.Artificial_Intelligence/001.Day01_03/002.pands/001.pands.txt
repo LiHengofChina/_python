@@ -5,7 +5,7 @@ Pandas 是由美国的数据科学家 Wes McKinney 在2008年创建的。
 
 
 
-pandas是基于NumPy的一种工具，
+pandas 是基于NumPy的一种工具，
 		//pandas 底层是NumPy
 		//Numpy 里面是数组，pandas里面也是数组
 		

@@ -1,18 +1,18 @@
 '''
 Series示例
- Series 常用属性
+Series 常用属性（新版规范写法）
 '''
 
-
-
-import numpy as np
 import pandas as pd
 
-
-
 s01 = pd.Series([100, 90, 80, 70], index=['zs', 'ls', 'ww', 'zl'])
+
+# ===============================
+# 常用属性
+# ===============================
+
 print(s01.values)
-print(type(s01.values))  #它是一个 ndarrsy
+print(type(s01.values))   # 它是一个 ndarray
 print(type(s01))
 print(s01.index)
 print(s01.dtype)
@@ -21,18 +21,30 @@ print(s01.ndim)
 print(s01.shape)
 
 
+# ===============================
+# 不要最后一个元素
+# ===============================
+
+print("##" * 20)
+
+# 1️⃣ 布尔掩码（推荐）
+print(s01.iloc[[True, True, True, False]])
+
+# 2️⃣ 位置掩码（必须用 iloc）
+print(s01.iloc[[0, 1, 2]])
+
+# 3️⃣ 标签掩码（必须用 loc）
+print(s01.loc[['zs', 'ls', 'ww']])
 
 
-##  不要最后一个元素
-print("##" * 20)  # 直接切片
-print(s01[[True, True, True, False]])  # 掩码操作
-print(s01[[0, 1, 2]])  # 掩码操作
-print(s01[['zs', 'ls', 'ww']])  # 掩码操作
+print("##" * 20)
 
-print("##" * 20)#如果数据量非常大的时候，这样做
-print(s01.index[:-1])                  # 对索引进行切片操作，
-print(type(s01.index[:-1]))            # 对索引进行切片操作，切出来 的还是索引
-print(s01[s01.index[:-1]])             # 再进行掩码操作
+# 如果数据量非常大，推荐这种写法
 
+# 对索引进行切片
+idx = s01.index[:-1]
+print(idx)
+print(type(idx))  # 还是 Index 类型
 
-
+# 用标签索引取值（必须用 loc）
+print(s01.loc[idx])
