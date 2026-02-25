@@ -1,0 +1,21 @@
+
+//============================== 给项目配置虚拟环境
+//============================== 给项目配置虚拟环境
+
+Settings
+	-> Project:xxx
+		 -> Python Interpreter
+				-> Add Interpreter
+					-> Add Local Interpreter
+					//===================  不存在虚拟环境
+					Environment: New
+					Location: E:\_python\002.Artificial_Intelligence\001.Day01_03\workspace_001.Day01_03\venv
+							  //项目虚拟环境的路径
+					Base interpreter: D:\Users\liheng\AppData\Local\Programs\Python\Python313\python.exe
+							  //解析器路径，这时是为了复制它
+ 					//===================  存在虚拟环境
+					interpreter: E:\_python\002.Artificial_Intelligence\001.Day01_03\workspace_001.Day01_03\venv\Scripts\python.ex
+							  //这时是为了使用它
+
+
+

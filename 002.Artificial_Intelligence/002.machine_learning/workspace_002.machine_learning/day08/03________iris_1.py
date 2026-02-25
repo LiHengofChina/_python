@@ -42,10 +42,9 @@ train_x,test_x,train_y,test_y = ms.train_test_split(x,y,
 
 
 #（4）构建模型
-model = lm.LogisticRegression(solver='liblinear', C=1
-                              # ,multi_cass  = 'auto'
-                              # 它自动就是多分类类
-                              # 它会根据类型判断，自动创建多分类器
+model = lm.LogisticRegression(  solver='lbfgs'
+                              , max_iter=1000
+                              , C=1
                               )
 
 #（4）训练

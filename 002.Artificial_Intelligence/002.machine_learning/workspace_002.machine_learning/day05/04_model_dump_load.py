@@ -74,7 +74,7 @@ with open('../day05/model.pickle', 'wb') as f :
 print('save succss')
 
 #======================================#加载模型
-with open('../day06/model.pickle', 'rb') as f:
+with open('../day05/model.pickle', 'rb') as f:
     new_model = pickle.load(f)
 
 # 这种写法支警告

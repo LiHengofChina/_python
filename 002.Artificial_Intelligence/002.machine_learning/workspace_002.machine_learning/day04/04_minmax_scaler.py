@@ -14,7 +14,7 @@ mms_sample = raw_sample.copy()
 
 
 for clo in mms_sample.T:
-    ptp = clo.ptp(); # 极差
+    ptp = np.ptp(clo); # 极差
     clo -= clo.min()  #列的每个值减去它的最小值
     clo /= ptp  #然后除以它的极差
 
