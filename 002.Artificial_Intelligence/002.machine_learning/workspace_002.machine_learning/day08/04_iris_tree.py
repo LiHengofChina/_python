@@ -64,7 +64,7 @@ print(score.mean()) #打印平均值
 model.fit(train_x,train_y)
 
 #（6）将测试集带入预测
-pred_train_y = model.predict(train_x)
+# pred_train_y = model.predict(train_x)
 pred_test_y = model.predict(test_x)
 
 #（7）评估
