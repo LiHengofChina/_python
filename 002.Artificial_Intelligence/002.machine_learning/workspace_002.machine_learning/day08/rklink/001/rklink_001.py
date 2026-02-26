@@ -1,5 +1,4 @@
 
-
 '''
 
 脱敏识别 —— 手机号 vs 身份证（二分类）
@@ -13,6 +12,7 @@ import sklearn.model_selection as ms
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
+from sklearn.metrics import f1_score
 
 # ==============================
 #（1）加载数据
@@ -61,10 +61,6 @@ model = RandomForestClassifier(
 #（5）在训练集上做交叉验证（此时不要先 fit）
 # 它只是评估工具
 # 交叉验证得分可以用来判断：
-# ✅ 特征是否有区分能力
-# ✅ 数据是否有问题
-# ✅ 是否过拟合
-# ✅ 模型是否稳定
 # ==============================
 # 做5次交叉验证，评估模型是否可用
 score = ms.cross_val_score(
@@ -84,6 +80,11 @@ print("-" * 50)
 # ==============================
 
 model.fit(X_train, y_train)
+
+print("特征重要性：")
+print(model.feature_importances_)
+print("=" * 50)
+
 
 # ==============================
 #（6）预测
@@ -113,7 +114,6 @@ print(classification_report(y_test, pred))
 # ==============================
 #（9）F1得分
 # ==============================
-from sklearn.metrics import f1_score
 
 print("-" * 50)
 print("F1得分（weighted）:", f1_score(y_test, pred, average="weighted"))
@@ -137,4 +137,8 @@ probability = model.predict_proba(feature)[0]
 # 输出结果
 print(f"输入：{test_sample}")
 print(f"预测类别：{prediction}")
-print(f"置信度：{probability}")
+
+print("置信度（每颗树的观点）：")
+
+for cls, prob in zip(model.classes_, probability):
+    print(f"  {cls} : {prob:.4f}")
