@@ -114,6 +114,13 @@ def extract_column_features(text_list):
     )
     bank_luhn_ratio = bank_luhn_match / len(cleaned)
 
+    # 8 CVV 长度比例
+    cvv_match = sum(
+        1 for t in cleaned
+        if len(t) in (3, 4) and t.isdigit()
+    )
+    cvv_length_ratio = cvv_match / len(cleaned)
+
     return [
         avg_length,
         fixed_length_flag,
@@ -122,7 +129,8 @@ def extract_column_features(text_list):
         id_regex_ratio,
         id_contains_valid_birth_ratio,
         bank_length_match_ratio,
-        bank_luhn_ratio
+        bank_luhn_ratio,
+        cvv_length_ratio
     ]
 
 # ==============================
@@ -238,13 +246,21 @@ print("=" * 60)
 #     "+8613777777777",
 #     "13666666666"
 # ]
-#银行卡号
+# #银行卡号
+# test_column = [
+#     "6222021234567893",
+#     "6222021234567802",
+#     "6222021234567810",
+#     "6222021234567828",
+#     "6222021234567836"
+# ]
+# 标准CVV列
 test_column = [
-    "6222021234567893",
-    "6222021234567802",
-    "6222021234567810",
-    "6222021234567828",
-    "6222021234567836"
+    "123",
+    "456",
+    "789",
+    "321",
+    "654"
 ]
 
 feature = np.array([extract_column_features(test_column)])
