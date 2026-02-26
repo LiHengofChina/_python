@@ -60,6 +60,6 @@ pred_test_y = model.predict(test_x)
 #（7）评估
 print('测试集真实值：', test_y.values)
 print('测试集预测值：',pred_test_y)
-#使用 评估模块来  求精度
+#使用 评估模块来  求精度 打印 “准确率”
 print(sm.accuracy_score(test_y,pred_test_y))
 

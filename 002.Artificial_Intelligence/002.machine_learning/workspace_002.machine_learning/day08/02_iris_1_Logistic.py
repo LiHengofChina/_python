@@ -67,7 +67,7 @@ print('测试集预测值：',pred_test_y)
 # print( (test_y.values  ==  pred_test_y).sum() / len(test_y)) #实际它是平均值
 # print( (test_y.values  ==  pred_test_y).mean() ) #实际它是平均值
 
-#使用 评估模块来  求精度
+#使用 评估模块来  求精度 打印 “准确率”
 print(sm.accuracy_score(test_y,pred_test_y))
 
 
