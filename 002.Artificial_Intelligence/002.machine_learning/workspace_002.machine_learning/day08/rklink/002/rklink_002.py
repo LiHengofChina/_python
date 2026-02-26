@@ -17,7 +17,10 @@ from sklearn.metrics import classification_report
 # ==============================
 #（1）加载数据
 # ==============================
-df = pd.read_csv("../001/phone_id_data.csv", dtype={"text": str})
+df = pd.read_csv("phone_id_data.csv", dtype={"text": str})
+# print("原始数据：")
+# print(df)
+# print("-" * 50)
 
 
 # ==============================
@@ -30,7 +33,9 @@ def extract_features(text):
 # 构造特征矩阵
 X = np.array([extract_features(t) for t in df["text"]])
 y = df["label"].values
-
+# print("特征矩阵 X：")
+# print(X)
+# print("-" * 50)
 
 # ==============================
 #（3）划分训练 / 测试集
@@ -54,7 +59,14 @@ model = RandomForestClassifier(
 
 # ==============================
 #（5）在训练集上做交叉验证（此时不要先 fit）
+# 它只是评估工具
+# 交叉验证得分可以用来判断：
+# ✅ 特征是否有区分能力
+# ✅ 数据是否有问题
+# ✅ 是否过拟合
+# ✅ 模型是否稳定
 # ==============================
+# 做5次交叉验证，评估模型是否可用
 score = ms.cross_val_score(
     model,
     X_train,
@@ -62,7 +74,6 @@ score = ms.cross_val_score(
     cv=5,
     scoring="f1_weighted"
 )
-
 
 print("交叉验证得分:", score)
 print("平均得分:", score.mean())
