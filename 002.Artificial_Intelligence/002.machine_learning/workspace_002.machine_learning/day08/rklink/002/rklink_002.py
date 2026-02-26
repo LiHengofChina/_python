@@ -1,6 +1,7 @@
 """
-脱敏识别 —— 手机号 vs 身份证（二分类）
+脱敏识别 —— 多分类（列级特征版本）
 列级特征版本
+随机森林
 """
 
 import numpy as np
@@ -68,7 +69,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0]*6
+        return [0] * 12
 
     lengths = [len(t) for t in cleaned]
 
@@ -121,6 +122,27 @@ def extract_column_features(text_list):
     )
     cvv_length_ratio = cvv_match / len(cleaned)
 
+    # 9 统计 6 位纯数字占比。
+    zip6_digit_match = sum(
+        1 for t in cleaned
+        if len(t) == 6 and t.isdigit()
+    )
+    zip6_digit_ratio = zip6_digit_match / len(cleaned)
+
+    # 10 统计前两位是否“稳定”。
+    prefixes = [t[:2] for t in cleaned if len(t) == 6 and t.isdigit()]
+    if prefixes:
+        prefix_unique_ratio = len(set(prefixes)) / len(prefixes)
+    else:
+        prefix_unique_ratio = 1
+    # 11 统计以 00 或 000 结尾的比例。
+    zip_zero_tail_match = sum(
+        1 for t in cleaned
+        if len(t) == 6 and t.isdigit() and (t.endswith("00") or t.endswith("000"))
+    )
+    zip_zero_tail_ratio = zip_zero_tail_match / len(cleaned)
+
+
     return [
         avg_length,
         fixed_length_flag,
@@ -130,7 +152,10 @@ def extract_column_features(text_list):
         id_contains_valid_birth_ratio,
         bank_length_match_ratio,
         bank_luhn_ratio,
-        cvv_length_ratio
+        cvv_length_ratio,
+        zip6_digit_ratio,
+        prefix_unique_ratio,
+        zip_zero_tail_ratio
     ]
 
 # ==============================
@@ -255,12 +280,20 @@ print("=" * 60)
 #     "6222021234567836"
 # ]
 # 标准CVV列
+# test_column = [
+#     "123",
+#     "456",
+#     "789",
+#     "321",
+#     "654"
+# ]
+
 test_column = [
-    "123",
-    "456",
-    "789",
-    "321",
-    "654"
+    "510000",
+    "510030",
+    "510100",
+    "510220",
+    "510300"
 ]
 
 feature = np.array([extract_column_features(test_column)])
@@ -270,7 +303,9 @@ probability = model.predict_proba(feature)[0]
 
 print("输入：", test_column)
 print("预测类别:", prediction)
-print("置信度（每颗树的观点）：")
 
+print("=" * 60)
+
+print("置信度（每颗树的观点）：")
 for cls, prob in zip(model.classes_, probability):
     print(f"  {cls} : {prob:.4f}")
