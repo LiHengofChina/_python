@@ -264,6 +264,46 @@ EMAIL_REGEX = re.compile(
     r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
 )
 
+
+
+# ==============================
+# VIN 结构正则（17位，排除 I O Q）
+# ==============================
+VIN_REGEX = re.compile(r'^[A-HJ-NPR-Z0-9]{17}$')
+
+
+# ==============================
+# VIN 校验位函数（第 9 位）
+# ==============================
+VIN_WEIGHTS = [8, 7, 6, 5, 4, 3, 2, 10,
+               0,
+               9, 8, 7, 6, 5, 4, 3, 2]
+
+VIN_TRANS = {
+    **{str(i): i for i in range(10)},
+    **dict(zip("ABCDEFGHJKLMNPRSTUVWXYZ",
+               [1,2,3,4,5,6,7,8,9,
+                1,2,3,4,5,7,8,9]))
+}
+
+def vin_check_digit_valid(vin):
+    if not VIN_REGEX.match(vin):
+        return False
+
+    total = 0
+    for i, c in enumerate(vin):
+        value = VIN_TRANS.get(c, None)
+        if value is None:
+            return False
+        total += value * VIN_WEIGHTS[i]
+
+    remainder = total % 11
+    check_char = 'X' if remainder == 10 else str(remainder)
+
+    return vin[8] == check_char
+
+
+
 # ==============================
 # （2）列级特征提取函数
 # ==============================
@@ -273,7 +313,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 44
+        return [0] * 48
 
     lengths = [len(t) for t in cleaned]
 
@@ -561,6 +601,30 @@ def extract_column_features(text_list):
         if t.count("@") == 1
     ) / len(cleaned)
 
+    # 44 → VIN 正则匹配比例
+    vin_regex_ratio = sum(
+        1 for t in cleaned
+        if VIN_REGEX.match(t)
+    ) / len(cleaned)
+
+    # 45 → 长度为 17 的比例
+    vin_length_ratio = sum(
+        1 for t in cleaned
+        if len(t) == 17
+    ) / len(cleaned)
+
+    # 46 → VIN 校验位合法比例
+    vin_check_digit_ratio = sum(
+        1 for t in cleaned
+        if vin_check_digit_valid(t)
+    ) / len(cleaned)
+
+    # 47 → VIN 校验位合法比例
+    VIN_REGION_PREFIX = set("12345JKLMNSTVWXYZ9")
+    vin_region_prefix_ratio = sum(
+        1 for t in cleaned
+        if len(t) >= 1 and t[0] in VIN_REGION_PREFIX
+    ) / len(cleaned)
 
     return [
         avg_length,
@@ -606,8 +670,11 @@ def extract_column_features(text_list):
         url_structure_ratio,
         url_keyword_ratio,
         email_regex_ratio,
-        email_at_ratio
-
+        email_at_ratio,
+        vin_regex_ratio,
+        vin_length_ratio,
+        vin_check_digit_ratio,
+        vin_region_prefix_ratio
 
     ]
 
@@ -659,7 +726,8 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 model = RandomForestClassifier(
     n_estimators=100,
-    random_state=42
+    random_state=42,
+    class_weight='balanced'
 )
 
 # ==============================
@@ -869,17 +937,29 @@ print("=" * 60)
 # ]
 
 # EMAIL 测试列
-test_column = [
-    "test@example.com",
-    "user123@gmail.com",
-    "admin@openai.com",
-    "contact@company.cn",
-    "user.name+tag@gmail.com",
-    "abc@@wrong.com",      # 干扰（两个@）
-    "not_an_email",        # 干扰
-    "hello@world"          # 干扰（无后缀）
-]
+# test_column = [
+#     "test@example.com",
+#     "user123@gmail.com",
+#     "admin@openai.com",
+#     "contact@company.cn",
+#     "user.name+tag@gmail.com",
+#     "abc@@wrong.com",      # 干扰（两个@）
+#     "not_an_email",        # 干扰
+#     "hello@world"          # 干扰（无后缀）
+# ]
 
+
+# VIN 测试列
+test_column = [
+    "1HGCM82633A004352",
+    "JH4KA9650MC000000",
+    "1FAFP404X1F123456",
+    "5YJSA1E26HF000001",
+    "1M8GDM9AXKP042788",
+    "ABCDEFG123456789",   # 干扰（包含非法字母）
+    "12345678901234567",  # 干扰（纯数字）
+    "SHORTVIN123"         # 干扰（长度不够）
+]
 
 feature = np.array([extract_column_features(test_column)])
 
