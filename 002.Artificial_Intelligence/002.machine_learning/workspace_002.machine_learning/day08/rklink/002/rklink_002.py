@@ -61,6 +61,18 @@ def luhn_check(card_number):
         return False
 
 # ==============================
+# 加载 证券和基金 代码 数据
+# ==============================
+# 读取本地字典
+stock_df = pd.read_csv("stock_fund/stock_code_dict.csv", dtype=str)
+fund_df = pd.read_csv("stock_fund/fund_code_dict.csv", dtype=str)
+
+# 构建字典
+stock_dict = set(stock_df["code"].astype(str))
+fund_dict = set(fund_df["基金代码"].astype(str))
+
+
+# ==============================
 # （2）列级特征提取函数
 # ==============================
 
@@ -69,7 +81,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 12
+        return [0] * 15
 
     lengths = [len(t) for t in cleaned]
 
@@ -118,7 +130,7 @@ def extract_column_features(text_list):
     # 8 CVV 长度比例
     cvv_match = sum(
         1 for t in cleaned
-        if len(t) in (3, 4) and t.isdigit()
+        if len(t) == 3 and t.isdigit()
     )
     cvv_length_ratio = cvv_match / len(cleaned)
 
@@ -142,6 +154,21 @@ def extract_column_features(text_list):
     )
     zip_zero_tail_ratio = zip_zero_tail_match / len(cleaned)
 
+    # 12 证券代码字典匹配比例
+    stock_dict_match = sum(
+        1 for t in cleaned
+        if t in stock_dict
+    )
+    stock_dict_ratio = stock_dict_match / len(cleaned)
+
+    # 13 基金代码字典匹配比例
+    fund_dict_match = sum(
+        1 for t in cleaned
+        if t in fund_dict
+    )
+    fund_dict_ratio = fund_dict_match / len(cleaned)
+
+
 
     return [
         avg_length,
@@ -155,7 +182,9 @@ def extract_column_features(text_list):
         cvv_length_ratio,
         zip6_digit_ratio,
         prefix_unique_ratio,
-        zip_zero_tail_ratio
+        zip_zero_tail_ratio,
+        stock_dict_ratio,
+        fund_dict_ratio
     ]
 
 # ==============================
@@ -218,7 +247,7 @@ if len(X_train) >= 5:
         model,
         X_train,
         y_train,
-        cv=3,
+        cv=4,
         scoring="f1_weighted"
     )
 
@@ -288,14 +317,35 @@ print("=" * 60)
 #     "654"
 # ]
 
-test_column = [
-    "510000",
-    "510030",
-    "510100",
-    "510220",
-    "510300"
-]
+# 邮编
+# test_column = [
+#     "510000",
+#     "510030",
+#     "510100",
+#     "510220",
+#     "510300"
+# ]
 
+# # 股票代码
+# test_column = [
+#     "600000",  # 浦发银行
+#     "600036",  # 招商银行
+#     "600519",  # 贵州茅台
+#     "601318",  # 中国平安
+#     "601398",  # 工商银行
+#     "603288",  # 海天味业
+#     "603259",  # 药明康德
+#     "605499"
+# ]
+
+# 基金代码
+test_column = [
+    "000001",  # 华夏成长混合
+    "110011",  # 华夏成长混合
+    "519674",  # 华泰柏瑞沪深300ETF
+    "160119",  # 南方中证500ETF
+    "003095"   # 易方达消费行业ETF
+]
 feature = np.array([extract_column_features(test_column)])
 
 prediction = model.predict(feature)[0]
