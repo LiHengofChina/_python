@@ -73,6 +73,32 @@ fund_dict = set(fund_df["基金代码"].astype(str))
 
 
 # ==============================
+# 加载 邮编代码
+# ==============================
+
+import json
+
+# 读取本地邮编 JSON
+with open("zip_code/zip_code.txt", "r", encoding="utf-8") as f:
+    zip_data = json.load(f)
+
+zip_dict = set()
+
+
+# 递归提取 postcode
+def extract_postcodes(nodes):
+    for node in nodes:
+        if "postcode" in node and node["postcode"]:
+            zip_dict.add(str(node["postcode"]).strip())
+
+        if "children" in node and node["children"]:
+            extract_postcodes(node["children"])
+
+# 开始提取
+extract_postcodes(zip_data)
+
+
+# ==============================
 # （2）列级特征提取函数
 # ==============================
 
@@ -154,14 +180,22 @@ def extract_column_features(text_list):
     )
     zip_zero_tail_ratio = zip_zero_tail_match / len(cleaned)
 
-    # 12 证券代码字典匹配比例
+    # 12 -> zip_dict_ratio
+    zip_dict_match = sum(
+        1 for t in cleaned
+        if t in zip_dict
+    )
+    zip_dict_ratio = zip_dict_match / len(cleaned)
+
+    # 13 证券代码字典匹配比例
     stock_dict_match = sum(
         1 for t in cleaned
         if t in stock_dict
     )
     stock_dict_ratio = stock_dict_match / len(cleaned)
 
-    # 13 基金代码字典匹配比例
+
+    # 14 基金代码字典匹配比例
     fund_dict_match = sum(
         1 for t in cleaned
         if t in fund_dict
@@ -183,6 +217,7 @@ def extract_column_features(text_list):
         zip6_digit_ratio,
         prefix_unique_ratio,
         zip_zero_tail_ratio,
+        zip_dict_ratio,
         stock_dict_ratio,
         fund_dict_ratio
     ]
@@ -327,25 +362,25 @@ print("=" * 60)
 # ]
 
 # # 股票代码
-# test_column = [
-#     "600000",  # 浦发银行
-#     "600036",  # 招商银行
-#     "600519",  # 贵州茅台
-#     "601318",  # 中国平安
-#     "601398",  # 工商银行
-#     "603288",  # 海天味业
-#     "603259",  # 药明康德
-#     "605499"
-# ]
-
-# 基金代码
 test_column = [
-    "000001",  # 华夏成长混合
-    "110011",  # 华夏成长混合
-    "519674",  # 华泰柏瑞沪深300ETF
-    "160119",  # 南方中证500ETF
-    "003095"   # 易方达消费行业ETF
+    "600000",  # 浦发银行
+    "600036",  # 招商银行
+    "600519",  # 贵州茅台
+    "601318",  # 中国平安
+    "601398",  # 工商银行
+    "603288",  # 海天味业
+    "603259",  # 药明康德
+    "605499"
 ]
+
+# # 基金代码
+# test_column = [
+#     "000001",  # 华夏成长混合
+#     "110011",  # 华夏成长混合
+#     "519674",  # 华泰柏瑞沪深300ETF
+#     "160119",  # 南方中证500ETF
+#     "003095"   # 易方达消费行业ETF
+# ]
 feature = np.array([extract_column_features(test_column)])
 
 prediction = model.predict(feature)[0]
