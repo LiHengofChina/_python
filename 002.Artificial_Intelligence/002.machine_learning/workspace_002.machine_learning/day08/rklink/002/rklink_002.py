@@ -126,6 +126,12 @@ extract_region_ids(zip_data)
 
 
 # ==============================
+# 年份正则
+# ==============================
+
+PERMIT_YEAR_PATTERN = re.compile(r'(19|20)\d{2}')
+
+# ==============================
 # 统一社会信用代码校验
 # GB 32100-2015
 # ==============================
@@ -159,6 +165,19 @@ def credit_code_check(code):
 
     return check_char == code[17]
 
+# ==============================
+# 省级简称字典
+# ==============================
+province_abbr_dict = {
+    "京","津","沪","渝",
+    "冀","晋","辽","吉","黑",
+    "苏","浙","皖","闽","赣","鲁",
+    "豫","鄂","湘","粤","桂","琼",
+    "川","贵","云",
+    "陕","甘","青",
+    "蒙","宁","新","藏",
+    "港","澳","台"
+}
 
 # ==============================
 # （2）列级特征提取函数
@@ -169,7 +188,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 23
+        return [0] * 28
 
     lengths = [len(t) for t in cleaned]
 
@@ -319,6 +338,42 @@ def extract_column_features(text_list):
     )
     officer_digit_middle_ratio = officer_digit_middle_match / len(cleaned)
 
+    # 23 → 特殊汉字比例（经营许可证）
+    permit_keyword_match = sum(
+        1 for t in cleaned
+        if any(k in t for k in ["许可", "经营", "证", "监", "卫", "药", "械", "消"])
+    )
+    permit_keyword_ratio = permit_keyword_match / len(cleaned)
+
+    # 24 → 包含年份数字
+    permit_year_match = sum(
+        1 for t in cleaned
+        if PERMIT_YEAR_PATTERN.search(t)
+    )
+    permit_contains_year_ratio = permit_year_match / len(cleaned)
+
+    # 25 → 偶尔出现括号 ()（）
+    permit_parenthesis_match = sum(
+        1 for t in cleaned
+        if any(p in t for p in ["(", ")", "（", "）"])
+    )
+    permit_contains_parenthesis_ratio = permit_parenthesis_match / len(cleaned)
+
+    # 26 → 偶尔出现横杠 -
+    permit_dash_match = sum(
+        1 for t in cleaned
+        if "-" in t
+    )
+    permit_dash_structure_ratio = permit_dash_match / len(cleaned)
+
+    # 27 → 包含一个省级简称
+    permit_province_match = sum(
+        1 for t in cleaned
+        if any(abbr in t for abbr in province_abbr_dict)
+    )
+    permit_province_abbr_ratio = permit_province_match / len(cleaned)
+
+
     return [
         avg_length,
         fixed_length_flag,
@@ -342,7 +397,13 @@ def extract_column_features(text_list):
         officer_keyword_ratio,
         officer_pattern_ratio,
         officer_end_with_hao_ratio,
-        officer_digit_middle_ratio
+        officer_digit_middle_ratio,
+        permit_keyword_ratio,
+        permit_contains_year_ratio,
+        permit_contains_parenthesis_ratio,
+        permit_dash_structure_ratio,
+        permit_province_abbr_ratio
+
     ]
 
 # ==============================
@@ -519,19 +580,34 @@ print("=" * 60)
 #     "91320594670131819W"
 # ]
 
+# 军官证
+# test_column = [
+#     "军字第2001988号",      # 正常军官证
+#     "海字第123456号",      # 正常军官证
+#     "空字第765432号",      # 正常军官证
+#     "武字第112233号",      # 正常军官证
+#     "军字第ABC123号",      # 中间不是纯数字（干扰）
+#     "军第123456号",        # 少了“字”
+#     "字第123456号",        # 少了前缀
+#     "军字第12345号",       # 数字长度边界（5位）
+#     "军字第123456789号",   # 数字过长（9位）
+#     "军字第888888号X"      # 末尾多字符
+# ]
 
+#
 test_column = [
-    "军字第2001988号",      # 正常军官证
-    "海字第123456号",      # 正常军官证
-    "空字第765432号",      # 正常军官证
-    "武字第112233号",      # 正常军官证
-    "军字第ABC123号",      # 中间不是纯数字（干扰）
-    "军第123456号",        # 少了“字”
-    "字第123456号",        # 少了前缀
-    "军字第12345号",       # 数字长度边界（5位）
-    "军字第123456789号",   # 数字过长（9位）
-    "军字第888888号X"      # 末尾多字符
+    "粤食药监械经营许20180001号",       # 标准
+    "苏B-2021-000123",               # 横杠结构
+    "赣卫消证字(2019)第0012号",        # 括号 + 年份
+    "经营许可证20200111号",            # 只有关键词+年份
+    "许可证编号2022-000321",          # 年份+横杠
+    "食药监械经营许20201111号",        # 无省简称
+    "京食药监械经营许20230004号",       # 省简称+年份
+    "许可2023第0099号",               # 简化结构
+    "营业执照20200123",               # 噪音（非许可证）
+    "1234567890"                     # 强噪音
 ]
+
 
 feature = np.array([extract_column_features(test_column)])
 
