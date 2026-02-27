@@ -303,6 +303,93 @@ def vin_check_digit_valid(vin):
     return vin[8] == check_char
 
 
+# ==============================
+# 车牌号正则
+# ==============================
+
+# 普通汽车牌照（7位）：省简称 + 1字母 + 5位（字母/数字） + 1位（字母/数字）
+# 排除 I O（实际规则里常排除，先不做极致严格）
+PLATE_NORMAL_REGEX = re.compile(r'^[京津沪渝冀晋辽吉黑苏浙皖闽赣鲁豫鄂湘粤桂琼川贵云陕甘青蒙宁新藏港澳台][A-Z][A-Z0-9]{5}$')
+
+# 新能源（8位）简化版：
+# 小型新能源：省简称 + 字母 + D/F + 1位字母数字 + 4位数字
+# 大型新能源：省简称 + 字母 + 5位数字 + D/F
+PLATE_NEW_ENERGY_REGEX = re.compile(
+    r'(^[京津沪渝冀晋辽吉黑苏浙皖闽赣鲁豫鄂湘粤桂琼川贵云陕甘青蒙宁新藏港澳台][A-Z][DF][A-Z0-9]\d{4}$)|'
+    r'(^[京津沪渝冀晋辽吉黑苏浙皖闽赣鲁豫鄂湘粤桂琼川贵云陕甘青蒙宁新藏港澳台][A-Z]\d{5}[DF]$)'
+)
+
+
+# ==============================
+# 中征码 校验函数（mod97）
+# ==============================
+
+CHARACTER_CODE_REGEX = re.compile(r'^[A-Z0-9]{3}\d{13}$')
+
+CHARACTER_CODE_WEIGHTS = [
+    1, 3, 5, 7, 11, 2, 13,
+    1, 1, 17, 19, 97, 23, 29
+]
+
+
+def character_code_check(code: str) -> bool:
+    if not code:
+        return False
+
+    code = code.strip().upper()
+
+    # 长度必须 16
+    if len(code) != 16:
+        return False
+
+    # 正则校验
+    if not CHARACTER_CODE_REGEX.match(code):
+        return False
+
+    try:
+        total = 0
+        for i, ch in enumerate(code):
+            # Java 的 Character.getNumericValue 行为：
+            # '0'-'9' -> 0-9
+            # 'A'-'Z' -> 10-35
+            value = int(ch) if ch.isdigit() else ord(ch) - ord('A') + 10
+            total += value * CHARACTER_CODE_WEIGHTS[i]
+
+        # Java 逻辑：num % 97 + 1
+        reissue = total % 97 + 1
+
+        # 校验位是最后 2 位
+        verify_code = f"{reissue:02d}"
+
+        return code[-2:] == verify_code
+
+    except Exception:
+        return False
+
+
+# ==============================
+# 日期
+# ==============================
+DATE_REGEX = re.compile(
+    r'^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{8})$'
+)
+from datetime import datetime
+
+def valid_date(text):
+    try:
+        if "-" in text:
+            datetime.strptime(text, "%Y-%m-%d")
+        elif "/" in text:
+            datetime.strptime(text, "%Y/%m/%d")
+        elif "." in text:
+            datetime.strptime(text, "%Y.%m.%d")
+        elif len(text) == 8:
+            datetime.strptime(text, "%Y%m%d")
+        else:
+            return False
+        return True
+    except:
+        return False
 
 # ==============================
 # （2）列级特征提取函数
@@ -313,7 +400,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 48
+        return [0] * 52
 
     lengths = [len(t) for t in cleaned]
 
@@ -626,6 +713,87 @@ def extract_column_features(text_list):
         if len(t) >= 1 and t[0] in VIN_REGION_PREFIX
     ) / len(cleaned)
 
+
+    # ==============================
+    # （16）PLATE_NUMBER 车牌号
+    # ==============================
+
+    # 48 → plate_regex_ratio
+    plate_regex_ratio = sum(
+        1 for t in cleaned
+        if (PLATE_NORMAL_REGEX.match(t.upper()) or PLATE_NEW_ENERGY_REGEX.match(t.upper()))
+    ) / len(cleaned)
+
+    # 49 → plate_province_ratio
+    plate_province_ratio = sum(
+        1 for t in cleaned
+        if len(t) >= 1 and t[0] in province_abbr_dict
+    ) / len(cleaned)
+
+    # 50 → plate_length_ratio
+    plate_length_ratio = sum(
+        1 for t in cleaned
+        if len(t) in (7, 8)
+    ) / len(cleaned)
+
+    # 51 → plate_new_energy_ratio
+    plate_new_energy_ratio = sum(
+        1 for t in cleaned
+        if PLATE_NEW_ENERGY_REGEX.match(t.upper())
+    ) / len(cleaned)
+
+    # ==============================
+    # （17）CHARACTER_CODE 中征码
+    # ==============================
+
+    # 52 → character_length_16_ratio
+    character_length_16_ratio = sum(
+        1 for t in cleaned
+        if len(t) == 16
+    ) / len(cleaned)
+
+    # 53 → character_prefix_alnum_ratio
+    character_prefix_alnum_ratio = sum(
+        1 for t in cleaned
+        if len(t) == 16 and re.match(r'^[A-Z0-9]{3}', t.upper())
+    ) / len(cleaned)
+
+    # 54 → character_check_digit_ratio
+    character_check_digit_ratio = sum(
+        1 for t in cleaned
+        if len(t) == 16 and character_code_check(t)
+    ) / len(cleaned)
+
+    # ==============================
+    # （18）DATE 年月日（不含时间）
+    # ==============================
+
+    # 55 → date_regex_ratio
+    date_regex_ratio = sum(
+        1 for t in cleaned
+        if DATE_REGEX.match(t)
+    ) / len(cleaned)
+
+    # 56 → date_valid_ratio
+    date_valid_ratio = sum(
+        1 for t in cleaned
+        if valid_date(t)
+    ) / len(cleaned)
+
+    # 57 → date_year_reasonable_ratio
+    date_year_reasonable_ratio = sum(
+        1 for t in cleaned
+        if DATE_REGEX.match(t) and 1900 <= int(t[:4]) <= 2100
+    ) / len(cleaned)
+
+    # 58 → date_separator_ratio
+    date_separator_ratio = sum(
+        1 for t in cleaned
+        if any(sep in t for sep in ["-", "/", "."])
+    ) / len(cleaned)
+
+
+
     return [
         avg_length,
         fixed_length_flag,
@@ -674,8 +842,18 @@ def extract_column_features(text_list):
         vin_regex_ratio,
         vin_length_ratio,
         vin_check_digit_ratio,
-        vin_region_prefix_ratio
-
+        vin_region_prefix_ratio,
+        plate_regex_ratio,
+        plate_province_ratio,
+        plate_length_ratio,
+        plate_new_energy_ratio,
+        character_length_16_ratio,
+        character_prefix_alnum_ratio,
+        character_check_digit_ratio,
+        date_regex_ratio,
+        date_valid_ratio,
+        date_year_reasonable_ratio,
+        date_separator_ratio
     ]
 
 # ==============================
@@ -950,15 +1128,52 @@ print("=" * 60)
 
 
 # VIN 测试列
+# test_column = [
+#     "1HGCM82633A004352",
+#     "JH4KA9650MC000000",
+#     "1FAFP404X1F123456",
+#     "5YJSA1E26HF000001",
+#     "1M8GDM9AXKP042788",
+#     "ABCDEFG123456789",   # 干扰（包含非法字母）
+#     "12345678901234567",  # 干扰（纯数字）
+#     "SHORTVIN123"         # 干扰（长度不够）
+# ]
+
+
+# 车牌号
+# test_column = [
+#     "粤B12345",
+#     "京A1B2C3",
+#     "苏A12345D",   # 新能源
+#     "沪C88888",
+#     "1234567",     # 噪音
+#     "abcdefg",     # 噪音
+#     "600519",      # 股票干扰
+#     "110105199001011234"  # 身份证干扰
+# ]
+
+#中征码
+# test_column = [
+#     "ABC1234567890123",
+#     "XYZ9876543210987",
+#     "A1B0000000000001",
+#     "1234567890123456",   # 干扰（纯数字）
+#     "600519",             # 股票干扰
+#     "110105199001011234", # 身份证干扰
+#     "粤B12345",           # 车牌干扰
+#     "not_code"            # 噪音
+# ]
+
+
+#日期
 test_column = [
-    "1HGCM82633A004352",
-    "JH4KA9650MC000000",
-    "1FAFP404X1F123456",
-    "5YJSA1E26HF000001",
-    "1M8GDM9AXKP042788",
-    "ABCDEFG123456789",   # 干扰（包含非法字母）
-    "12345678901234567",  # 干扰（纯数字）
-    "SHORTVIN123"         # 干扰（长度不够）
+    "2023-01-01",
+    "2023-02-15",
+    "2023-03-20",
+    "20230101",
+    "not_date",
+    "600519",
+    "粤B12345"
 ]
 
 feature = np.array([extract_column_features(test_column)])
