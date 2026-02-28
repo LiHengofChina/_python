@@ -171,6 +171,22 @@ city_dict = set(
 )
 
 # ==============================
+# 构建中文姓氏字典
+# ==============================
+
+import json
+
+with open("chinesename/surname_dict.json", "r", encoding="utf-8") as f:
+    surname_list = json.load(f)
+
+surname_dict = set(
+    s.strip()
+    for s in surname_list
+    if isinstance(s, str) and s.strip()
+)
+
+
+# ==============================
 # 构建企业名称关键词字典
 # ==============================
 
@@ -591,7 +607,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 91
+        return [0] * 103
 
     lengths = [len(t) for t in cleaned]
 
@@ -1224,6 +1240,110 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
 
+    # ==============================
+    # （28）NAME 中文姓名
+    # ==============================
+    # 91 → name_chinese_ratio 中文字符整体占比（结构型）
+    total_chars = sum(len(t) for t in cleaned)
+    chinese_chars = sum(
+        1 for t in cleaned for c in t
+        if '\u4e00' <= c <= '\u9fff'
+    )
+    name_chinese_ratio = chinese_chars / total_chars if total_chars > 0 else 0
+
+
+    # 92 → name_length_reasonable_ratio 合理长度比例（2~3）
+    name_length_reasonable_ratio = sum(
+        1 for t in cleaned
+        if 2 <= len(t.strip()) <= 3
+    ) / len(cleaned)
+
+
+    # 93 → name_all_chinese_ratio 全为中文比例
+    name_all_chinese_ratio = sum(
+        1 for t in cleaned
+        if len(t) >= 2 and all('\u4e00' <= c <= '\u9fff' for c in t)
+    ) / len(cleaned)
+
+
+    # 94 → name_surname_dict_ratio 首字在姓氏字典中的比例
+    name_surname_dict_ratio = sum(
+        1 for t in cleaned
+        if len(t) >= 2 and (
+            t[:2] in surname_dict or   # 复姓优先
+            t[0] in surname_dict
+        )
+    ) / len(cleaned)
+
+
+    # 95 → name_no_digit_ratio 不含数字比例
+    name_no_digit_ratio = sum(
+        1 for t in cleaned
+        if not any(c.isdigit() for c in t)
+    ) / len(cleaned)
+
+
+    # 96 → name_short_length_stability 列内长度稳定性（2或3居多）
+    short_lengths = [len(t) for t in cleaned if len(t) in (2, 3)]
+    if short_lengths:
+        name_short_length_stability = len(short_lengths) / len(cleaned)
+    else:
+        name_short_length_stability = 0
+
+    # ==============================
+    # （27）MONEY 金额
+    # ==============================
+
+    # 97 → money_numeric_ratio 纯数字或数字+小数比例
+    money_numeric_ratio = sum(
+        1 for t in cleaned
+        if re.match(r'^[+-]?\d+(\.\d+)?$', t.replace(",", ""))
+    ) / len(cleaned)
+
+
+    # 98 → money_decimal_ratio 含小数比例
+    money_decimal_ratio = sum(
+        1 for t in cleaned
+        if "." in t and re.match(r'^[+-]?\d+(\.\d+)?$', t.replace(",", ""))
+    ) / len(cleaned)
+
+
+    # 99 → money_currency_symbol_ratio 含货币符号比例
+    money_currency_symbol_ratio = sum(
+        1 for t in cleaned
+        if any(sym in t for sym in ["¥", "￥", "$", "€", "£"])
+    ) / len(cleaned)
+
+
+    # 100 → money_comma_ratio 含千分位逗号比例
+    money_comma_ratio = sum(
+        1 for t in cleaned
+        if "," in t
+    ) / len(cleaned)
+
+
+    # 101 → money_reasonable_length_ratio 合理长度（1~15）
+    money_reasonable_length_ratio = sum(
+        1 for t in cleaned
+        if 1 <= len(t.strip()) <= 15
+    ) / len(cleaned)
+
+
+    # 102 → money_signed_ratio 含正负号比例
+    money_signed_ratio = sum(
+        1 for t in cleaned
+        if t.startswith("-") or t.startswith("+")
+    ) / len(cleaned)
+
+    # 103 → money_unit_ratio 含金额单位比例
+    money_unit_ratio = sum(
+        1 for t in cleaned
+        if re.match(
+            r'^[+-]?\d+(,\d{3})*(\.\d+)?\s*(元|万元|万|亿|USD|RMB|CNY)?$',
+            t.replace("¥", "").replace("￥", "").strip(),
+            re.IGNORECASE
+        )
+    ) / len(cleaned)
 
     return [
         avg_length,
@@ -1325,6 +1445,23 @@ def extract_column_features(text_list):
         address_number_structure_ratio,
         address_length_reasonable_ratio,
         address_contains_building_ratio,
+
+        name_chinese_ratio,
+        name_length_reasonable_ratio,
+        name_all_chinese_ratio,
+        name_surname_dict_ratio,
+        name_no_digit_ratio,
+        name_short_length_stability,
+
+        money_numeric_ratio,
+        money_decimal_ratio,
+        money_currency_symbol_ratio,
+        money_comma_ratio,
+        money_reasonable_length_ratio,
+        money_signed_ratio,
+
+        money_unit_ratio,
+
     ]
 
 # ==============================
@@ -1755,31 +1892,132 @@ print("=" * 60)
 
 
 # ADDRESS 测试列
+# test_column = [
+#     "北京市朝阳区建国路88号",
+#     "广东省深圳市南山区科技园科苑路15号",
+#     "上海市浦东新区世纪大道100号A座",
+#     "杭州市西湖区文三路90号3栋2单元501室",
+#     "成都市高新区天府大道北段28号",
+#     "广州市天河区体育西路123号",
+#     "苏州市工业园区星湖街328号",
+#     "重庆市渝北区龙溪街道金山大道8号",
+#     "南京市鼓楼区中山北路66号",
+#     "武汉市洪山区珞瑜路726号",
+# 
+#     # -------- 噪音 --------
+#     "600519",                    # 股票
+#     "2023-01-01",                # 日期
+#     "110105199001011234",        # 身份证
+#     "China",                     # 国家
+#     "test@example.com",          # 邮箱
+#     "粤B12345",                  # 车牌
+#     "ZhangSan",                  # 拼音名
+#     "ABCDEF123",                 # 混合噪音
+#     "1HGCM82633A004352",         # VIN
+#     "JP"                         # 国家缩写
+# ]
+
+#
+# # NAME 预测测试列
+# test_column = [
+#     "张伟",
+#     "王在芳",
+#     "李娜",
+#     "刘洋",
+#     "陈杰",
+#     "赵敏",
+#     "黄磊",
+#     "周涛",
+#     "吴昊",
+#     "孙悦",
+#
+#     # -------- 噪音 --------
+#     "600519",                    # 股票
+#     "13888888888",               # 手机
+#     "110105199001011234",        # 身份证
+#     "2023-09-09",                # 日期
+#     "test@example.com",          # 邮箱
+#     "粤B88888",                  # 车牌
+#     "192.168.1.1",               # IP
+#     "ABCDEF123",                 # 混合字符串
+#     "China",                     # 国家
+#     "北京市朝阳区建国路88号"     # 地址
+# ]
+
+#
+# # MONEY 预测测试列
+# test_column = [
+#     "100",
+#     "¥3000",
+#     "600519",                # 股票干扰
+#     "1,200.50",
+#     "张三",                  # 姓名干扰
+#     "-500",
+#     "3万元",
+#     "2023-09-09",            # 日期干扰
+#     "4500元",
+#     "ABC123",                # 噪音
+#     "500 USD",
+#     "110105199001011234",    # 身份证干扰
+#     "￥8800",
+#     "192.168.1.1",           # IP干扰
+#     "2亿",
+#     "+750.80",
+#     "China",                 # 国家干扰
+#     "8万",
+#     "test@example.com",      # 邮箱干扰
+#     "3000 RMB"
+# ]
+
+
+# MONEY 预测测试列
+# test_column = [
+#     "100",
+#     "¥3000",
+#     "600519",                # 股票干扰
+#     "1,200.50",
+#     "张三",                  # 姓名干扰
+#     "-500",
+#     "3万元",
+#     "2023-09-09",            # 日期干扰
+#     "4500元",
+#     "ABC123",                # 噪音
+#     "500 USD",
+#     "110105199001011234",    # 身份证干扰
+#     "￥8800",
+#     "192.168.1.1",           # IP干扰
+#     "2亿",
+#     "+750.80",
+#     "China",                 # 国家干扰
+#     "8万",
+#     "test@example.com",      # 邮箱干扰
+#     "3000 RMB"
+# ]
+
+
+# DEFAULT 预测测试列
 test_column = [
-    "北京市朝阳区建国路88号",
-    "广东省深圳市南山区科技园科苑路15号",
-    "上海市浦东新区世纪大道100号A座",
-    "杭州市西湖区文三路90号3栋2单元501室",
-    "成都市高新区天府大道北段28号",
-    "广州市天河区体育西路123号",
-    "苏州市工业园区星湖街328号",
-    "重庆市渝北区龙溪街道金山大道8号",
-    "南京市鼓楼区中山北路66号",
-    "武汉市洪山区珞瑜路726号",
-
-    # -------- 噪音 --------
-    "600519",                    # 股票
-    "2023-01-01",                # 日期
-    "110105199001011234",        # 身份证
-    "China",                     # 国家
-    "test@example.com",          # 邮箱
-    "粤B12345",                  # 车牌
-    "ZhangSan",                  # 拼音名
-    "ABCDEF123",                 # 混合噪音
-    "1HGCM82633A004352",         # VIN
-    "JP"                         # 国家缩写
+    "hello world",
+    "系统参数A",
+    "config_value",
+    "alpha-beta",
+    "raw data",
+    "测试文本",
+    "meta.info",
+    "temp_flag",
+    "placeholder",
+    "debug-mode",
+    "lorem ipsum",
+    "internal_ref",
+    "node cluster",
+    "build-version",
+    "release candidate",
+    "sample_data",
+    "misc-item",
+    "control_value",
+    "trace-log",
+    "原始 数据"
 ]
-
 
 feature = np.array([extract_column_features(test_column)])
 

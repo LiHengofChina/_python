@@ -2214,3 +2214,337 @@ address_col_10,abcdef123,ADDRESS
 
 
 
+
+
+name_col_1,张伟,NAME
+name_col_1,600519,NAME
+name_col_1,李娜,NAME
+name_col_1,110105199001011234,NAME
+name_col_1,王芳,NAME
+name_col_1,粤B88888,NAME
+name_col_1,陈杰,NAME
+name_col_1,2023-09-09,NAME
+name_col_1,刘洋,NAME
+name_col_1,China,NAME
+
+name_col_2,孙悦,NAME
+name_col_2,吴昊,NAME
+name_col_2,192.168.1.1,NAME
+name_col_2,周涛,NAME
+name_col_2,600000,NAME
+name_col_2,黄磊,NAME
+name_col_2,JP,NAME
+name_col_2,张强,NAME
+name_col_2,20230101,NAME
+name_col_2,李想,NAME
+
+name_col_3,陈浩,NAME
+name_col_3,赵雷,NAME
+name_col_3,600519,NAME
+name_col_3,北京市朝阳区建国路88号,NAME
+name_col_3,王鑫,NAME
+name_col_3,110105198806158765,NAME
+name_col_3,李俊,NAME
+name_col_3,ABC123,NAME
+name_col_3,刘超,NAME
+name_col_3,2023-10-01,NAME
+
+name_col_4,张宇,NAME
+name_col_4,李强,NAME
+name_col_4,13888888888,NAME
+name_col_4,孙浩,NAME
+name_col_4,陈亮,NAME
+name_col_4,1HGCM82633A004352,NAME
+name_col_4,赵凯,NAME
+name_col_4,粤A12345,NAME
+name_col_4,王磊,NAME
+name_col_4,abcdef,NAME
+
+name_col_5,周杰,NAME
+name_col_5,王洋,NAME
+name_col_5,600001,NAME
+name_col_5,李雪,NAME
+name_col_5,深圳市南山区科技园,NAME
+name_col_5,张涛,NAME
+name_col_5,陈涛,NAME
+name_col_5,110105199508073210,NAME
+name_col_5,吴迪,NAME
+name_col_5,2022-12-31,NAME
+
+name_col_6,刘涛,NAME
+name_col_6,王凯,NAME
+name_col_6,2023-01-01,NAME
+name_col_6,孙楠,NAME
+name_col_6,ABCDEF123,NAME
+name_col_6,陈刚,NAME
+name_col_6,192.168.0.5,NAME
+name_col_6,赵峰,NAME
+name_col_6,600519,NAME
+name_col_6,李磊,NAME
+
+name_col_7,张静,NAME
+name_col_7,王丽,NAME
+name_col_7,110105199001011234,NAME
+name_col_7,周华,NAME
+name_col_7,test@example.com,NAME
+name_col_7,陈军,NAME
+name_col_7,600888,NAME
+name_col_7,李洋,NAME
+name_col_7,粤C88888,NAME
+name_col_7,孙强,NAME
+
+name_col_8,赵鹏,NAME
+name_col_8,600000,NAME
+name_col_8,李霞,NAME
+name_col_8,王波,NAME
+name_col_8,上海市浦东新区世纪大道,NAME
+name_col_8,陈波,NAME
+name_col_8,20230909,NAME
+name_col_8,刘伟,NAME
+name_col_8,China,NAME
+name_col_8,孙健,NAME
+
+name_col_9,吴涛,NAME
+name_col_9,张峰,NAME
+name_col_9,JP,NAME
+name_col_9,李军,NAME
+name_col_9,粤B99999,NAME
+name_col_9,陈鹏,NAME
+name_col_9,600888,NAME
+name_col_9,王凯,NAME
+name_col_9,2023-10-01,NAME
+name_col_9,赵强,NAME
+
+name_col_10,李伟,NAME
+name_col_10,110105199001011234,NAME
+name_col_10,王杰,NAME
+name_col_10,600519,NAME
+name_col_10,陈龙,NAME
+name_col_10,深圳市福田区深南大道,NAME
+name_col_10,孙涛,NAME
+name_col_10,192.168.1.1,NAME
+name_col_10,赵宇,NAME
+name_col_10,2022/12/31,NAME
+
+
+money_col_1,100, MONEY
+money_col_1,200.50, MONEY
+money_col_1,3万元, MONEY
+money_col_1,¥5000, MONEY
+money_col_1,-1200, MONEY
+money_col_1,600519, MONEY
+money_col_1,张三, MONEY
+money_col_1,2023-01-01, MONEY
+money_col_1,粤B88888, MONEY
+money_col_1,ABC123, MONEY
+
+money_col_2,1000, MONEY
+money_col_2,2500元, MONEY
+money_col_2,12.8万, MONEY
+money_col_2,$300, MONEY
+money_col_2,500 USD, MONEY
+money_col_2,110105199001011234, MONEY
+money_col_2,China, MONEY
+money_col_2,abc, MONEY
+money_col_2,192.168.1.1, MONEY
+money_col_2,2022-12-31, MONEY
+
+money_col_3,800, MONEY
+money_col_3,900.75, MONEY
+money_col_3,100万元, MONEY
+money_col_3,￥8800, MONEY
+money_col_3,+3500, MONEY
+money_col_3,张伟, MONEY
+money_col_3,600000, MONEY
+money_col_3,JP, MONEY
+money_col_3,test@example.com, MONEY
+money_col_3,粤A12345, MONEY
+
+money_col_4,15亿, MONEY
+money_col_4,3200元, MONEY
+money_col_4,780.00, MONEY
+money_col_4,1500.60, MONEY
+money_col_4,-50 USD, MONEY
+money_col_4,北京, MONEY
+money_col_4,20230909, MONEY
+money_col_4,110105198806158765, MONEY
+money_col_4,abc123, MONEY
+money_col_4,沪C88888, MONEY
+
+money_col_5,999, MONEY
+money_col_5,10万元, MONEY
+money_col_5,3200, MONEY
+money_col_5,4500 RMB, MONEY
+money_col_5,￥750, MONEY
+money_col_5,张三, MONEY
+money_col_5,600519, MONEY
+money_col_5,粤B99999, MONEY
+money_col_5,2023/01/01, MONEY
+money_col_5,China, MONEY
+
+money_col_6,10000, MONEY
+money_col_6,2500.88, MONEY
+money_col_6,5万, MONEY
+money_col_6,$1200, MONEY
+money_col_6,-300元, MONEY
+money_col_6,王五, MONEY
+money_col_6,110105199508073210, MONEY
+money_col_6,abc, MONEY
+money_col_6,JP, MONEY
+money_col_6,192.168.0.5, MONEY
+
+money_col_7,700, MONEY
+money_col_7,850.60, MONEY
+money_col_7,20万元, MONEY
+money_col_7,￥3000, MONEY
+money_col_7,+500 USD, MONEY
+money_col_7,600888, MONEY
+money_col_7,张强, MONEY
+money_col_7,2023-10-01, MONEY
+money_col_7,粤C12345, MONEY
+money_col_7,China, MONEY
+
+money_col_8,1200, MONEY
+money_col_8,600.90, MONEY
+money_col_8,2亿, MONEY
+money_col_8,$4500, MONEY
+money_col_8,8800元, MONEY
+money_col_8,110105199001011234, MONEY
+money_col_8,上海市浦东新区, MONEY
+money_col_8,abc123, MONEY
+money_col_8,JP, MONEY
+money_col_8,粤B77777, MONEY
+
+money_col_9,500, MONEY
+money_col_9,999.99, MONEY
+money_col_9,8万元, MONEY
+money_col_9,￥6500, MONEY
+money_col_9,-1000, MONEY
+money_col_9,张伟, MONEY
+money_col_9,600000, MONEY
+money_col_9,2022-05-05, MONEY
+money_col_9,China, MONEY
+money_col_9,IP地址, MONEY
+
+money_col_10,300, MONEY
+money_col_10,450.75, MONEY
+money_col_10,1万, MONEY
+money_col_10,$999, MONEY
+money_col_10,7800 RMB, MONEY
+money_col_10,110105199508073210, MONEY
+money_col_10,abc, MONEY
+money_col_10,粤A88888, MONEY
+money_col_10,2023-06-06, MONEY
+money_col_10,张三, MONEY
+
+
+
+default_col_11,hello world,DEFAULT
+default_col_11,foo_bar!,DEFAULT
+default_col_11,alpha-beta,DEFAULT
+default_col_11,测试数据A,DEFAULT
+default_col_11,config value,DEFAULT
+default_col_11,meta.info,DEFAULT
+default_col_11,random_text?,DEFAULT
+default_col_11,none!,DEFAULT
+default_col_11,占位符,DEFAULT
+default_col_11,debug-mode,DEFAULT
+
+default_col_12,GET /api/test,DEFAULT
+default_col_12,POST /login,DEFAULT
+default_col_12,状态_OK,DEFAULT
+default_col_12,user agent,DEFAULT
+default_col_12,trace-id-xyz,DEFAULT
+default_col_12,内部标识,DEFAULT
+default_col_12,系统_参数,DEFAULT
+default_col_12,hello?,DEFAULT
+default_col_12,空 白,DEFAULT
+default_col_12,flag=true,DEFAULT
+
+default_col_13,参数A1,DEFAULT
+default_col_13,参数-B2,DEFAULT
+default_col_13,alpha beta,DEFAULT
+default_col_13,gamma.delta,DEFAULT
+default_col_13,测试_flag,DEFAULT
+default_col_13,log-entry,DEFAULT
+default_col_13,raw data,DEFAULT
+default_col_13,system#1,DEFAULT
+default_col_13,占位_data,DEFAULT
+default_col_13,misc-item,DEFAULT
+
+default_col_14,module A,DEFAULT
+default_col_14,module_B,DEFAULT
+default_col_14,内部-引用,DEFAULT
+default_col_14,external ref,DEFAULT
+default_col_14,build-version,DEFAULT
+default_col_14,release candidate,DEFAULT
+default_col_14,临时 标记,DEFAULT
+default_col_14,test_mode!,DEFAULT
+default_col_14,开发环境,DEFAULT
+default_col_14,ref.code,DEFAULT
+
+default_col_15,lorem ipsum,DEFAULT
+default_col_15,string-value,DEFAULT
+default_col_15,样本 数据,DEFAULT
+default_col_15,placeholder!,DEFAULT
+default_col_15,sample_data?,DEFAULT
+default_col_15,meta 信息,DEFAULT
+default_col_15,raw-input,DEFAULT
+default_col_15,temp flag,DEFAULT
+default_col_15,unknown?,DEFAULT
+default_col_15,none_value,DEFAULT
+
+default_col_16,key=value,DEFAULT
+default_col_16,sys-log,DEFAULT
+default_col_16,trace log,DEFAULT
+default_col_16,error-log!,DEFAULT
+default_col_16,info.log,DEFAULT
+default_col_16,warning-log,DEFAULT
+default_col_16,测试 文本,DEFAULT
+default_col_16,alpha#beta,DEFAULT
+default_col_16,misc data,DEFAULT
+default_col_16,flag-true,DEFAULT
+
+default_col_17,param 1,DEFAULT
+default_col_17,param-2,DEFAULT
+default_col_17,input data,DEFAULT
+default_col_17,output-data,DEFAULT
+default_col_17,response ok,DEFAULT
+default_col_17,response-fail,DEFAULT
+default_col_17,引用-编号,DEFAULT
+default_col_17,temp store,DEFAULT
+default_col_17,系统 参数,DEFAULT
+default_col_17,占位 字符串,DEFAULT
+
+default_col_18,item-alpha,DEFAULT
+default_col_18,item beta,DEFAULT
+default_col_18,item.gamma,DEFAULT
+default_col_18,object ref,DEFAULT
+default_col_18,data-ref,DEFAULT
+default_col_18,cache entry,DEFAULT
+default_col_18,cache-miss,DEFAULT
+default_col_18,控制 标识,DEFAULT
+default_col_18,misc-data,DEFAULT
+default_col_18,raw payload,DEFAULT
+
+default_col_19,flag enabled,DEFAULT
+default_col_19,flag-disabled,DEFAULT
+default_col_19,run state,DEFAULT
+default_col_19,task-queue,DEFAULT
+default_col_19,job worker,DEFAULT
+default_col_19,async-mode,DEFAULT
+default_col_19,线程 池,DEFAULT
+default_col_19,worker-node,DEFAULT
+default_col_19,测试 项,DEFAULT
+default_col_19,temp-value,DEFAULT
+
+default_col_20,meta config,DEFAULT
+default_col_20,service-api,DEFAULT
+default_col_20,component id,DEFAULT
+default_col_20,node cluster,DEFAULT
+default_col_20,cluster-main,DEFAULT
+default_col_20,cluster backup,DEFAULT
+default_col_20,env stage,DEFAULT
+default_col_20,env-dev,DEFAULT
+default_col_20,release version,DEFAULT
+default_col_20,原始 数据,DEFAULT
