@@ -17,7 +17,7 @@ from sklearn.metrics import classification_report, f1_score
 # 必须包含 column_id,text,label
 # ==============================
 
-df = pd.read_csv("phone_id_data.csv", dtype={"text": str})
+df = pd.read_csv("fit_data.csv", dtype={"text": str})
 
 # print("原始数据前5行：")
 # print(df.head())
@@ -85,6 +85,20 @@ fund_df = pd.read_csv("stock_fund/fund_code_dict.csv", dtype=str)
 stock_dict = set(stock_df["code"].astype(str))
 fund_dict = set(fund_df["基金代码"].astype(str))
 
+
+# ==============================
+# 加载 国家 字典 数据
+# ==============================
+
+# 读取本地字典
+country_df = pd.read_csv("country/country_dict.csv", dtype=str)
+
+# 构建字典（统一去空格）
+country_dict = set(
+    country_df["country"].astype(str).str.strip()
+)
+
+print("国家字典数量:", len(country_dict))
 
 # ==============================
 # IP正则
@@ -390,6 +404,43 @@ def valid_date(text):
         return True
     except:
         return False
+# ==============================
+# 日期-时间
+# ==============================
+
+DATE_TIME_REGEX = re.compile(
+    r'^('
+    r'\d{4}[-/.]\d{1,2}[-/.]\d{1,2}[ T]\d{1,2}:\d{1,2}(:\d{1,2})?'
+    r'|\d{14}'
+    r')$'
+)
+from datetime import datetime
+
+def valid_datetime(text):
+    try:
+        if "-" in text or "/" in text or "." in text:
+            if "T" in text:
+                datetime.strptime(text, "%Y-%m-%dT%H:%M:%S")
+            elif " " in text:
+                try:
+                    datetime.strptime(text, "%Y-%m-%d %H:%M:%S")
+                except:
+                    datetime.strptime(text, "%Y-%m-%d %H:%M")
+            else:
+                return False
+        elif len(text) == 14:
+            datetime.strptime(text, "%Y%m%d%H%M%S")
+        else:
+            return False
+        return True
+    except:
+        return False
+
+# ==============================
+# 开启许可
+# ==============================
+ACCOUNT_OPENING_REGEX = re.compile(r'^[A-Z]\d{14}$')
+
 
 # ==============================
 # （2）列级特征提取函数
@@ -400,7 +451,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 52
+        return [0] * 66
 
     lengths = [len(t) for t in cleaned]
 
@@ -715,7 +766,7 @@ def extract_column_features(text_list):
 
 
     # ==============================
-    # （16）PLATE_NUMBER 车牌号
+    # （17）PLATE_NUMBER 车牌号
     # ==============================
 
     # 48 → plate_regex_ratio
@@ -743,7 +794,7 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
     # ==============================
-    # （17）CHARACTER_CODE 中征码
+    # （18）CHARACTER_CODE 中征码
     # ==============================
 
     # 52 → character_length_16_ratio
@@ -765,7 +816,7 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
     # ==============================
-    # （18）DATE 年月日（不含时间）
+    # （19）DATE 年月日（不含时间）
     # ==============================
 
     # 55 → date_regex_ratio
@@ -792,7 +843,82 @@ def extract_column_features(text_list):
         if any(sep in t for sep in ["-", "/", "."])
     ) / len(cleaned)
 
+    # ==============================
+    # （20）DATE_TIME 年月日 + 时间
+    # ==============================
 
+    # 59 → datetime_regex_ratio
+    datetime_regex_ratio = sum(
+        1 for t in cleaned
+        if DATE_TIME_REGEX.match(t)
+    ) / len(cleaned)
+
+    # 60 → datetime_valid_ratio
+    datetime_valid_ratio = sum(
+        1 for t in cleaned
+        if valid_datetime(t)
+    ) / len(cleaned)
+
+    # 61 → datetime_contains_colon_ratio
+    datetime_contains_colon_ratio = sum(
+        1 for t in cleaned
+        if ":" in t
+    ) / len(cleaned)
+
+    # 62 → datetime_length_14_ratio
+    datetime_length_14_ratio = sum(
+        1 for t in cleaned
+        if len(t) == 14 and t.isdigit()
+    ) / len(cleaned)
+    # ==============================
+    # （21）ACCOUNT_OPENING 开户许可证
+    # ==============================
+
+    # 63 → account_opening_regex_ratio 开户许可证正则匹配比例
+    account_opening_regex_ratio = sum(
+        1 for t in cleaned
+        if ACCOUNT_OPENING_REGEX.match(t)
+    ) / len(cleaned)
+
+    # 64 → account_opening_length_ratio 长度为15位比例
+    account_opening_length_ratio = sum(
+        1 for t in cleaned
+        if len(t) == 15
+    ) / len(cleaned)
+
+    # 65 → account_opening_prefix_alpha_ratio 首位为字母比例
+    account_opening_prefix_alpha_ratio = sum(
+        1 for t in cleaned
+        if len(t) == 15 and t[0].isalpha()
+    ) / len(cleaned)
+
+    # ==============================
+    # （21）COUNTRY 国籍
+    # ==============================
+
+    # 66 → country_dict_ratio 国家字典匹配比例
+    country_dict_ratio = sum(
+        1 for t in cleaned
+        if t.strip().upper() in country_dict
+    ) / len(cleaned)
+
+    # 67 → country_alpha_ratio 纯字母比例
+    country_alpha_ratio = sum(
+        1 for t in cleaned
+        if t.strip().isalpha()
+    ) / len(cleaned)
+
+    # 68 → country_chinese_ratio 含中文比例
+    country_chinese_ratio = sum(
+        1 for t in cleaned
+        if any('\u4e00' <= c <= '\u9fff' for c in t)
+    ) / len(cleaned)
+
+    # 69 → country_short_length_ratio 合理长度比例（2~20）
+    country_short_length_ratio = sum(
+        1 for t in cleaned
+        if 2 <= len(t.strip()) <= 20
+    ) / len(cleaned)
 
     return [
         avg_length,
@@ -853,7 +979,22 @@ def extract_column_features(text_list):
         date_regex_ratio,
         date_valid_ratio,
         date_year_reasonable_ratio,
-        date_separator_ratio
+        date_separator_ratio,
+
+        datetime_regex_ratio,
+        datetime_valid_ratio,
+        datetime_contains_colon_ratio,
+        datetime_length_14_ratio,
+
+        account_opening_regex_ratio,
+        account_opening_length_ratio,
+        account_opening_prefix_alpha_ratio,
+
+        country_dict_ratio,
+        country_alpha_ratio,
+        country_chinese_ratio,
+        country_short_length_ratio
+
     ]
 
 # ==============================
@@ -1166,14 +1307,48 @@ print("=" * 60)
 
 
 #日期
+# test_column = [
+#     "2023-01-01",
+#     "2023-02-15",
+#     "2023-03-20",
+#     "20230101",
+#     "not_date",
+#     "600519",
+#     "粤B12345"
+# ]
+#日期-时间
+# test_column = [
+#     "2023-01-01 12:30:45",
+#     "2023-02-15 08:15:30",
+#     "20230101123045",
+#     "600519",
+#     "2023-01-01",
+#     "粤B12345"
+# ]
+
+# 开启许可
+# test_column = [
+#     "J12345678901234",
+#     "K44030012345678",
+#     "L11010512345678",
+#     "123456789012345",
+#     "600519",
+#     "粤B12345"
+# ]
+
 test_column = [
-    "2023-01-01",
-    "2023-02-15",
-    "2023-03-20",
-    "20230101",
-    "not_date",
-    "600519",
-    "粤B12345"
+    "China",
+    "United States",
+    "USA",
+    "CN",
+    "中国",
+    "日本",
+    "JP",
+    "600519",              # 噪音（股票）
+    "2023-01-01",          # 噪音（日期）
+    "粤B12345",            # 噪音（车牌）
+    "abcdef123",           # 噪音
+    "110105199001011234"   # 噪音（身份证）
 ]
 
 feature = np.array([extract_column_features(test_column)])
