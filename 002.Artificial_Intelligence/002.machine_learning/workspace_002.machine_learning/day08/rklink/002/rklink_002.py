@@ -87,6 +87,82 @@ fund_dict = set(fund_df["基金代码"].astype(str))
 
 
 # ==============================
+# 构建基金名称字典
+# ==============================
+
+fund_name_dict = set(
+    fund_df["基金简称"].astype(str).str.strip()
+)
+
+# ==============================
+# 构建中国城市字典
+# ==============================
+
+city_df = pd.read_csv("cities/city_dict.csv", dtype=str)
+
+city_dict = set(
+    city_df["city"].astype(str).str.strip()
+)
+
+# ==============================
+# 构建企业名称关键词字典
+# ==============================
+
+enterprise_keyword_dict = set([
+    "有限公司",
+    "股份有限公司",
+    "集团",
+    "控股",
+    "科技",
+    "实业",
+    "投资",
+    "银行",
+    "公司",
+    "责任",
+    "合伙",
+    "有限合伙"
+])
+
+# ==============================
+# 构建企业名称后缀字典
+# ==============================
+
+enterprise_suffix_dict = set([
+    "有限公司",
+    "股份有限公司",
+    "集团有限公司",
+    "集团",
+    "公司",
+    "有限责任公司",
+    "责任公司",
+    "有限合伙",
+    "合伙企业",
+    "银行",
+    "研究院",
+    "事务所",
+    "基金会",
+    "中心",
+    "工作室"
+])
+
+# ==============================
+# PASSPORT 护照正则
+# ==============================
+
+PASSPORT_REGEX = re.compile(r'^[A-Z]{1,2}\d{7,8}$')
+
+# ==============================
+# 基金名称关键词
+# ==============================
+
+FUND_KEYWORDS = [
+    "基金", "混合", "灵活", "债券",
+    "可转债", "纯债", "增强债",
+    "成长", "一级", "二级", "股票"
+]
+
+
+# ==============================
 # 加载 国家 字典 数据
 # ==============================
 
@@ -451,7 +527,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 66
+        return [0] * 70
 
     lengths = [len(t) for t in cleaned]
 
@@ -920,6 +996,122 @@ def extract_column_features(text_list):
         if 2 <= len(t.strip()) <= 20
     ) / len(cleaned)
 
+    # ==============================
+    # （23）FUNDS_NAME 基金名称
+    # ==============================
+
+    # 70 → chinese_char_ratio 中文字符占比（结构型特征）
+    total_chars = sum(len(t) for t in cleaned)
+    chinese_chars = sum(
+        1 for t in cleaned for c in t
+        if '\u4e00' <= c <= '\u9fff'
+    )
+    chinese_char_ratio = chinese_chars / total_chars if total_chars > 0 else 0
+
+    # 71 → fund_keyword_ratio 行业关键词比例
+    fund_keyword_ratio = sum(
+        1 for t in cleaned
+        if any(k in t for k in FUND_KEYWORDS)
+    ) / len(cleaned)
+
+    # 72 → fund_name_dict_ratio 基金名称字典匹配比例
+    fund_name_dict_ratio = sum(
+        1 for t in cleaned
+        if t.strip() in fund_name_dict
+    ) / len(cleaned)
+
+    # 73 → fund_length_reasonable_ratio 合理长度比例（4~30）
+    fund_length_reasonable_ratio = sum(
+        1 for t in cleaned
+        if 4 <= len(t.strip()) <= 30
+    ) / len(cleaned)
+
+    # ==============================
+    # （24）PASSPORT 护照
+    # ==============================
+
+    # 74 → passport_regex_ratio 护照正则匹配比例
+    passport_regex_ratio = sum(
+        1 for t in cleaned
+        if PASSPORT_REGEX.match(t.upper())
+    ) / len(cleaned)
+
+    # 75 → passport_letter_digit_ratio 字母+数字结构比例
+    passport_letter_digit_ratio = sum(
+        1 for t in cleaned
+        if len(t) >= 2 and t[0].isalpha() and t[1:].isdigit()
+    ) / len(cleaned)
+
+    # 76 → passport_prefix_letter_ratio 首位为字母比例
+    passport_prefix_letter_ratio = sum(
+        1 for t in cleaned
+        if len(t) > 0 and t[0].isalpha()
+    ) / len(cleaned)
+
+    # 77 → passport_length_9_ratio 长度为9位比例
+    passport_length_9_ratio = sum(
+        1 for t in cleaned
+        if len(t) == 9
+    ) / len(cleaned)
+
+
+    # ==============================
+    # （25）PINYIN_NAME 拼音姓名
+    # ==============================
+
+    # 78 → pinyin_alpha_ratio 纯字母比例
+    pinyin_alpha_ratio = sum(
+        1 for t in cleaned
+        if t.replace(" ", "").isalpha()
+    ) / len(cleaned)
+
+    # 79 → pinyin_capital_ratio 首字母大写比例
+    pinyin_capital_ratio = sum(
+        1 for t in cleaned
+        if len(t) > 0 and t[0].isupper()
+    ) / len(cleaned)
+
+    # 80 → pinyin_space_ratio 含空格比例
+    pinyin_space_ratio = sum(
+        1 for t in cleaned
+        if " " in t
+    ) / len(cleaned)
+
+    # 81 → pinyin_length_reasonable_ratio 合理长度比例（6~20）
+    pinyin_length_reasonable_ratio = sum(
+        1 for t in cleaned
+        if 6 <= len(t.strip()) <= 20
+    ) / len(cleaned)
+
+    # ==============================
+    # （26）ENTERPRISE_NAME 企业名称
+    # ==============================
+
+    # 82 → enterprise_keyword_ratio 企业名称关键字占比
+    enterprise_keyword_ratio = sum(
+        1 for t in cleaned
+        if any(k in t for k in enterprise_keyword_dict)
+    ) / len(cleaned)
+
+    # 83 → enterprise_parenthesis_city_ratio 左括号 + 城市名 占比
+    enterprise_parenthesis_city_ratio = sum(
+        1 for t in cleaned
+        if any(f"（{city}" in t or f"({city}" in t for city in city_dict)
+    ) / len(cleaned)
+
+    # 84 → enterprise_length_reasonable_ratio 长度较长比例（6~40）
+    enterprise_length_reasonable_ratio = sum(
+        1 for t in cleaned
+        if 6 <= len(t.strip()) <= 40
+    ) / len(cleaned)
+
+    # 85 → enterprise_suffix_ratio 固定后缀占比
+    enterprise_suffix_ratio = sum(
+        1 for t in cleaned
+        if any(t.endswith(suffix) for suffix in enterprise_suffix_dict)
+    ) / len(cleaned)
+
+
     return [
         avg_length,
         fixed_length_flag,
@@ -993,7 +1185,27 @@ def extract_column_features(text_list):
         country_dict_ratio,
         country_alpha_ratio,
         country_chinese_ratio,
-        country_short_length_ratio
+        country_short_length_ratio,
+
+        chinese_char_ratio,
+        fund_keyword_ratio,
+        fund_name_dict_ratio,
+        fund_length_reasonable_ratio,
+
+        passport_regex_ratio,
+        passport_letter_digit_ratio,
+        passport_prefix_letter_ratio,
+        passport_length_9_ratio,
+
+        pinyin_alpha_ratio,
+        pinyin_capital_ratio,
+        pinyin_space_ratio,
+        pinyin_length_reasonable_ratio,
+
+        enterprise_keyword_ratio,
+        enterprise_parenthesis_city_ratio,
+        enterprise_length_reasonable_ratio,
+        enterprise_suffix_ratio,
 
     ]
 
@@ -1336,20 +1548,92 @@ print("=" * 60)
 #     "粤B12345"
 # ]
 
+# 国籍
+# test_column = [
+#     "China",
+#     "United States",
+#     "USA",
+#     "CN",
+#     "中国",
+#     "日本",
+#     "JP",
+#     "600519",              # 噪音（股票）
+#     "2023-01-01",          # 噪音（日期）
+#     "粤B12345",            # 噪音（车牌）
+#     "abcdef123",           # 噪音
+#     "110105199001011234"   # 噪音（身份证）
+# ]
+
+# FUNDS_NAME 测试列
+# test_column = [
+#     "华夏成长混合",
+#     "中海可转债债券A",
+#     "南方中证500ETF",
+#     "易方达消费行业股票",
+#     "广发稳健增长混合",
+#     "博时信用债纯债",
+#     "600519",              # 噪音（股票代码）
+#     "2023-01-01",          # 噪音（日期）
+#     "粤B12345",            # 噪音（车牌）
+#     "110105199001011234",  # 噪音（身份证）
+#     "abcdef123",           # 噪音
+#     "China"                # 噪音（国家）
+# ]
+
+# 护照
+# test_column = [
+#     "E12345678",
+#     "G98765432",
+#     "P12345678",
+#     "D12345678",
+#     "123456789",          # 噪音
+#     "600519",             # 噪音
+#     "2023-01-01",         # 噪音
+#     "110105199001011234", # 噪音
+#     "abcdef123",          # 噪音
+#     "粤B12345"            # 噪音
+# ]
+
+#拼字名字
+# test_column = [
+#     "ZhangSan",
+#     "Li Ming",
+#     "WangWei",
+#     "Chen Hao",
+#     "LiuYang",
+#     "600519",               # 噪音
+#     "China",                # 噪音（国家）
+#     "test@example.com",     # 噪音（邮箱）
+#     "110105199001011234",   # 噪音（身份证）
+#     "粤B12345"              # 噪音
+# ]
+
+
 test_column = [
-    "China",
-    "United States",
-    "USA",
-    "CN",
-    "中国",
-    "日本",
-    "JP",
-    "600519",              # 噪音（股票）
-    "2023-01-01",          # 噪音（日期）
-    "粤B12345",            # 噪音（车牌）
-    "abcdef123",           # 噪音
-    "110105199001011234"   # 噪音（身份证）
+    "北京华瑞科技有限公司",
+    "上海腾飞投资集团有限公司",
+    "深圳中科实业股份有限公司",
+    "杭州未来能源（深圳）有限公司",
+    "广州博雅教育科技有限公司",
+    "中国工商银行股份有限公司",
+    "南京东方文化传媒集团",
+    "成都金桥资产管理有限公司",
+    "天津恒信建筑工程有限公司",
+    "青岛蓝海环保科技有限公司",
+
+    # -------- 噪音 --------
+    "600519",                      # 股票代码
+    "2023-01-01",                  # 日期
+    "110105199001011234",          # 身份证
+    "粤B12345",                    # 车牌
+    "China",                       # 国家
+    "JP",                          # 国家缩写
+    "abcdef123",                   # 噪音
+    "192.168.1.1",                 # IP
+    "000001",                      # 基金代码
+    "20230101123045"               # 日期时间
 ]
+
 
 feature = np.array([extract_column_features(test_column)])
 
