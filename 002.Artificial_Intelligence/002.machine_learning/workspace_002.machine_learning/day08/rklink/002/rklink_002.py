@@ -48,11 +48,77 @@ DIGIT_MIDDLE_PATTERN = re.compile(r'字第(\d{5,8})号')
 
 
 # ==============================
+# 构建地址门牌结构单位字典
+# ==============================
+
+ADDRESS_NUMBER_PATTERN = re.compile(
+    r"\d{1,5}(号|栋|单元|室|楼|层)"
+)
+
+
+# ==============================
 # MAC
 # ==============================
 MAC_REGEX = re.compile(
     r'^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$|^[0-9A-Fa-f]{12}$'
 )
+
+
+# ==============================
+# 构建地址行政区划关键词字典
+# ==============================
+
+address_region_keyword_dict = set([
+    "省", "市", "区", "县",
+    "镇", "乡", "街道",
+    "开发区", "新区",
+    "自治州"
+])
+
+
+# ==============================
+# 构建地址道路关键词字典（完整版）
+# ==============================
+
+address_road_keyword_dict = set([
+
+    # ===== 基础道路 =====
+    "路", "街", "大道", "巷", "胡同", "弄", "里",
+    "段", "号", "桥", "线",
+
+    # ===== 主干道路 =====
+    "快速路", "高速", "高速公路",
+    "国道", "省道", "县道", "乡道",
+    "环路", "环线", "中路", "东路", "西路", "南路", "北路",
+
+    # ===== 城市扩展结构 =====
+    "大街", "小路", "支路",
+    "步行街", "商业街",
+    "内环", "外环",
+
+    # ===== 行政街道 =====
+    "街道", "街道办事处",
+
+    # ===== 园区类 =====
+    "开发区", "工业园", "科技园",
+    "产业园", "创业园", "物流园",
+    "软件园", "园区",
+
+    # ===== 商业建筑 =====
+    "广场", "大厦", "中心", "写字楼",
+    "商务楼", "办公楼",
+
+    # ===== 住宅楼栋 =====
+    "栋", "单元", "室", "楼", "层",
+    "座", "幢", "号楼",
+
+    # ===== 乡村结构 =====
+    "村", "社区", "新区",
+
+    # ===== 交通节点 =====
+    "站", "出口", "入口", "收费站"
+])
+
 
 # ==============================
 # Luhn 函数
@@ -171,8 +237,9 @@ country_df = pd.read_csv("country/country_dict.csv", dtype=str)
 
 # 构建字典（统一去空格）
 country_dict = set(
-    country_df["country"].astype(str).str.strip()
+    country_df["country"].astype(str).str.strip().str.upper()
 )
+
 
 print("国家字典数量:", len(country_dict))
 
@@ -341,13 +408,10 @@ URL_REGEX = re.compile(
     r'(/[\w\-\.~:/?#\[\]@!$&\'()*+,;=%]*)?$'
 )
 
-EMAIL_REGEX = re.compile(
-    r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
-)
 
 
 # ==============================
-# URL 正则
+# EMAIL 正则
 # ==============================
 
 EMAIL_REGEX = re.compile(
@@ -527,7 +591,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 70
+        return [0] * 91
 
     lengths = [len(t) for t in cleaned]
 
@@ -602,10 +666,11 @@ def extract_column_features(text_list):
 
     # 12 统计前两位是否“稳定”。
     prefixes = [t[:2] for t in cleaned if len(t) == 6 and t.isdigit()]
+
     if prefixes:
-        prefix_unique_ratio = len(set(prefixes)) / len(prefixes)
+        prefix_stability_ratio = 1 if len(set(prefixes)) == 1 else 0
     else:
-        prefix_unique_ratio = 1
+        prefix_stability_ratio = 0
     # 13 统计以 00 或 000 结尾的比例。
     zip_zero_tail_match = sum(
         1 for t in cleaned
@@ -908,10 +973,16 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
     # 57 → date_year_reasonable_ratio
-    date_year_reasonable_ratio = sum(
-        1 for t in cleaned
-        if DATE_REGEX.match(t) and 1900 <= int(t[:4]) <= 2100
-    ) / len(cleaned)
+    date_year_reasonable_ratio = 0
+    for t in cleaned:
+        if DATE_REGEX.match(t):
+            years = re.findall(r'\d{4}', t)
+            if years:
+                year = int(years[0])
+                if 1900 <= year <= 2100:
+                    date_year_reasonable_ratio += 1
+
+    date_year_reasonable_ratio /= len(cleaned)
 
     # 58 → date_separator_ratio
     date_separator_ratio = sum(
@@ -1094,9 +1165,14 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
     # 83 → enterprise_parenthesis_city_ratio 左括号 + 城市名 占比
+    CITY_PREFIXES = tuple(
+        [f"（{c}" for c in city_dict] +
+        [f"({c}" for c in city_dict]
+    )
+
     enterprise_parenthesis_city_ratio = sum(
         1 for t in cleaned
-        if any(f"（{city}" in t or f"({city}" in t for city in city_dict)
+        if any(prefix in t for prefix in CITY_PREFIXES)
     ) / len(cleaned)
 
     # 84 → enterprise_length_reasonable_ratio 长度较长比例（6~40）
@@ -1112,6 +1188,43 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
 
+
+    # ==============================
+    # （27）ADDRESS 地址
+    # ==============================
+
+    # 86 → address_region_ratio 行政区划关键词比例
+    address_region_ratio = sum(
+        1 for t in cleaned
+        if any(k in t for k in address_region_keyword_dict)
+    ) / len(cleaned)
+
+    # 87 → address_road_keyword_ratio 道路关键词比例
+    address_road_keyword_ratio = sum(
+        1 for t in cleaned
+        if any(k in t for k in address_road_keyword_dict)
+    ) / len(cleaned)
+
+    # 88 → address_number_structure_ratio 门牌数字结构比例
+    address_number_structure_ratio = sum(
+        1 for t in cleaned
+        if ADDRESS_NUMBER_PATTERN.search(t)
+    ) / len(cleaned)
+
+    # 89 → address_length_reasonable_ratio 合理长度比例（8~60）
+    address_length_reasonable_ratio = sum(
+        1 for t in cleaned
+        if 8 <= len(t.strip()) <= 60
+    ) / len(cleaned)
+
+    # 90 → address_contains_building_ratio 楼栋结构比例
+    address_contains_building_ratio = sum(
+        1 for t in cleaned
+        if any(k in t for k in ["栋", "单元", "室", "楼", "层"])
+    ) / len(cleaned)
+
+
+
     return [
         avg_length,
         fixed_length_flag,
@@ -1125,7 +1238,7 @@ def extract_column_features(text_list):
         bank_luhn_ratio,
         cvv_length_ratio,
         zip6_digit_ratio,
-        prefix_unique_ratio,
+        prefix_stability_ratio,
         zip_zero_tail_ratio,
         zip_dict_ratio,
         stock_dict_ratio,
@@ -1207,6 +1320,11 @@ def extract_column_features(text_list):
         enterprise_length_reasonable_ratio,
         enterprise_suffix_ratio,
 
+        address_region_ratio,
+        address_road_keyword_ratio,
+        address_number_structure_ratio,
+        address_length_reasonable_ratio,
+        address_contains_building_ratio,
     ]
 
 # ==============================
@@ -1608,30 +1726,58 @@ print("=" * 60)
 #     "粤B12345"              # 噪音
 # ]
 
+# 公司名字
+# test_column = [
+#     "北京华瑞科技有限公司",
+#     "上海腾飞投资集团有限公司",
+#     "深圳中科实业股份有限公司",
+#     "杭州未来能源（深圳）有限公司",
+#     "广州博雅教育科技有限公司",
+#     "中国工商银行股份有限公司",
+#     "南京东方文化传媒集团",
+#     "成都金桥资产管理有限公司",
+#     "天津恒信建筑工程有限公司",
+#     "青岛蓝海环保科技有限公司",
+#
+#     # -------- 噪音 --------
+#     "600519",                      # 股票代码
+#     "2023-01-01",                  # 日期
+#     "110105199001011234",          # 身份证
+#     "粤B12345",                    # 车牌
+#     "China",                       # 国家
+#     "JP",                          # 国家缩写
+#     "abcdef123",                   # 噪音
+#     "192.168.1.1",                 # IP
+#     "000001",                      # 基金代码
+#     "20230101123045"               # 日期时间
+# ]
 
+
+
+# ADDRESS 测试列
 test_column = [
-    "北京华瑞科技有限公司",
-    "上海腾飞投资集团有限公司",
-    "深圳中科实业股份有限公司",
-    "杭州未来能源（深圳）有限公司",
-    "广州博雅教育科技有限公司",
-    "中国工商银行股份有限公司",
-    "南京东方文化传媒集团",
-    "成都金桥资产管理有限公司",
-    "天津恒信建筑工程有限公司",
-    "青岛蓝海环保科技有限公司",
+    "北京市朝阳区建国路88号",
+    "广东省深圳市南山区科技园科苑路15号",
+    "上海市浦东新区世纪大道100号A座",
+    "杭州市西湖区文三路90号3栋2单元501室",
+    "成都市高新区天府大道北段28号",
+    "广州市天河区体育西路123号",
+    "苏州市工业园区星湖街328号",
+    "重庆市渝北区龙溪街道金山大道8号",
+    "南京市鼓楼区中山北路66号",
+    "武汉市洪山区珞瑜路726号",
 
     # -------- 噪音 --------
-    "600519",                      # 股票代码
-    "2023-01-01",                  # 日期
-    "110105199001011234",          # 身份证
-    "粤B12345",                    # 车牌
-    "China",                       # 国家
-    "JP",                          # 国家缩写
-    "abcdef123",                   # 噪音
-    "192.168.1.1",                 # IP
-    "000001",                      # 基金代码
-    "20230101123045"               # 日期时间
+    "600519",                    # 股票
+    "2023-01-01",                # 日期
+    "110105199001011234",        # 身份证
+    "China",                     # 国家
+    "test@example.com",          # 邮箱
+    "粤B12345",                  # 车牌
+    "ZhangSan",                  # 拼音名
+    "ABCDEF123",                 # 混合噪音
+    "1HGCM82633A004352",         # VIN
+    "JP"                         # 国家缩写
 ]
 
 
