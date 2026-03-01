@@ -442,7 +442,12 @@ URL_REGEX = re.compile(
     r'(/[\w\-\.~:/?#\[\]@!$&\'()*+,;=%]*)?$'
 )
 
-
+DOMAIN_REGEX = re.compile(
+    r'^(?:https?://)?'      # 可选 scheme
+    r'(?:www\.)?'           # 可选 www
+    r'([A-Za-z0-9-]+\.)+'   # 至少一个子域
+    r'[A-Za-z]{2,}'         # 顶级域
+)
 
 # ==============================
 # EMAIL 正则
@@ -932,6 +937,18 @@ def extract_column_features(text_list):
         if re.fullmatch(r'[0-9A-Fa-f]{12}', t)
     ) / len(cleaned)
 
+    mac_strict_format_ratio = sum(
+        1 for t in cleaned
+        if re.fullmatch(r'([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}', t)
+    ) / len(cleaned)
+
+    # 含有5个冒号占比
+    mac_5_colon_ratio = sum(
+        1 for t in cleaned
+        if t.count(":") == 5
+    ) / len(cleaned)
+
+
     # ==============================
     # （14）URL
     # ==============================
@@ -955,10 +972,56 @@ def extract_column_features(text_list):
 
 
     # 41 → url 关键字比例
-    URL_KEYWORDS = ["http", "https", "www.", ".com", ".cn", ".net", ".org"]
+    URL_KEYWORDS = [
+        # 协议
+        "http://", "https://", "ftp://",
+
+        # 常见子域
+        "www.", "m.", "api.", "cdn.", "static.",
+
+        # 顶级域（常见）
+        ".com", ".cn", ".net", ".org", ".io", ".gov",
+        ".edu", ".co", ".uk", ".jp", ".de", ".fr",
+        ".info", ".biz", ".top", ".xyz",
+
+        # URL 结构符号
+        "/api/", "/index", "/home", "/login",
+        "?id=", "?page=", "&", "=",
+
+        # 常见路径特征
+        "/v1/", "/v2/", "/static/", "/assets/"
+    ]
     url_keyword_ratio = sum(
         1 for t in cleaned
         if any(k in t.lower() for k in URL_KEYWORDS)
+    ) / len(cleaned)
+
+    # 域名结构合法比例
+    domain_structure_ratio = sum(
+        1 for t in cleaned
+        if DOMAIN_REGEX.match(t)
+    ) / len(cleaned)
+
+    # 不包含@
+    url_no_at_ratio = sum(
+        1 for t in cleaned
+        if "@" not in t
+    ) / len(cleaned)
+
+    # 一般URL只包含两个冒号
+    url_colon_reasonable_ratio = sum(
+        1 for t in cleaned
+        if 1 <= t.count(":") <= 2
+    ) / len(cleaned)
+
+    url_letter_slash_ratio = sum(
+        1 for t in cleaned
+        if re.search(r'[A-Za-z]/', t)
+    ) / len(cleaned)
+
+    url_dot_alpha_ratio = sum(
+        1 for t in cleaned
+        if re.search(r'[A-Za-z]\.[A-Za-z]', t)
     ) / len(cleaned)
 
     # ==============================
@@ -978,7 +1041,7 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
     # ==============================
-    # （16）VIN
+    # （16）CAR_VIN
     # ==============================
     # 44 → VIN 正则匹配比例
     vin_regex_ratio = sum(
@@ -999,7 +1062,7 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
     # 47 → VIN 校验位合法比例
-    VIN_REGION_PREFIX = set("12345JKLMNSTVWXYZ9")
+    VIN_REGION_PREFIX = set("123456789ABCDEFGHJKLMNPRSTUVWXYZ")
     vin_region_prefix_ratio = sum(
         1 for t in cleaned
         if len(t) >= 1 and t[0] in VIN_REGION_PREFIX
@@ -1008,7 +1071,7 @@ def extract_column_features(text_list):
     # 48 → VIN 不含冒号比例
     vin_no_colon_ratio = sum(
         1 for t in cleaned
-        if ":" not in t and "-" not in t
+        if ":" not in t
     ) / len(cleaned)
 
     # ==============================
@@ -1481,18 +1544,30 @@ def extract_column_features(text_list):
         mac_colon_format_ratio,
         mac_dash_format_ratio,
         mac_plain_hex_12_ratio,
+        mac_strict_format_ratio,
+        mac_5_colon_ratio,
 
         url_regex_ratio,
         url_scheme_ratio,
         url_structure_ratio,
         url_keyword_ratio,
+        domain_structure_ratio,
+        url_no_at_ratio,
+
+        url_colon_reasonable_ratio,
+        url_letter_slash_ratio,
+        url_dot_alpha_ratio,
+
         email_regex_ratio,
         email_at_ratio,
+
         vin_regex_ratio,
         vin_length_ratio,
         vin_check_digit_ratio,
         vin_region_prefix_ratio,
         vin_no_colon_ratio,
+
+
         plate_regex_ratio,
         plate_province_ratio,
         plate_length_ratio,
@@ -1712,11 +1787,17 @@ all_test_columns = {
     ],
 
     "STOCK_CODE": [
-        "600000","600036","600519","601318","601398",
-        "603288","603259",
-        "2023-01-01","粤B12345","13888888888"
+        "600000",
+        "600036",
+        "600519",
+        "601318",
+        "601398",
+        "603288",
+        "603259",
+        "000001",
+        "000858",
+        "002415"
     ],
-
 
     "FUNDS": [
         "000001","110011","519674","160119","003095",
@@ -1804,10 +1885,16 @@ all_test_columns = {
     ],
 
     "CAR_VIN": [
-        "1HGCM82633A004352","JH4KA9650MC000000","1FAFP404X1F123456",
-        "5YJSA1E26HF000001","1M8GDM9AXKP042788",
-        "2FTRX18W1XCA12345","WAUZZZ8P29A123456",
-        "600519","110105199001011234","China"
+        "1HGCM82633A004352",
+        "JH4KA9650MC000000",
+        "1FAFP404X1F123456",
+        "5YJSA1E26HF000001",
+        "1M8GDM9AXKP042788",
+        "2FTRX18W1XCA12345",
+        "WAUZZZ8P29A123456",
+        "SALWR2VF4FA000001",
+        "KMHCG45C12U123456",
+        "3VWFE21C04M000001"
     ],
 
     "PLATE_NUMBER": [
