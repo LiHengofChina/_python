@@ -611,6 +611,9 @@ def extract_column_features(text_list):
 
     lengths = [len(t) for t in cleaned]
 
+    # ==============================
+    # （1）PHONE
+    # ==============================
     # 0 avg_length
     avg_length = np.mean(lengths)
 
@@ -628,6 +631,9 @@ def extract_column_features(text_list):
     phone_match = sum(1 for t in cleaned if PHONE_REGEX.match(t))
     phone_regex_ratio = phone_match / len(cleaned)
 
+    # ==============================
+    # （2）ID_CARD
+    # ==============================
     # 4 id_regex_ratio
     id_match = sum(1 for t in cleaned if ID_REGEX.match(t))
     id_regex_ratio = id_match / len(cleaned)
@@ -651,7 +657,9 @@ def extract_column_features(text_list):
         if len(t) >= 6 and t[:6].isdigit() and t[:6] in region_dict
     ) / len(cleaned)
 
-
+    # ==============================
+    # （3）BANK_CARD
+    # ==============================
     # 8 银行卡长度匹配比例（16-19位 + 全数字）
     bank_length_match = sum(
         1 for t in cleaned
@@ -666,6 +674,9 @@ def extract_column_features(text_list):
     )
     bank_luhn_ratio = bank_luhn_match / len(cleaned)
 
+    # ==============================
+    # （4）CVV
+    # ==============================
     # 10 CVV 长度比例
     cvv_match = sum(
         1 for t in cleaned
@@ -673,6 +684,9 @@ def extract_column_features(text_list):
     )
     cvv_length_ratio = cvv_match / len(cleaned)
 
+    # ==============================
+    # （5）ZIP_CODE
+    # ==============================
     # 11 统计 6 位纯数字占比。
     zip6_digit_match = sum(
         1 for t in cleaned
@@ -701,6 +715,9 @@ def extract_column_features(text_list):
     )
     zip_dict_ratio = zip_dict_match / len(cleaned)
 
+    # ==============================
+    # （6）STOCK_CODE
+    # ==============================
     # 15 证券代码字典匹配比例
     stock_dict_match = sum(
         1 for t in cleaned
@@ -708,6 +725,9 @@ def extract_column_features(text_list):
     )
     stock_dict_ratio = stock_dict_match / len(cleaned)
 
+    # ==============================
+    # （7）FUND_CODE
+    # ==============================
 
     # 16 基金代码字典匹配比例
     fund_dict_match = sum(
@@ -716,6 +736,9 @@ def extract_column_features(text_list):
     )
     fund_dict_ratio = fund_dict_match / len(cleaned)
 
+    # ==============================
+    # （8）CREDIT_CODE
+    # ==============================
     # 17 长度 = 18 且 全为数字 + 大写字母 的比例
     credit_length_match = sum(
         1 for t in cleaned
@@ -743,6 +766,9 @@ def extract_column_features(text_list):
     )
     credit_check_digit_ratio = credit_check_match / len(cleaned)
 
+    # ==============================
+    # （9）OFFICER_CARD
+    # ==============================
     # 21 -> 特殊汉字的比例
     officer_keyword_match = sum(
         1 for t in cleaned
@@ -771,6 +797,9 @@ def extract_column_features(text_list):
     )
     officer_digit_middle_ratio = officer_digit_middle_match / len(cleaned)
 
+    # ==============================
+    # （10）PERMIT
+    # ==============================
     # 25 → 特殊汉字比例（经营许可证）
     permit_keyword_match = sum(
         1 for t in cleaned
@@ -806,6 +835,9 @@ def extract_column_features(text_list):
     )
     permit_province_abbr_ratio = permit_province_match / len(cleaned)
 
+    # ==============================
+    # （11）CAR_DRIVING_LICENSE
+    # ==============================
     # 30 → 长度为 18 的比例
     driving_length_18_match = sum(
         1 for t in cleaned
@@ -820,6 +852,9 @@ def extract_column_features(text_list):
     )
     driving_all_digit_ratio = driving_all_digit_match / len(cleaned)
 
+    # ==============================
+    # （12）IP
+    # ==============================
     # 32 IPv4 正则匹配比例
     ipv4_regex_ratio = sum(
         1 for t in cleaned
@@ -838,6 +873,9 @@ def extract_column_features(text_list):
         if IPV6_REGEX.match(t)
     ) / len(cleaned)
 
+    # ==============================
+    # （13）MAC
+    # ==============================
     # 35 → MAC 正则匹配比例
     mac_regex_ratio = sum(
         1 for t in cleaned
@@ -857,6 +895,9 @@ def extract_column_features(text_list):
         if len(t) in (12, 17)
     ) / len(cleaned)
 
+    # ==============================
+    # （14）URL
+    # ==============================
     # 38 → URL 正则匹配比例
     url_regex_ratio = sum(
         1 for t in cleaned
@@ -883,6 +924,9 @@ def extract_column_features(text_list):
         if any(k in t.lower() for k in URL_KEYWORDS)
     ) / len(cleaned)
 
+    # ==============================
+    # （15）EMAIL
+    # ==============================
 
     # 42 → Email 正则匹配比例
     email_regex_ratio = sum(
@@ -896,6 +940,9 @@ def extract_column_features(text_list):
         if t.count("@") == 1
     ) / len(cleaned)
 
+    # ==============================
+    # （16）VIN
+    # ==============================
     # 44 → VIN 正则匹配比例
     vin_regex_ratio = sum(
         1 for t in cleaned
@@ -1056,7 +1103,7 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
     # ==============================
-    # （21）COUNTRY 国籍
+    # （22）COUNTRY
     # ==============================
 
     # 66 → country_dict_ratio 国家字典匹配比例
@@ -1243,30 +1290,21 @@ def extract_column_features(text_list):
     # ==============================
     # （28）NAME 中文姓名
     # ==============================
-    # 91 → name_chinese_ratio 中文字符整体占比（结构型）
-    total_chars = sum(len(t) for t in cleaned)
-    chinese_chars = sum(
-        1 for t in cleaned for c in t
-        if '\u4e00' <= c <= '\u9fff'
-    )
-    name_chinese_ratio = chinese_chars / total_chars if total_chars > 0 else 0
-
-
-    # 92 → name_length_reasonable_ratio 合理长度比例（2~3）
+    # 91 → name_length_reasonable_ratio 合理长度比例（2~3）
     name_length_reasonable_ratio = sum(
         1 for t in cleaned
         if 2 <= len(t.strip()) <= 3
     ) / len(cleaned)
 
 
-    # 93 → name_all_chinese_ratio 全为中文比例
+    # 92 → name_all_chinese_ratio 全为中文比例
     name_all_chinese_ratio = sum(
         1 for t in cleaned
         if len(t) >= 2 and all('\u4e00' <= c <= '\u9fff' for c in t)
     ) / len(cleaned)
 
 
-    # 94 → name_surname_dict_ratio 首字在姓氏字典中的比例
+    # 93 → name_surname_dict_ratio 首字在姓氏字典中的比例
     name_surname_dict_ratio = sum(
         1 for t in cleaned
         if len(t) >= 2 and (
@@ -1276,14 +1314,14 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
 
-    # 95 → name_no_digit_ratio 不含数字比例
+    # 94 → name_no_digit_ratio 不含数字比例
     name_no_digit_ratio = sum(
         1 for t in cleaned
         if not any(c.isdigit() for c in t)
     ) / len(cleaned)
 
 
-    # 96 → name_short_length_stability 列内长度稳定性（2或3居多）
+    # 95 → name_short_length_stability 列内长度稳定性（2或3居多）
     short_lengths = [len(t) for t in cleaned if len(t) in (2, 3)]
     if short_lengths:
         name_short_length_stability = len(short_lengths) / len(cleaned)
@@ -1291,51 +1329,45 @@ def extract_column_features(text_list):
         name_short_length_stability = 0
 
     # ==============================
-    # （27）MONEY 金额
+    # （29）MONEY 金额
     # ==============================
 
-    # 97 → money_numeric_ratio 纯数字或数字+小数比例
+    # 96 → money_numeric_ratio 纯数字或数字+小数比例
     money_numeric_ratio = sum(
         1 for t in cleaned
         if re.match(r'^[+-]?\d+(\.\d+)?$', t.replace(",", ""))
     ) / len(cleaned)
 
 
-    # 98 → money_decimal_ratio 含小数比例
+    # 97 → money_decimal_ratio 含小数比例
     money_decimal_ratio = sum(
         1 for t in cleaned
         if "." in t and re.match(r'^[+-]?\d+(\.\d+)?$', t.replace(",", ""))
     ) / len(cleaned)
 
 
-    # 99 → money_currency_symbol_ratio 含货币符号比例
+    # 98 → money_currency_symbol_ratio 含货币符号比例
     money_currency_symbol_ratio = sum(
         1 for t in cleaned
         if any(sym in t for sym in ["¥", "￥", "$", "€", "£"])
     ) / len(cleaned)
 
 
-    # 100 → money_comma_ratio 含千分位逗号比例
+    # 99 → money_comma_ratio 含千分位逗号比例
     money_comma_ratio = sum(
         1 for t in cleaned
         if "," in t
     ) / len(cleaned)
 
 
-    # 101 → money_reasonable_length_ratio 合理长度（1~15）
+    # 100 → money_reasonable_length_ratio 合理长度（1~15）
     money_reasonable_length_ratio = sum(
         1 for t in cleaned
         if 1 <= len(t.strip()) <= 15
     ) / len(cleaned)
 
 
-    # 102 → money_signed_ratio 含正负号比例
-    money_signed_ratio = sum(
-        1 for t in cleaned
-        if t.startswith("-") or t.startswith("+")
-    ) / len(cleaned)
-
-    # 103 → money_unit_ratio 含金额单位比例
+    # 101 →
     money_unit_ratio = sum(
         1 for t in cleaned
         if re.match(
@@ -1446,7 +1478,6 @@ def extract_column_features(text_list):
         address_length_reasonable_ratio,
         address_contains_building_ratio,
 
-        name_chinese_ratio,
         name_length_reasonable_ratio,
         name_all_chinese_ratio,
         name_surname_dict_ratio,
@@ -1458,7 +1489,6 @@ def extract_column_features(text_list):
         money_currency_symbol_ratio,
         money_comma_ratio,
         money_reasonable_length_ratio,
-        money_signed_ratio,
 
         money_unit_ratio,
 
@@ -1593,6 +1623,7 @@ print("=" * 60)
 #     "91440300715267260"
 # ]
 
+
 # #银行卡号
 # test_column = [
 #     "6222021234567893",
@@ -1611,15 +1642,18 @@ print("=" * 60)
 #     "654"
 # ]
 
-# 邮编
+
+# ## 邮编
 # test_column = [
-#     "510000",
-#     "510030",
-#     "510100",
-#     "510220",
-#     "510300"
+#     "100000",  # 北京
+#     "200000",  # 上海
+#     "300000",  # 天津
+#     "400000",  # 重庆
+#     "710000"   # 西安
 # ]
 
+
+#
 # # 股票代码
 # test_column = [
 #     "600000",  # 浦发银行
@@ -1633,8 +1667,8 @@ print("=" * 60)
 # ]
 
 
-
-# # 基金代码
+#
+# 基金代码
 # test_column = [
 #     "000001",  # 华夏成长混合
 #     "110011",  # 华夏成长混合
@@ -1710,19 +1744,31 @@ print("=" * 60)
 #     "300.168.1.1"   # 干扰（非法IPv4）
 # ]
 
-# # URL 测试列
+# #MAC
 # test_column = [
-#     "https://www.baidu.com",
-#     "http://example.com/index.html",
-#     "https://openai.com/research?type=ai",
-#     "ftp://ftp.example.org/file.txt",
-#     "http://192.168.1.1/login",
-#     "www.sample.net",
-#     "example.com/path/to/page",
-#     "not_a_url"   # 干扰
+#     "00:1A:2B:3C:4D:5E",
+#     "10:9A:BC:DE:F0:11",
+#     "AA:BB:CC:DD:EE:FF",
+#     "12:34:56:78:9A:BC",
+#     "DE:AD:BE:EF:00:01"
 # ]
 
-# EMAIL 测试列
+# # # URL 测试列
+# test_column = [
+#     "https://www.example.com",
+#     "http://www.test.com",
+#     "ftp://ftp.example.org/file.txt",
+#     "https://openai.com/research?type=ai",
+#     "https://subdomain.example.com",
+#     "https://www.linkedin.com",
+#     "ftp://fileserver.example.org",
+#     "https://www.vimeo.com",
+#     "http://localhost:6000",
+#     "https://www.youtube.com",
+#     "https://openai.com/research/ai"
+# ]
+
+# # EMAIL 测试列
 # test_column = [
 #     "test@example.com",
 #     "user123@gmail.com",
@@ -1735,7 +1781,7 @@ print("=" * 60)
 # ]
 
 
-# VIN 测试列
+# CAR_VIN 测试列
 # test_column = [
 #     "1HGCM82633A004352",
 #     "JH4KA9650MC000000",
@@ -1903,7 +1949,7 @@ print("=" * 60)
 #     "重庆市渝北区龙溪街道金山大道8号",
 #     "南京市鼓楼区中山北路66号",
 #     "武汉市洪山区珞瑜路726号",
-# 
+#
 #     # -------- 噪音 --------
 #     "600519",                    # 股票
 #     "2023-01-01",                # 日期
@@ -1970,54 +2016,30 @@ print("=" * 60)
 # ]
 
 
-# MONEY 预测测试列
+#
+# # DEFAULT 预测测试列
 # test_column = [
-#     "100",
-#     "¥3000",
-#     "600519",                # 股票干扰
-#     "1,200.50",
-#     "张三",                  # 姓名干扰
-#     "-500",
-#     "3万元",
-#     "2023-09-09",            # 日期干扰
-#     "4500元",
-#     "ABC123",                # 噪音
-#     "500 USD",
-#     "110105199001011234",    # 身份证干扰
-#     "￥8800",
-#     "192.168.1.1",           # IP干扰
-#     "2亿",
-#     "+750.80",
-#     "China",                 # 国家干扰
-#     "8万",
-#     "test@example.com",      # 邮箱干扰
-#     "3000 RMB"
+#     "hello world",
+#     "系统参数A",
+#     "config_value",
+#     "alpha-beta",
+#     "raw data",
+#     "测试文本",
+#     "meta.info",
+#     "temp_flag",
+#     "placeholder",
+#     "debug-mode",
+#     "lorem ipsum",
+#     "internal_ref",
+#     "node cluster",
+#     "build-version",
+#     "release candidate",
+#     "sample_data",
+#     "misc-item",
+#     "control_value",
+#     "trace-log",
+#     "原始 数据"
 # ]
-
-
-# DEFAULT 预测测试列
-test_column = [
-    "hello world",
-    "系统参数A",
-    "config_value",
-    "alpha-beta",
-    "raw data",
-    "测试文本",
-    "meta.info",
-    "temp_flag",
-    "placeholder",
-    "debug-mode",
-    "lorem ipsum",
-    "internal_ref",
-    "node cluster",
-    "build-version",
-    "release candidate",
-    "sample_data",
-    "misc-item",
-    "control_value",
-    "trace-log",
-    "原始 数据"
-]
 
 feature = np.array([extract_column_features(test_column)])
 
@@ -2029,9 +2051,9 @@ print("预测类别:", prediction)
 
 print("=" * 60)
 
-print("置信度（每颗树的观点）：")
-for cls, prob in zip(model.classes_, probability):
-    print(f"  {cls} : {prob:.4f}")
+# print("置信度（每颗树的观点）：")
+# for cls, prob in zip(model.classes_, probability):
+#     print(f"  {cls} : {prob:.4f}")
 
 
 
