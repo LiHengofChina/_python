@@ -36,7 +36,7 @@ def valid_birth(id_number):
         month = int(birth[4:6])
         day = int(birth[6:8])
         #TODO 注意生日范围
-        return 1300 <= year <= 2925 and 1 <= month <= 12 and 1 <= day <= 31
+        return 1949 <= year <= 2049 and 1 <= month <= 12 and 1 <= day <= 31
     except:
         return False
 # ==============================
@@ -258,6 +258,24 @@ country_dict = set(
 
 
 print("国家字典数量:", len(country_dict))
+
+
+# ==============================
+# 拼音结构
+# ==============================
+
+
+def is_reasonable_pinyin(text):
+    text = text.strip()
+
+    if not re.fullmatch(r"[A-Za-z ]+", text):
+        return False
+
+    pure = text.replace(" ", "")
+
+    # 允许大小写混合，但必须全部是字母
+    return pure.isalpha()
+
 
 # ==============================
 # IP正则
@@ -494,48 +512,37 @@ PLATE_NEW_ENERGY_REGEX = re.compile(
 # 中征码 校验函数（mod97）
 # ==============================
 
-CHARACTER_CODE_REGEX = re.compile(r'^[A-Z0-9]{3}\d{13}$')
+CHAR_CODE_REGEX = re.compile(r'^[A-Z0-9]{3}\d{13}$')
 
-CHARACTER_CODE_WEIGHTS = [
-    1, 3, 5, 7, 11, 2, 13,
-    1, 1, 17, 19, 97, 23, 29
-]
-
+# 55 → character_check_digit_ratio（校验位合法比例）
+def char_numeric_value(ch: str) -> int:
+    ch = ch.upper()
+    if ch.isdigit():
+        return int(ch)
+    if "A" <= ch <= "Z":
+        return ord(ch) - ord("A") + 10
+    return -1  # 非法字符
 
 def character_code_check(code: str) -> bool:
-    if not code:
-        return False
-
     code = code.strip().upper()
 
-    # 长度必须 16
-    if len(code) != 16:
+    # 必须满足结构：3位[A-Z0-9] + 13位数字（总16位）
+    if not CHAR_CODE_REGEX.fullmatch(code):
         return False
 
-    # 正则校验
-    if not CHARACTER_CODE_REGEX.match(code):
-        return False
+    weight_factor = [1, 3, 5, 7, 11, 2, 13, 1, 1, 17, 19, 97, 23, 29]
 
-    try:
-        total = 0
-        for i, ch in enumerate(code):
-            # Java 的 Character.getNumericValue 行为：
-            # '0'-'9' -> 0-9
-            # 'A'-'Z' -> 10-35
-            value = int(ch) if ch.isdigit() else ord(ch) - ord('A') + 10
-            total += value * CHARACTER_CODE_WEIGHTS[i]
+    total = 0
+    # 前14位参与计算（索引 0..13），与 Java 逻辑一致
+    for i in range(14):
+        v = char_numeric_value(code[i])
+        if v < 0:
+            return False
+        total += v * weight_factor[i]
 
-        # Java 逻辑：num % 97 + 1
-        reissue = total % 97 + 1
-
-        # 校验位是最后 2 位
-        verify_code = f"{reissue:02d}"
-
-        return code[-2:] == verify_code
-
-    except Exception:
-        return False
-
+    reissue = total % 97 + 1
+    verify = f"{reissue:02d}"
+    return code[-2:] == verify
 
 # ==============================
 # 日期
@@ -607,7 +614,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 103
+        return [0] * 104
 
     lengths = [len(t) for t in cleaned]
 
@@ -737,7 +744,7 @@ def extract_column_features(text_list):
     fund_dict_ratio = fund_dict_match / len(cleaned)
 
     # ==============================
-    # （8）CREDIT_CODE
+    # （8）CREDIT_CODE 统一社会信用代码
     # ==============================
     # 17 长度 = 18 且 全为数字 + 大写字母 的比例
     credit_length_match = sum(
@@ -767,7 +774,7 @@ def extract_column_features(text_list):
     credit_check_digit_ratio = credit_check_match / len(cleaned)
 
     # ==============================
-    # （9）OFFICER_CARD
+    # （9）OFFICER_CARD 军官证
     # ==============================
     # 21 -> 特殊汉字的比例
     officer_keyword_match = sum(
@@ -807,6 +814,16 @@ def extract_column_features(text_list):
     )
     permit_keyword_ratio = permit_keyword_match / len(cleaned)
 
+    permit_no_di_ratio = sum(
+        1 for t in cleaned
+        if "第" not in t
+    ) / len(cleaned)
+
+    permit_xu_keyword_ratio = sum(
+        1 for t in cleaned
+        if any(k in t for k in ["许可", "许可证", "经营许可", "生产许可"])
+    ) / len(cleaned)
+
     # 26 → 包含年份数字
     permit_year_match = sum(
         1 for t in cleaned
@@ -834,6 +851,20 @@ def extract_column_features(text_list):
         if any(abbr in t for abbr in province_abbr_dict)
     )
     permit_province_abbr_ratio = permit_province_match / len(cleaned)
+
+    # 30 → 不包含“第”的比例（排他特征：区分 OFFICER_CARD）
+    permit_no_di_ratio = sum(
+        1 for t in cleaned
+        if "第" not in t
+    ) / len(cleaned)
+
+    # 31 → 许可证关键词命中比例（强语义特征）
+    # 长关键词放前面，避免被“许可”提前覆盖（但 any() 本身不影响结果，只是语义更清晰）
+    permit_xu_keyword_ratio = sum(
+        1 for t in cleaned
+        if any(k in t for k in ["经营许可证", "生产许可证", "许可证", "许可"])
+    ) / len(cleaned)
+
 
     # ==============================
     # （11）CAR_DRIVING_LICENSE
@@ -877,22 +908,28 @@ def extract_column_features(text_list):
     # （13）MAC
     # ==============================
     # 35 → MAC 正则匹配比例
+    # 35 → mac_regex_ratio（严格正则匹配比例）
     mac_regex_ratio = sum(
         1 for t in cleaned
         if MAC_REGEX.match(t)
     ) / len(cleaned)
 
-    # 36 → 含 5 个相同分隔符比例（必须相同）
-    mac_separator_ratio = sum(
+    # 36 → mac_colon_format_ratio（冒号分隔格式比例）
+    mac_colon_format_ratio = sum(
         1 for t in cleaned
-        if (t.count(':') == 5 and '-' not in t)
-        or (t.count('-') == 5 and ':' not in t)
+        if re.fullmatch(r'([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}', t)
     ) / len(cleaned)
 
-    # 37 → 长度为 12 或 17 的比例
-    mac_length_ratio = sum(
+    # 37 → mac_dash_format_ratio（短横线分隔格式比例）
+    mac_dash_format_ratio = sum(
         1 for t in cleaned
-        if len(t) in (12, 17)
+        if re.fullmatch(r'([0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}', t)
+    ) / len(cleaned)
+
+    # 38 → mac_plain_hex_12_ratio（纯 12 位十六进制比例）
+    mac_plain_hex_12_ratio = sum(
+        1 for t in cleaned
+        if re.fullmatch(r'[0-9A-Fa-f]{12}', t)
     ) / len(cleaned)
 
     # ==============================
@@ -968,6 +1005,11 @@ def extract_column_features(text_list):
         if len(t) >= 1 and t[0] in VIN_REGION_PREFIX
     ) / len(cleaned)
 
+    # 48 → VIN 不含冒号比例
+    vin_no_colon_ratio = sum(
+        1 for t in cleaned
+        if ":" not in t and "-" not in t
+    ) / len(cleaned)
 
     # ==============================
     # （17）PLATE_NUMBER 车牌号
@@ -1001,22 +1043,34 @@ def extract_column_features(text_list):
     # （18）CHARACTER_CODE 中征码
     # ==============================
 
-    # 52 → character_length_16_ratio
+    # 52 → character_regex_ratio（严格结构匹配比例）
+    character_regex_ratio = sum(
+        1 for t in cleaned
+        if CHAR_CODE_REGEX.fullmatch(t.strip())
+    ) / len(cleaned)
+
+    # 53 → character_length_16_ratio（长度为16比例）
     character_length_16_ratio = sum(
         1 for t in cleaned
-        if len(t) == 16
+        if len(t.strip()) == 16
     ) / len(cleaned)
 
-    # 53 → character_prefix_alnum_ratio
-    character_prefix_alnum_ratio = sum(
+    # 54 → character_suffix_digit_ratio（后13位全数字比例）
+    character_suffix_digit_ratio = sum(
         1 for t in cleaned
-        if len(t) == 16 and re.match(r'^[A-Z0-9]{3}', t.upper())
+        if len(t.strip()) == 16 and t.strip()[3:].isdigit()
     ) / len(cleaned)
 
-    # 54 → character_check_digit_ratio
+    # 55 → character_check_digit_ratio（校验位合法比例）
     character_check_digit_ratio = sum(
         1 for t in cleaned
-        if len(t) == 16 and character_code_check(t)
+        if len(t.strip()) == 16 and character_code_check(t.strip())
+    ) / len(cleaned)
+
+    # 56 → character_no_separator_ratio（无分隔符比例）
+    character_no_separator_ratio = sum(
+        1 for t in cleaned
+        if ":" not in t and "-" not in t and "_" not in t
     ) / len(cleaned)
 
     # ==============================
@@ -1217,17 +1271,22 @@ def extract_column_features(text_list):
         if 6 <= len(t.strip()) <= 20
     ) / len(cleaned)
 
+    # 82 → pinyin_pure_alpha_ratio 100 字母
+    pinyin_pure_alpha_ratio = sum(
+        1 for t in cleaned if is_reasonable_pinyin(t)
+    ) / len(cleaned)
+
     # ==============================
     # （26）ENTERPRISE_NAME 企业名称
     # ==============================
 
-    # 82 → enterprise_keyword_ratio 企业名称关键字占比
+    # 83 → enterprise_keyword_ratio 企业名称关键字占比
     enterprise_keyword_ratio = sum(
         1 for t in cleaned
         if any(k in t for k in enterprise_keyword_dict)
     ) / len(cleaned)
 
-    # 83 → enterprise_parenthesis_city_ratio 左括号 + 城市名 占比
+    # 84 → enterprise_parenthesis_city_ratio 左括号 + 城市名 占比
     CITY_PREFIXES = tuple(
         [f"（{c}" for c in city_dict] +
         [f"({c}" for c in city_dict]
@@ -1238,13 +1297,13 @@ def extract_column_features(text_list):
         if any(prefix in t for prefix in CITY_PREFIXES)
     ) / len(cleaned)
 
-    # 84 → enterprise_length_reasonable_ratio 长度较长比例（6~40）
+    # 85 → enterprise_length_reasonable_ratio 长度较长比例（6~40）
     enterprise_length_reasonable_ratio = sum(
         1 for t in cleaned
         if 6 <= len(t.strip()) <= 40
     ) / len(cleaned)
 
-    # 85 → enterprise_suffix_ratio 固定后缀占比
+    # 86 → enterprise_suffix_ratio 固定后缀占比
     enterprise_suffix_ratio = sum(
         1 for t in cleaned
         if any(t.endswith(suffix) for suffix in enterprise_suffix_dict)
@@ -1256,31 +1315,31 @@ def extract_column_features(text_list):
     # （27）ADDRESS 地址
     # ==============================
 
-    # 86 → address_region_ratio 行政区划关键词比例
+    # 87 → address_region_ratio 行政区划关键词比例
     address_region_ratio = sum(
         1 for t in cleaned
         if any(k in t for k in address_region_keyword_dict)
     ) / len(cleaned)
 
-    # 87 → address_road_keyword_ratio 道路关键词比例
+    # 88 → address_road_keyword_ratio 道路关键词比例
     address_road_keyword_ratio = sum(
         1 for t in cleaned
         if any(k in t for k in address_road_keyword_dict)
     ) / len(cleaned)
 
-    # 88 → address_number_structure_ratio 门牌数字结构比例
+    # 89 → address_number_structure_ratio 门牌数字结构比例
     address_number_structure_ratio = sum(
         1 for t in cleaned
         if ADDRESS_NUMBER_PATTERN.search(t)
     ) / len(cleaned)
 
-    # 89 → address_length_reasonable_ratio 合理长度比例（8~60）
+    # 90 → address_length_reasonable_ratio 合理长度比例（8~60）
     address_length_reasonable_ratio = sum(
         1 for t in cleaned
         if 8 <= len(t.strip()) <= 60
     ) / len(cleaned)
 
-    # 90 → address_contains_building_ratio 楼栋结构比例
+    # 91 → address_contains_building_ratio 楼栋结构比例
     address_contains_building_ratio = sum(
         1 for t in cleaned
         if any(k in t for k in ["栋", "单元", "室", "楼", "层"])
@@ -1290,21 +1349,21 @@ def extract_column_features(text_list):
     # ==============================
     # （28）NAME 中文姓名
     # ==============================
-    # 91 → name_length_reasonable_ratio 合理长度比例（2~3）
+    # 92 → name_length_reasonable_ratio 合理长度比例（2~3）
     name_length_reasonable_ratio = sum(
         1 for t in cleaned
         if 2 <= len(t.strip()) <= 3
     ) / len(cleaned)
 
 
-    # 92 → name_all_chinese_ratio 全为中文比例
+    # 93 → name_all_chinese_ratio 全为中文比例
     name_all_chinese_ratio = sum(
         1 for t in cleaned
         if len(t) >= 2 and all('\u4e00' <= c <= '\u9fff' for c in t)
     ) / len(cleaned)
 
 
-    # 93 → name_surname_dict_ratio 首字在姓氏字典中的比例
+    # 94 → name_surname_dict_ratio 首字在姓氏字典中的比例
     name_surname_dict_ratio = sum(
         1 for t in cleaned
         if len(t) >= 2 and (
@@ -1314,14 +1373,14 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
 
-    # 94 → name_no_digit_ratio 不含数字比例
+    # 95 → name_no_digit_ratio 不含数字比例
     name_no_digit_ratio = sum(
         1 for t in cleaned
         if not any(c.isdigit() for c in t)
     ) / len(cleaned)
 
 
-    # 95 → name_short_length_stability 列内长度稳定性（2或3居多）
+    # 96 → name_short_length_stability 列内长度稳定性（2或3居多）
     short_lengths = [len(t) for t in cleaned if len(t) in (2, 3)]
     if short_lengths:
         name_short_length_stability = len(short_lengths) / len(cleaned)
@@ -1332,42 +1391,42 @@ def extract_column_features(text_list):
     # （29）MONEY 金额
     # ==============================
 
-    # 96 → money_numeric_ratio 纯数字或数字+小数比例
+    # 97 → money_numeric_ratio 纯数字或数字+小数比例
     money_numeric_ratio = sum(
         1 for t in cleaned
         if re.match(r'^[+-]?\d+(\.\d+)?$', t.replace(",", ""))
     ) / len(cleaned)
 
 
-    # 97 → money_decimal_ratio 含小数比例
+    # 98 → money_decimal_ratio 含小数比例
     money_decimal_ratio = sum(
         1 for t in cleaned
         if "." in t and re.match(r'^[+-]?\d+(\.\d+)?$', t.replace(",", ""))
     ) / len(cleaned)
 
 
-    # 98 → money_currency_symbol_ratio 含货币符号比例
+    # 99 → money_currency_symbol_ratio 含货币符号比例
     money_currency_symbol_ratio = sum(
         1 for t in cleaned
         if any(sym in t for sym in ["¥", "￥", "$", "€", "£"])
     ) / len(cleaned)
 
 
-    # 99 → money_comma_ratio 含千分位逗号比例
+    # 100 → money_comma_ratio 含千分位逗号比例
     money_comma_ratio = sum(
         1 for t in cleaned
         if "," in t
     ) / len(cleaned)
 
 
-    # 100 → money_reasonable_length_ratio 合理长度（1~15）
+    # 101 → money_reasonable_length_ratio 合理长度（1~15）
     money_reasonable_length_ratio = sum(
         1 for t in cleaned
         if 1 <= len(t.strip()) <= 15
     ) / len(cleaned)
 
 
-    # 101 →
+    # 102 →
     money_unit_ratio = sum(
         1 for t in cleaned
         if re.match(
@@ -1408,14 +1467,21 @@ def extract_column_features(text_list):
         permit_contains_parenthesis_ratio,
         permit_dash_structure_ratio,
         permit_province_abbr_ratio,
+
+        permit_no_di_ratio,
+        permit_xu_keyword_ratio,
+
         driving_length_18_ratio,
         driving_all_digit_ratio,
         ipv4_regex_ratio,
         ipv4_dot_ratio,
         ipv6_regex_ratio,
+
         mac_regex_ratio,
-        mac_separator_ratio,
-        mac_length_ratio,
+        mac_colon_format_ratio,
+        mac_dash_format_ratio,
+        mac_plain_hex_12_ratio,
+
         url_regex_ratio,
         url_scheme_ratio,
         url_structure_ratio,
@@ -1426,13 +1492,19 @@ def extract_column_features(text_list):
         vin_length_ratio,
         vin_check_digit_ratio,
         vin_region_prefix_ratio,
+        vin_no_colon_ratio,
         plate_regex_ratio,
         plate_province_ratio,
         plate_length_ratio,
         plate_new_energy_ratio,
+
+
+        character_regex_ratio,
         character_length_16_ratio,
-        character_prefix_alnum_ratio,
+        character_suffix_digit_ratio,
         character_check_digit_ratio,
+        character_no_separator_ratio,
+
         date_regex_ratio,
         date_valid_ratio,
         date_year_reasonable_ratio,
@@ -1466,6 +1538,7 @@ def extract_column_features(text_list):
         pinyin_capital_ratio,
         pinyin_space_ratio,
         pinyin_length_reasonable_ratio,
+        pinyin_pure_alpha_ratio,
 
         enterprise_keyword_ratio,
         enterprise_parenthesis_city_ratio,
@@ -1596,464 +1669,270 @@ print(classification_report(y_test, pred))
 print("F1得分:", f1_score(y_test, pred, average="weighted"))
 print("=" * 60)
 
+
 # ==============================
-# （10）手动测试整列
+# （10）批量测试整列
+# ==============================
+all_test_columns = {
+
+
+    "PHONE": [
+        "13888888888","13999999999","13700001111","15812345678",
+        "18688889999","15066668888","13123456789",
+        "600519","2023-01-01","粤B12345"
+    ],
+
+
+    "ID_CARD": [
+        "110105199001011234","440106198806158765","320311199508073210",
+        "510107197502299999","330102197902307777",
+        "210102198812123456","370102199306123210",
+        "600519","test@example.com","粤B12345"
+    ],
+
+
+    "BANK_CARD": [
+        "6222021234567893","6222021234567802","6222021234567810",
+        "6222021234567828","6222021234567836",
+        "6222021234567844","6222021234567852",
+        "110105199001011234","600519","China"
+    ],
+
+    "CVV": [
+        "123","456","789","321","654","987","147",
+        "600519","2023-01-01","粤B12345"
+    ],
+
+    "ZIP_CODE": [
+        "100000","200000","300000","400000",
+        "710000","610000","510000",
+        "600519","test@example.com","110105199001011234",
+        "100000","200000","300000","400000","710000","610000","510000",
+        "600519","test@example.com","110105199001011234"
+    ],
+
+    "STOCK_CODE": [
+        "600000","600036","600519","601318","601398",
+        "603288","603259",
+        "2023-01-01","粤B12345","13888888888"
+    ],
+
+
+    "FUNDS": [
+        "000001","110011","519674","160119","003095",
+        "001234","002345",
+        "600519","粤B12345","China"
+    ],
+
+
+    "CREDIT_CODE": [
+        "9144030071526726X","91310000631696382C","91110108MA01G90MXE",
+        "914401007594278192","91350100MA2D6J0A5X",
+        "91420500MA4KW8F67W","91440300MA5G21P972",
+        "600519","2023-01-01","粤B12345"
+    ],
+
+
+    "OFFICER_CARD": [
+        "军字第2001988号","海字第123456号","空字第765432号",
+        "武字第112233号","军字第888888号",
+        "军字第123456号","海字第987654号",
+        "600519","test@example.com","粤B12345"
+    ],
+
+
+    "PERMIT": [
+        "粤食药监械经营许20180001号",       # 标准
+        "苏B-2021-000123",               # 横杠结构
+        "赣卫消证字(2019)第0012号",        # 括号 + 年份
+        "经营许可证20200111号",            # 只有关键词+年份
+        "许可证编号2022-000321",          # 年份+横杠
+        "食药监械经营许20201111号",        # 无省简称
+        "京食药监械经营许20230004号",       # 省简称+年份
+        "许可2023第0099号",               # 简化结构
+        "营业执照20200123",               # 噪音（非许可证）
+        "1234567890"                     # 强噪音
+    ],
+
+
+    "CAR_DRIVING_LICENCE": [
+            "110105199001011234",
+            "110105198806158765",
+            "110105199508073210",
+            "11010519750228999X",
+            "110105199912317777",
+            "110105200001018888",
+            "110105198003056666",
+            "110105199607077777"
+    ],
+
+
+
+    "IP": [
+        "192.168.1.10",
+        "10.0.0.5",
+        "172.16.100.200",
+        "8.8.8.8",
+        "2001:db8::1",
+        "fe80::1ff:fe23:4567:890a",
+        "::1",
+        "300.168.1.1"   # 干扰（非法IPv4）
+    ],
+
+
+
+    "MAC": [
+        "00:1A:2B:3C:4D:5E","10:9A:BC:DE:F0:11","AA:BB:CC:DD:EE:FF",
+        "12:34:56:78:9A:BC","DE:AD:BE:EF:00:01",
+        "01:23:45:67:89:AB","FE:DC:BA:98:76:54",
+        "600519","110105199001011234","China"
+    ],
+
+    "URL": [
+        "https://www.example.com","http://www.test.com",
+        "ftp://ftp.example.org/file.txt","https://openai.com/research",
+        "https://subdomain.example.com","https://www.linkedin.com",
+        "https://www.youtube.com",
+        "600519","110105199001011234","China"
+    ],
+
+    "EMAIL": [
+        "test@example.com","user123@gmail.com","admin@openai.com",
+        "contact@company.cn","user.name+tag@gmail.com",
+        "hello@world.com","info@test.cn",
+        "600519","2023-01-01","粤B12345"
+    ],
+
+    "CAR_VIN": [
+        "1HGCM82633A004352","JH4KA9650MC000000","1FAFP404X1F123456",
+        "5YJSA1E26HF000001","1M8GDM9AXKP042788",
+        "2FTRX18W1XCA12345","WAUZZZ8P29A123456",
+        "600519","110105199001011234","China"
+    ],
+
+    "PLATE_NUMBER": [
+        "粤B12345","京A1B2C3","苏A12345D","沪C88888",
+        "浙A6F3K9","鲁B7L2Q4","川A1234D",
+        "600519","2023-01-01","110105199001011234"
+    ],
+
+
+    "CHARACTER_CODE": [
+        "ABC1234567890123",
+        "XYZ9876543210987",
+        "A1B0000000000001",
+        "1234567890123456",   # 干扰（纯数字）
+        "600519",             # 股票干扰
+        "110105199001011234", # 身份证干扰
+        "粤B12345",           # 车牌干扰
+        "not_code"            # 噪音
+    ],
+
+
+
+    "DATE": [
+        "2023-01-01","2023-02-15","2023-03-20",
+        "20230101","2022-12-31","2021-08-08","2020-06-18",
+        "600519","粤B12345","test@example.com"
+    ],
+
+    "DATE_TIME": [
+        "2023-01-01 12:30:45","2023-02-15 08:15:30",
+        "20230101123045","2022-12-31 23:59:59",
+        "2021-08-08 06:06:06","2020-06-18 18:18:18","2019-05-05 05:05:05",
+        "600519","粤B12345","China"
+    ],
+
+    "PASSPORT": [
+        "E12345678", "G98765432", "P12345678",
+        "D12345678", "E87654321", "G12349876", "P87651234",
+        "600519", "粤B12345", "2023-01-01"
+    ],
+
+    "ACCOUNT_OPENING": [
+        "J12345678901234",
+        "K44030012345678",
+        "L11010512345678",
+        "123456789012345",
+        "600519",
+        "粤B12345"
+    ],
+
+    "COUNTRY": [
+        "China","United States","USA","CN","中国","日本","JP",
+        "600519","2023-01-01","粤B12345"
+    ],
+
+    "FUNDS_NAME": [
+        "华夏成长混合","中海可转债债券A","南方中证500ETF",
+        "易方达消费行业股票","广发稳健增长混合",
+        "博时信用债纯债","嘉实沪深300指数",
+        "600519","2023-01-01","粤B12345"
+    ],
+
+    "PINYIN_NAME": [
+        "ZhangSan","Li Ming","WangWei","Chen Hao",
+        "LiuYang","ZhaoMin","HuangLei",
+        "600519","China","110105199001011234"
+    ],
+
+    "ENTERPRISE_NAME": [
+        "北京华瑞科技有限公司","上海腾飞投资集团有限公司",
+        "深圳中科实业股份有限公司","杭州未来能源有限公司",
+        "广州博雅教育科技有限公司","中国工商银行股份有限公司",
+        "成都金桥资产管理有限公司",
+        "600519","2023-01-01","粤B12345"
+    ],
+
+    "ADDRESS": [
+        "北京市朝阳区建国路88号","广东省深圳市南山区科技园科苑路15号",
+        "上海市浦东新区世纪大道100号A座","杭州市西湖区文三路90号",
+        "成都市高新区天府大道北段28号",
+        "广州市天河区体育西路123号","苏州市工业园区星湖街328号",
+        "600519","China","test@example.com"
+    ],
+
+    "NAME": [
+        "张伟","王在芳","李娜","刘洋","陈杰","赵敏","黄磊",
+        "600519","13888888888","test@example.com"
+    ],
+
+    "MONEY": [
+        "100","¥3000","1,200.50","-500","3万元","4500元","￥8800",
+        "600519","China","test@example.com"
+    ],
+
+    "DEFAULT": [
+        "hello world","系统参数A","config_value",
+        "alpha-beta","raw data","测试文本","meta.info",
+        "600519","2023-01-01","粤B12345"
+    ]
+}
+
+# ==============================
+# 循环预测
 # ==============================
 
+for label_name, test_column in all_test_columns.items():
 
-#手机号
-# test_column = [
-#     "13888888888",
-#     "13999999999",
-#     "+8613777777777",
-#     "13666666666"
-# ]
+    feature = np.array([extract_column_features(test_column)])
 
-# 身份证
-# test_column = [
-#     "110105199001011234",
-#     "440106198806158765",
-#     "320311199508073210",
-#     "510107197502299999",
-#     "330102197902307777",
-#     "110105123456789012",
-#     "110105199001011230",
-#     "12345678901234567X",
-#     "600519",
-#     "91440300715267260"
-# ]
+    prediction = model.predict(feature)[0]
+    probability = model.predict_proba(feature)[0]
 
+    print("\n==============================")
+    print("测试类型:", label_name)
+    print("预测类别:", prediction)
 
-# #银行卡号
-# test_column = [
-#     "6222021234567893",
-#     "6222021234567802",
-#     "6222021234567810",
-#     "6222021234567828",
-#     "6222021234567836"
-# ]
+    # 打印概率排序（从高到低）
+    sorted_probs = sorted(
+        zip(model.classes_, probability),
+        key=lambda x: x[1],
+        reverse=True
+    )
 
-# 标准CVV列
-# test_column = [
-#     "123",
-#     "456",
-#     "789",
-#     "321",
-#     "654"
-# ]
-
-
-# ## 邮编
-# test_column = [
-#     "100000",  # 北京
-#     "200000",  # 上海
-#     "300000",  # 天津
-#     "400000",  # 重庆
-#     "710000"   # 西安
-# ]
-
-
-#
-# # 股票代码
-# test_column = [
-#     "600000",  # 浦发银行
-#     "600036",  # 招商银行
-#     "600519",  # 贵州茅台
-#     "601318",  # 中国平安
-#     "601398",  # 工商银行
-#     "603288",  # 海天味业
-#     "603259",  # 药明康德
-#     "605499"
-# ]
-
-
-#
-# 基金代码
-# test_column = [
-#     "000001",  # 华夏成长混合
-#     "110011",  # 华夏成长混合
-#     "519674",  # 华泰柏瑞沪深300ETF
-#     "160119",  # 南方中证500ETF
-#     "003095"   # 易方达消费行业ETF
-# ]
-
-
-# 统一社会信用代码
-# test_column = [
-#     "9144030071526726X",
-#     "91310000631696382C",
-#     "91110108MA01G90MXE",
-#     "914401007594278192",
-#     "91350100MA2D6J0A5X",
-#     "91420500MA4KW8F67W",
-#     "91440300MA5G21P972",
-#     "91320594670131819W"
-# ]
-
-# 军官证
-# test_column = [
-#     "军字第2001988号",      # 正常军官证
-#     "海字第123456号",      # 正常军官证
-#     "空字第765432号",      # 正常军官证
-#     "武字第112233号",      # 正常军官证
-#     "军字第ABC123号",      # 中间不是纯数字（干扰）
-#     "军第123456号",        # 少了“字”
-#     "字第123456号",        # 少了前缀
-#     "军字第12345号",       # 数字长度边界（5位）
-#     "军字第123456789号",   # 数字过长（9位）
-#     "军字第888888号X"      # 末尾多字符
-# ]
-
-# 经营许可
-# test_column = [
-#     "粤食药监械经营许20180001号",       # 标准
-#     "苏B-2021-000123",               # 横杠结构
-#     "赣卫消证字(2019)第0012号",        # 括号 + 年份
-#     "经营许可证20200111号",            # 只有关键词+年份
-#     "许可证编号2022-000321",          # 年份+横杠
-#     "食药监械经营许20201111号",        # 无省简称
-#     "京食药监械经营许20230004号",       # 省简称+年份
-#     "许可2023第0099号",               # 简化结构
-#     "营业执照20200123",               # 噪音（非许可证）
-#     "1234567890"                     # 强噪音
-# ]
-
-
-#
-# # 驾驶证
-# test_column = [
-#     "110105199001011234",
-#     "110105198806158765",
-#     "110105199508073210",
-#     "11010519750228999X",
-#     "110105199912317777",
-#     "110105200001018888",
-#     "110105198003056666",
-#     "110105199607077777"
-# ]
-
-# IP 混合测试列
-# test_column = [
-#     "192.168.1.10",
-#     "10.0.0.5",
-#     "172.16.100.200",
-#     "8.8.8.8",
-#     "2001:db8::1",
-#     "fe80::1ff:fe23:4567:890a",
-#     "::1",
-#     "300.168.1.1"   # 干扰（非法IPv4）
-# ]
-
-# #MAC
-# test_column = [
-#     "00:1A:2B:3C:4D:5E",
-#     "10:9A:BC:DE:F0:11",
-#     "AA:BB:CC:DD:EE:FF",
-#     "12:34:56:78:9A:BC",
-#     "DE:AD:BE:EF:00:01"
-# ]
-
-# # # URL 测试列
-# test_column = [
-#     "https://www.example.com",
-#     "http://www.test.com",
-#     "ftp://ftp.example.org/file.txt",
-#     "https://openai.com/research?type=ai",
-#     "https://subdomain.example.com",
-#     "https://www.linkedin.com",
-#     "ftp://fileserver.example.org",
-#     "https://www.vimeo.com",
-#     "http://localhost:6000",
-#     "https://www.youtube.com",
-#     "https://openai.com/research/ai"
-# ]
-
-# # EMAIL 测试列
-# test_column = [
-#     "test@example.com",
-#     "user123@gmail.com",
-#     "admin@openai.com",
-#     "contact@company.cn",
-#     "user.name+tag@gmail.com",
-#     "abc@@wrong.com",      # 干扰（两个@）
-#     "not_an_email",        # 干扰
-#     "hello@world"          # 干扰（无后缀）
-# ]
-
-
-# CAR_VIN 测试列
-# test_column = [
-#     "1HGCM82633A004352",
-#     "JH4KA9650MC000000",
-#     "1FAFP404X1F123456",
-#     "5YJSA1E26HF000001",
-#     "1M8GDM9AXKP042788",
-#     "ABCDEFG123456789",   # 干扰（包含非法字母）
-#     "12345678901234567",  # 干扰（纯数字）
-#     "SHORTVIN123"         # 干扰（长度不够）
-# ]
-
-
-# 车牌号
-# test_column = [
-#     "粤B12345",
-#     "京A1B2C3",
-#     "苏A12345D",   # 新能源
-#     "沪C88888",
-#     "1234567",     # 噪音
-#     "abcdefg",     # 噪音
-#     "600519",      # 股票干扰
-#     "110105199001011234"  # 身份证干扰
-# ]
-
-#中征码
-# test_column = [
-#     "ABC1234567890123",
-#     "XYZ9876543210987",
-#     "A1B0000000000001",
-#     "1234567890123456",   # 干扰（纯数字）
-#     "600519",             # 股票干扰
-#     "110105199001011234", # 身份证干扰
-#     "粤B12345",           # 车牌干扰
-#     "not_code"            # 噪音
-# ]
-
-
-#日期
-# test_column = [
-#     "2023-01-01",
-#     "2023-02-15",
-#     "2023-03-20",
-#     "20230101",
-#     "not_date",
-#     "600519",
-#     "粤B12345"
-# ]
-#日期-时间
-# test_column = [
-#     "2023-01-01 12:30:45",
-#     "2023-02-15 08:15:30",
-#     "20230101123045",
-#     "600519",
-#     "2023-01-01",
-#     "粤B12345"
-# ]
-
-# 开启许可
-# test_column = [
-#     "J12345678901234",
-#     "K44030012345678",
-#     "L11010512345678",
-#     "123456789012345",
-#     "600519",
-#     "粤B12345"
-# ]
-
-# 国籍
-# test_column = [
-#     "China",
-#     "United States",
-#     "USA",
-#     "CN",
-#     "中国",
-#     "日本",
-#     "JP",
-#     "600519",              # 噪音（股票）
-#     "2023-01-01",          # 噪音（日期）
-#     "粤B12345",            # 噪音（车牌）
-#     "abcdef123",           # 噪音
-#     "110105199001011234"   # 噪音（身份证）
-# ]
-
-# FUNDS_NAME 测试列
-# test_column = [
-#     "华夏成长混合",
-#     "中海可转债债券A",
-#     "南方中证500ETF",
-#     "易方达消费行业股票",
-#     "广发稳健增长混合",
-#     "博时信用债纯债",
-#     "600519",              # 噪音（股票代码）
-#     "2023-01-01",          # 噪音（日期）
-#     "粤B12345",            # 噪音（车牌）
-#     "110105199001011234",  # 噪音（身份证）
-#     "abcdef123",           # 噪音
-#     "China"                # 噪音（国家）
-# ]
-
-# 护照
-# test_column = [
-#     "E12345678",
-#     "G98765432",
-#     "P12345678",
-#     "D12345678",
-#     "123456789",          # 噪音
-#     "600519",             # 噪音
-#     "2023-01-01",         # 噪音
-#     "110105199001011234", # 噪音
-#     "abcdef123",          # 噪音
-#     "粤B12345"            # 噪音
-# ]
-
-#拼字名字
-# test_column = [
-#     "ZhangSan",
-#     "Li Ming",
-#     "WangWei",
-#     "Chen Hao",
-#     "LiuYang",
-#     "600519",               # 噪音
-#     "China",                # 噪音（国家）
-#     "test@example.com",     # 噪音（邮箱）
-#     "110105199001011234",   # 噪音（身份证）
-#     "粤B12345"              # 噪音
-# ]
-
-# 公司名字
-# test_column = [
-#     "北京华瑞科技有限公司",
-#     "上海腾飞投资集团有限公司",
-#     "深圳中科实业股份有限公司",
-#     "杭州未来能源（深圳）有限公司",
-#     "广州博雅教育科技有限公司",
-#     "中国工商银行股份有限公司",
-#     "南京东方文化传媒集团",
-#     "成都金桥资产管理有限公司",
-#     "天津恒信建筑工程有限公司",
-#     "青岛蓝海环保科技有限公司",
-#
-#     # -------- 噪音 --------
-#     "600519",                      # 股票代码
-#     "2023-01-01",                  # 日期
-#     "110105199001011234",          # 身份证
-#     "粤B12345",                    # 车牌
-#     "China",                       # 国家
-#     "JP",                          # 国家缩写
-#     "abcdef123",                   # 噪音
-#     "192.168.1.1",                 # IP
-#     "000001",                      # 基金代码
-#     "20230101123045"               # 日期时间
-# ]
-
-
-
-# ADDRESS 测试列
-# test_column = [
-#     "北京市朝阳区建国路88号",
-#     "广东省深圳市南山区科技园科苑路15号",
-#     "上海市浦东新区世纪大道100号A座",
-#     "杭州市西湖区文三路90号3栋2单元501室",
-#     "成都市高新区天府大道北段28号",
-#     "广州市天河区体育西路123号",
-#     "苏州市工业园区星湖街328号",
-#     "重庆市渝北区龙溪街道金山大道8号",
-#     "南京市鼓楼区中山北路66号",
-#     "武汉市洪山区珞瑜路726号",
-#
-#     # -------- 噪音 --------
-#     "600519",                    # 股票
-#     "2023-01-01",                # 日期
-#     "110105199001011234",        # 身份证
-#     "China",                     # 国家
-#     "test@example.com",          # 邮箱
-#     "粤B12345",                  # 车牌
-#     "ZhangSan",                  # 拼音名
-#     "ABCDEF123",                 # 混合噪音
-#     "1HGCM82633A004352",         # VIN
-#     "JP"                         # 国家缩写
-# ]
-
-#
-# # NAME 预测测试列
-# test_column = [
-#     "张伟",
-#     "王在芳",
-#     "李娜",
-#     "刘洋",
-#     "陈杰",
-#     "赵敏",
-#     "黄磊",
-#     "周涛",
-#     "吴昊",
-#     "孙悦",
-#
-#     # -------- 噪音 --------
-#     "600519",                    # 股票
-#     "13888888888",               # 手机
-#     "110105199001011234",        # 身份证
-#     "2023-09-09",                # 日期
-#     "test@example.com",          # 邮箱
-#     "粤B88888",                  # 车牌
-#     "192.168.1.1",               # IP
-#     "ABCDEF123",                 # 混合字符串
-#     "China",                     # 国家
-#     "北京市朝阳区建国路88号"     # 地址
-# ]
-
-#
-# # MONEY 预测测试列
-# test_column = [
-#     "100",
-#     "¥3000",
-#     "600519",                # 股票干扰
-#     "1,200.50",
-#     "张三",                  # 姓名干扰
-#     "-500",
-#     "3万元",
-#     "2023-09-09",            # 日期干扰
-#     "4500元",
-#     "ABC123",                # 噪音
-#     "500 USD",
-#     "110105199001011234",    # 身份证干扰
-#     "￥8800",
-#     "192.168.1.1",           # IP干扰
-#     "2亿",
-#     "+750.80",
-#     "China",                 # 国家干扰
-#     "8万",
-#     "test@example.com",      # 邮箱干扰
-#     "3000 RMB"
-# ]
-
-
-#
-# # DEFAULT 预测测试列
-# test_column = [
-#     "hello world",
-#     "系统参数A",
-#     "config_value",
-#     "alpha-beta",
-#     "raw data",
-#     "测试文本",
-#     "meta.info",
-#     "temp_flag",
-#     "placeholder",
-#     "debug-mode",
-#     "lorem ipsum",
-#     "internal_ref",
-#     "node cluster",
-#     "build-version",
-#     "release candidate",
-#     "sample_data",
-#     "misc-item",
-#     "control_value",
-#     "trace-log",
-#     "原始 数据"
-# ]
-
-feature = np.array([extract_column_features(test_column)])
-
-prediction = model.predict(feature)[0]
-probability = model.predict_proba(feature)[0]
-
-print("输入：", test_column)
-print("预测类别:", prediction)
-
-print("=" * 60)
-
-# print("置信度（每颗树的观点）：")
-# for cls, prob in zip(model.classes_, probability):
-#     print(f"  {cls} : {prob:.4f}")
-
+    print("置信度,概率分布:")
+    for cls, prob in sorted_probs[:5]:   # 只显示前3个最高概率
+        print(f"{cls}: {prob:.4f}")
 
 
