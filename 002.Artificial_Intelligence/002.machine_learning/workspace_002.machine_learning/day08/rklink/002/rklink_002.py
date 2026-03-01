@@ -257,7 +257,8 @@ country_dict = set(
 )
 
 
-print("国家字典数量:", len(country_dict))
+# print("国家字典数量:", len(country_dict))
+
 
 
 # ==============================
@@ -609,6 +610,19 @@ def valid_datetime(text):
 # ==============================
 ACCOUNT_OPENING_REGEX = re.compile(r'^[A-Z]\d{14}$')
 
+permit_strong_keyword_dict = {
+    "许可",
+    "许可证",
+    "经营许可证",
+    "生产许可证",
+    "批准文号",
+    "登记证",
+    "备案",
+    "食药监",
+    "械",
+    "消",
+    "药"
+}
 
 # ==============================
 # （2）列级特征提取函数
@@ -619,7 +633,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 104
+        return [0] * 118
 
     lengths = [len(t) for t in cleaned]
 
@@ -757,6 +771,7 @@ def extract_column_features(text_list):
         if len(t) == 18 and all(c in CREDIT_CODE_CHARS for c in t)
     )
     credit_length_match_ratio = credit_length_match / len(cleaned)
+
     # 18 第 3-8 位是纯数字的比例
     credit_region_digit_match = sum(
         1 for t in cleaned
@@ -810,78 +825,92 @@ def extract_column_features(text_list):
     officer_digit_middle_ratio = officer_digit_middle_match / len(cleaned)
 
     # ==============================
-    # （10）PERMIT
+    # （10）PERMIT 优化版
     # ==============================
-    # 25 → 特殊汉字比例（经营许可证）
-    permit_keyword_match = sum(
-        1 for t in cleaned
-        if any(k in t for k in ["许可", "经营", "证", "监", "卫", "药", "械", "消"])
-    )
-    permit_keyword_ratio = permit_keyword_match / len(cleaned)
 
-    permit_no_di_ratio = sum(
+    # 25 强许可证关键词比例（严格语义）
+    permit_strict_keyword_ratio = sum(
         1 for t in cleaned
-        if "第" not in t
+        if any(k in t for k in [
+            "许可证", "经营许可证", "生产许可证",
+            "批准文号", "登记证", "备案号"
+        ])
     ) / len(cleaned)
 
-    permit_xu_keyword_ratio = sum(
+    # 26 文号结构比例（字第xxx号）
+    permit_wenzi_pattern_ratio = sum(
         1 for t in cleaned
-        if any(k in t for k in ["许可", "许可证", "经营许可", "生产许可"])
+        if re.search(r'字第\d{3,}号', t)
     ) / len(cleaned)
 
-    # 26 → 包含年份数字
-    permit_year_match = sum(
+    # 27 年份 + 号 结构比例
+    permit_year_hao_ratio = sum(
         1 for t in cleaned
-        if PERMIT_YEAR_PATTERN.search(t)
-    )
-    permit_contains_year_ratio = permit_year_match / len(cleaned)
+        if re.search(r'(19|20)\d{2}.*号', t)
+    ) / len(cleaned)
 
-    # 27 → 偶尔出现括号 ()（）
-    permit_parenthesis_match = sum(
+    # 28 年份 + 编号结构比例（括号）
+    permit_year_parenthesis_ratio = sum(
+        1 for t in cleaned
+        if re.search(r'[（(](19|20)\d{2}[)）]', t)
+    ) / len(cleaned)
+
+    # 29 数字连续长度 >=4 比例（编号特征）
+    permit_long_digit_ratio = sum(
+        1 for t in cleaned
+        if re.search(r'\d{4,}', t)
+    ) / len(cleaned)
+
+    # 30 包含“证”字比例（核心结构）
+    permit_contains_zheng_ratio = sum(
+        1 for t in cleaned
+        if "证" in t
+    ) / len(cleaned)
+
+    # 31 包含“许可”字比例
+    permit_contains_xuke_ratio = sum(
+        1 for t in cleaned
+        if "许可" in t
+    ) / len(cleaned)
+
+    # 32 不包含道路关键词比例（抑制 ADDRESS 干扰）
+    permit_no_road_keyword_ratio = sum(
+        1 for t in cleaned
+        if not any(k in t for k in address_road_keyword_dict)
+    ) / len(cleaned)
+
+    # 33 不符合地址强结构比例（市+区+路）
+    permit_not_address_pattern_ratio = sum(
+        1 for t in cleaned
+        if not re.search(r".+市.+区.+(路|街|大道)", t)
+    ) / len(cleaned)
+
+    # 34 数字不在末尾比例（地址编号通常在末尾）
+    permit_digit_not_tail_ratio = sum(
+        1 for t in cleaned
+        if not re.search(r"\d+号?$", t.strip())
+    ) / len(cleaned)
+
+    # 35 包含括号比例
+    permit_parenthesis_ratio = sum(
         1 for t in cleaned
         if any(p in t for p in ["(", ")", "（", "）"])
-    )
-    permit_contains_parenthesis_ratio = permit_parenthesis_match / len(cleaned)
-
-    # 28 → 偶尔出现横杠 -
-    permit_dash_match = sum(
-        1 for t in cleaned
-        if "-" in t
-    )
-    permit_dash_structure_ratio = permit_dash_match / len(cleaned)
-
-    # 29 → 包含一个省级简称
-    permit_province_match = sum(
-        1 for t in cleaned
-        if any(abbr in t for abbr in province_abbr_dict)
-    )
-    permit_province_abbr_ratio = permit_province_match / len(cleaned)
-
-    # 30 → 不包含“第”的比例（排他特征：区分 OFFICER_CARD）
-    permit_no_di_ratio = sum(
-        1 for t in cleaned
-        if "第" not in t
     ) / len(cleaned)
 
-    # 31 → 许可证关键词命中比例（强语义特征）
-    # 长关键词放前面，避免被“许可”提前覆盖（但 any() 本身不影响结果，只是语义更清晰）
-    permit_xu_keyword_ratio = sum(
-        1 for t in cleaned
-        if any(k in t for k in ["经营许可证", "生产许可证", "许可证", "许可"])
-    ) / len(cleaned)
+
 
 
     # ==============================
     # （11）CAR_DRIVING_LICENSE
     # ==============================
-    # 30 → 长度为 18 的比例
+    # 34 → 长度为 18 的比例
     driving_length_18_match = sum(
         1 for t in cleaned
         if len(t) == 18
     )
     driving_length_18_ratio = driving_length_18_match / len(cleaned)
 
-    # 31 → 整列纯数字比例
+    # 35 → 整列纯数字比例
     driving_all_digit_match = sum(
         1 for t in cleaned
         if t.isdigit()
@@ -891,19 +920,19 @@ def extract_column_features(text_list):
     # ==============================
     # （12）IP
     # ==============================
-    # 32 IPv4 正则匹配比例
+    # 36 IPv4 正则匹配比例
     ipv4_regex_ratio = sum(
         1 for t in cleaned
         if IPV4_REGEX.match(t)
     ) / len(cleaned)
 
-    # 33 IPv4 含 3 个点的比例
+    # 37 IPv4 含 3 个点的比例
     ipv4_dot_ratio = sum(
         1 for t in cleaned
         if t.count('.') == 3
     ) / len(cleaned)
 
-    # 34 IPv6 正则匹配比例
+    # 38 IPv6 正则匹配比例
     ipv6_regex_ratio = sum(
         1 for t in cleaned
         if IPV6_REGEX.match(t)
@@ -912,37 +941,37 @@ def extract_column_features(text_list):
     # ==============================
     # （13）MAC
     # ==============================
-    # 35 → MAC 正则匹配比例
-    # 35 → mac_regex_ratio（严格正则匹配比例）
+    # 39 → MAC 正则匹配比例
     mac_regex_ratio = sum(
         1 for t in cleaned
         if MAC_REGEX.match(t)
     ) / len(cleaned)
 
-    # 36 → mac_colon_format_ratio（冒号分隔格式比例）
+    # 40 → mac_colon_format_ratio（冒号分隔格式比例）
     mac_colon_format_ratio = sum(
         1 for t in cleaned
         if re.fullmatch(r'([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}', t)
     ) / len(cleaned)
 
-    # 37 → mac_dash_format_ratio（短横线分隔格式比例）
+    # 41 → mac_dash_format_ratio（短横线分隔格式比例）
     mac_dash_format_ratio = sum(
         1 for t in cleaned
         if re.fullmatch(r'([0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}', t)
     ) / len(cleaned)
 
-    # 38 → mac_plain_hex_12_ratio（纯 12 位十六进制比例）
+    # 42 → mac_plain_hex_12_ratio（纯 12 位十六进制比例）
     mac_plain_hex_12_ratio = sum(
         1 for t in cleaned
         if re.fullmatch(r'[0-9A-Fa-f]{12}', t)
     ) / len(cleaned)
 
-    mac_strict_format_ratio = sum(
+    # 43 → MAC 全为大写十六进制比例
+    mac_uppercase_ratio = sum(
         1 for t in cleaned
-        if re.fullmatch(r'([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}', t)
+        if re.fullmatch(r'([0-9A-F]{2}:){5}[0-9A-F]{2}', t)
     ) / len(cleaned)
 
-    # 含有5个冒号占比
+    # 44 含有5个冒号占比
     mac_5_colon_ratio = sum(
         1 for t in cleaned
         if t.count(":") == 5
@@ -952,26 +981,26 @@ def extract_column_features(text_list):
     # ==============================
     # （14）URL
     # ==============================
-    # 38 → URL 正则匹配比例
+    # 45  → URL 正则匹配比例
     url_regex_ratio = sum(
         1 for t in cleaned
         if URL_REGEX.match(t)
     ) / len(cleaned)
 
-    # 39 → 含 "://"
+    # 46  → 含 "://"
     url_scheme_ratio = sum(
         1 for t in cleaned
         if t.count("://") == 1
     ) / len(cleaned)
 
-    # 40 → 含 "." 且含 "/"
+    # 47 → 含 "." 且含 "/"
     url_structure_ratio = sum(
         1 for t in cleaned
         if "." in t and "/" in t
     ) / len(cleaned)
 
 
-    # 41 → url 关键字比例
+    # 48 → url 关键字比例
     URL_KEYWORDS = [
         # 协议
         "http://", "https://", "ftp://",
@@ -996,29 +1025,30 @@ def extract_column_features(text_list):
         if any(k in t.lower() for k in URL_KEYWORDS)
     ) / len(cleaned)
 
-    # 域名结构合法比例
+    # 49 域名结构合法比例
     domain_structure_ratio = sum(
         1 for t in cleaned
         if DOMAIN_REGEX.match(t)
     ) / len(cleaned)
 
-    # 不包含@
+    # 50 不包含@
     url_no_at_ratio = sum(
         1 for t in cleaned
         if "@" not in t
     ) / len(cleaned)
 
-    # 一般URL只包含两个冒号
+    # 51 一般URL只包含两个冒号
     url_colon_reasonable_ratio = sum(
         1 for t in cleaned
         if 1 <= t.count(":") <= 2
     ) / len(cleaned)
 
+    # 52
     url_letter_slash_ratio = sum(
         1 for t in cleaned
         if re.search(r'[A-Za-z]/', t)
     ) / len(cleaned)
-
+    # 53
     url_dot_alpha_ratio = sum(
         1 for t in cleaned
         if re.search(r'[A-Za-z]\.[A-Za-z]', t)
@@ -1028,13 +1058,13 @@ def extract_column_features(text_list):
     # （15）EMAIL
     # ==============================
 
-    # 42 → Email 正则匹配比例
+    # 54 → Email 正则匹配比例
     email_regex_ratio = sum(
         1 for t in cleaned
         if EMAIL_REGEX.match(t)
     ) / len(cleaned)
 
-    # 43 → 含单个 "@"
+    # 55 → 含单个 "@"
     email_at_ratio = sum(
         1 for t in cleaned
         if t.count("@") == 1
@@ -1043,32 +1073,32 @@ def extract_column_features(text_list):
     # ==============================
     # （16）CAR_VIN
     # ==============================
-    # 44 → VIN 正则匹配比例
+    # 56 → VIN 正则匹配比例
     vin_regex_ratio = sum(
         1 for t in cleaned
         if VIN_REGEX.match(t)
     ) / len(cleaned)
 
-    # 45 → 长度为 17 的比例
+    # 57 → 长度为 17 的比例
     vin_length_ratio = sum(
         1 for t in cleaned
         if len(t) == 17
     ) / len(cleaned)
 
-    # 46 → VIN 校验位合法比例
+    # 58 → VIN 校验位合法比例
     vin_check_digit_ratio = sum(
         1 for t in cleaned
         if vin_check_digit_valid(t)
     ) / len(cleaned)
 
-    # 47 → VIN 校验位合法比例
+    # 59 → VIN 校验位合法比例
     VIN_REGION_PREFIX = set("123456789ABCDEFGHJKLMNPRSTUVWXYZ")
     vin_region_prefix_ratio = sum(
         1 for t in cleaned
         if len(t) >= 1 and t[0] in VIN_REGION_PREFIX
     ) / len(cleaned)
 
-    # 48 → VIN 不含冒号比例
+    # 60 → VIN 不含冒号比例
     vin_no_colon_ratio = sum(
         1 for t in cleaned
         if ":" not in t
@@ -1078,25 +1108,25 @@ def extract_column_features(text_list):
     # （17）PLATE_NUMBER 车牌号
     # ==============================
 
-    # 48 → plate_regex_ratio
+    # 61 → plate_regex_ratio
     plate_regex_ratio = sum(
         1 for t in cleaned
         if (PLATE_NORMAL_REGEX.match(t.upper()) or PLATE_NEW_ENERGY_REGEX.match(t.upper()))
     ) / len(cleaned)
 
-    # 49 → plate_province_ratio
+    # 62 → plate_province_ratio
     plate_province_ratio = sum(
         1 for t in cleaned
         if len(t) >= 1 and t[0] in province_abbr_dict
     ) / len(cleaned)
 
-    # 50 → plate_length_ratio
+    # 63 → plate_length_ratio
     plate_length_ratio = sum(
         1 for t in cleaned
         if len(t) in (7, 8)
     ) / len(cleaned)
 
-    # 51 → plate_new_energy_ratio
+    # 64 → plate_new_energy_ratio
     plate_new_energy_ratio = sum(
         1 for t in cleaned
         if PLATE_NEW_ENERGY_REGEX.match(t.upper())
@@ -1106,31 +1136,31 @@ def extract_column_features(text_list):
     # （18）CHARACTER_CODE 中征码
     # ==============================
 
-    # 52 → character_regex_ratio（严格结构匹配比例）
+    # 65 → character_regex_ratio（严格结构匹配比例）
     character_regex_ratio = sum(
         1 for t in cleaned
         if CHAR_CODE_REGEX.fullmatch(t.strip())
     ) / len(cleaned)
 
-    # 53 → character_length_16_ratio（长度为16比例）
+    # 66 → character_length_16_ratio（长度为16比例）
     character_length_16_ratio = sum(
         1 for t in cleaned
         if len(t.strip()) == 16
     ) / len(cleaned)
 
-    # 54 → character_suffix_digit_ratio（后13位全数字比例）
+    # 67 → character_suffix_digit_ratio（后13位全数字比例）
     character_suffix_digit_ratio = sum(
         1 for t in cleaned
         if len(t.strip()) == 16 and t.strip()[3:].isdigit()
     ) / len(cleaned)
 
-    # 55 → character_check_digit_ratio（校验位合法比例）
+    # 68 → character_check_digit_ratio（校验位合法比例）
     character_check_digit_ratio = sum(
         1 for t in cleaned
         if len(t.strip()) == 16 and character_code_check(t.strip())
     ) / len(cleaned)
 
-    # 56 → character_no_separator_ratio（无分隔符比例）
+    # 69 → character_no_separator_ratio（无分隔符比例）
     character_no_separator_ratio = sum(
         1 for t in cleaned
         if ":" not in t and "-" not in t and "_" not in t
@@ -1140,19 +1170,19 @@ def extract_column_features(text_list):
     # （19）DATE 年月日（不含时间）
     # ==============================
 
-    # 55 → date_regex_ratio
+    # 70 → date_regex_ratio
     date_regex_ratio = sum(
         1 for t in cleaned
         if DATE_REGEX.match(t)
     ) / len(cleaned)
 
-    # 56 → date_valid_ratio
+    # 71 → date_valid_ratio
     date_valid_ratio = sum(
         1 for t in cleaned
         if valid_date(t)
     ) / len(cleaned)
 
-    # 57 → date_year_reasonable_ratio
+    # 72 → date_year_reasonable_ratio
     date_year_reasonable_ratio = 0
     for t in cleaned:
         if DATE_REGEX.match(t):
@@ -1164,7 +1194,7 @@ def extract_column_features(text_list):
 
     date_year_reasonable_ratio /= len(cleaned)
 
-    # 58 → date_separator_ratio
+    # 73 → date_separator_ratio
     date_separator_ratio = sum(
         1 for t in cleaned
         if any(sep in t for sep in ["-", "/", "."])
@@ -1174,25 +1204,25 @@ def extract_column_features(text_list):
     # （20）DATE_TIME 年月日 + 时间
     # ==============================
 
-    # 59 → datetime_regex_ratio
+    # 74 → datetime_regex_ratio
     datetime_regex_ratio = sum(
         1 for t in cleaned
         if DATE_TIME_REGEX.match(t)
     ) / len(cleaned)
 
-    # 60 → datetime_valid_ratio
+    # 75 → datetime_valid_ratio
     datetime_valid_ratio = sum(
         1 for t in cleaned
         if valid_datetime(t)
     ) / len(cleaned)
 
-    # 61 → datetime_contains_colon_ratio
+    # 76 → datetime_contains_colon_ratio
     datetime_contains_colon_ratio = sum(
         1 for t in cleaned
         if ":" in t
     ) / len(cleaned)
 
-    # 62 → datetime_length_14_ratio
+    # 77 → datetime_length_14_ratio
     datetime_length_14_ratio = sum(
         1 for t in cleaned
         if len(t) == 14 and t.isdigit()
@@ -1201,19 +1231,19 @@ def extract_column_features(text_list):
     # （21）ACCOUNT_OPENING 开户许可证
     # ==============================
 
-    # 63 → account_opening_regex_ratio 开户许可证正则匹配比例
+    # 78 → account_opening_regex_ratio 开户许可证正则匹配比例
     account_opening_regex_ratio = sum(
         1 for t in cleaned
         if ACCOUNT_OPENING_REGEX.match(t)
     ) / len(cleaned)
 
-    # 64 → account_opening_length_ratio 长度为15位比例
+    # 79 → account_opening_length_ratio 长度为15位比例
     account_opening_length_ratio = sum(
         1 for t in cleaned
         if len(t) == 15
     ) / len(cleaned)
 
-    # 65 → account_opening_prefix_alpha_ratio 首位为字母比例
+    # 80 → account_opening_prefix_alpha_ratio 首位为字母比例
     account_opening_prefix_alpha_ratio = sum(
         1 for t in cleaned
         if len(t) == 15 and t[0].isalpha()
@@ -1223,25 +1253,25 @@ def extract_column_features(text_list):
     # （22）COUNTRY
     # ==============================
 
-    # 66 → country_dict_ratio 国家字典匹配比例
+    # 81 → country_dict_ratio 国家字典匹配比例
     country_dict_ratio = sum(
         1 for t in cleaned
         if t.strip().upper() in country_dict
     ) / len(cleaned)
 
-    # 67 → country_alpha_ratio 纯字母比例
+    # 82 → country_alpha_ratio 纯字母比例
     country_alpha_ratio = sum(
         1 for t in cleaned
         if t.strip().isalpha()
     ) / len(cleaned)
 
-    # 68 → country_chinese_ratio 含中文比例
+    # 83 → country_chinese_ratio 含中文比例
     country_chinese_ratio = sum(
         1 for t in cleaned
         if any('\u4e00' <= c <= '\u9fff' for c in t)
     ) / len(cleaned)
 
-    # 69 → country_short_length_ratio 合理长度比例（2~20）
+    # 84 → country_short_length_ratio 合理长度比例（2~20）
     country_short_length_ratio = sum(
         1 for t in cleaned
         if 2 <= len(t.strip()) <= 20
@@ -1251,7 +1281,7 @@ def extract_column_features(text_list):
     # （23）FUNDS_NAME 基金名称
     # ==============================
 
-    # 70 → chinese_char_ratio 中文字符占比（结构型特征）
+    # 85 → chinese_char_ratio 中文字符占比（结构型特征）
     total_chars = sum(len(t) for t in cleaned)
     chinese_chars = sum(
         1 for t in cleaned for c in t
@@ -1259,19 +1289,19 @@ def extract_column_features(text_list):
     )
     chinese_char_ratio = chinese_chars / total_chars if total_chars > 0 else 0
 
-    # 71 → fund_keyword_ratio 行业关键词比例
+    # 86 → fund_keyword_ratio 行业关键词比例
     fund_keyword_ratio = sum(
         1 for t in cleaned
         if any(k in t for k in FUND_KEYWORDS)
     ) / len(cleaned)
 
-    # 72 → fund_name_dict_ratio 基金名称字典匹配比例
+    # 87 → fund_name_dict_ratio 基金名称字典匹配比例
     fund_name_dict_ratio = sum(
         1 for t in cleaned
         if t.strip() in fund_name_dict
     ) / len(cleaned)
 
-    # 73 → fund_length_reasonable_ratio 合理长度比例（4~30）
+    # 88 → fund_length_reasonable_ratio 合理长度比例（4~30）
     fund_length_reasonable_ratio = sum(
         1 for t in cleaned
         if 4 <= len(t.strip()) <= 30
@@ -1281,25 +1311,25 @@ def extract_column_features(text_list):
     # （24）PASSPORT 护照
     # ==============================
 
-    # 74 → passport_regex_ratio 护照正则匹配比例
+    # 89 → passport_regex_ratio 护照正则匹配比例
     passport_regex_ratio = sum(
         1 for t in cleaned
         if PASSPORT_REGEX.match(t.upper())
     ) / len(cleaned)
 
-    # 75 → passport_letter_digit_ratio 字母+数字结构比例
+    # 90 → passport_letter_digit_ratio 字母+数字结构比例
     passport_letter_digit_ratio = sum(
         1 for t in cleaned
         if len(t) >= 2 and t[0].isalpha() and t[1:].isdigit()
     ) / len(cleaned)
 
-    # 76 → passport_prefix_letter_ratio 首位为字母比例
+    # 91 → passport_prefix_letter_ratio 首位为字母比例
     passport_prefix_letter_ratio = sum(
         1 for t in cleaned
         if len(t) > 0 and t[0].isalpha()
     ) / len(cleaned)
 
-    # 77 → passport_length_9_ratio 长度为9位比例
+    # 92 → passport_length_9_ratio 长度为9位比例
     passport_length_9_ratio = sum(
         1 for t in cleaned
         if len(t) == 9
@@ -1310,31 +1340,31 @@ def extract_column_features(text_list):
     # （25）PINYIN_NAME 拼音姓名
     # ==============================
 
-    # 78 → pinyin_alpha_ratio 纯字母比例
+    # 93 → pinyin_alpha_ratio 纯字母比例
     pinyin_alpha_ratio = sum(
         1 for t in cleaned
         if t.replace(" ", "").isalpha()
     ) / len(cleaned)
 
-    # 79 → pinyin_capital_ratio 首字母大写比例
+    # 94 → pinyin_capital_ratio 首字母大写比例
     pinyin_capital_ratio = sum(
         1 for t in cleaned
         if len(t) > 0 and t[0].isupper()
     ) / len(cleaned)
 
-    # 80 → pinyin_space_ratio 含空格比例
+    # 95 → pinyin_space_ratio 含空格比例
     pinyin_space_ratio = sum(
         1 for t in cleaned
         if " " in t
     ) / len(cleaned)
 
-    # 81 → pinyin_length_reasonable_ratio 合理长度比例（6~20）
+    # 96 → pinyin_length_reasonable_ratio 合理长度比例（6~20）
     pinyin_length_reasonable_ratio = sum(
         1 for t in cleaned
         if 6 <= len(t.strip()) <= 20
     ) / len(cleaned)
 
-    # 82 → pinyin_pure_alpha_ratio 100 字母
+    # 97 → pinyin_pure_alpha_ratio 100 字母
     pinyin_pure_alpha_ratio = sum(
         1 for t in cleaned if is_reasonable_pinyin(t)
     ) / len(cleaned)
@@ -1343,13 +1373,13 @@ def extract_column_features(text_list):
     # （26）ENTERPRISE_NAME 企业名称
     # ==============================
 
-    # 83 → enterprise_keyword_ratio 企业名称关键字占比
+    # 98 → enterprise_keyword_ratio 企业名称关键字占比
     enterprise_keyword_ratio = sum(
         1 for t in cleaned
         if any(k in t for k in enterprise_keyword_dict)
     ) / len(cleaned)
 
-    # 84 → enterprise_parenthesis_city_ratio 左括号 + 城市名 占比
+    # 99 enterprise_parenthesis_city_ratio 左括号 + 城市名 占比
     CITY_PREFIXES = tuple(
         [f"（{c}" for c in city_dict] +
         [f"({c}" for c in city_dict]
@@ -1360,13 +1390,13 @@ def extract_column_features(text_list):
         if any(prefix in t for prefix in CITY_PREFIXES)
     ) / len(cleaned)
 
-    # 85 → enterprise_length_reasonable_ratio 长度较长比例（6~40）
+    # 100 → enterprise_length_reasonable_ratio 长度较长比例（6~40）
     enterprise_length_reasonable_ratio = sum(
         1 for t in cleaned
         if 6 <= len(t.strip()) <= 40
     ) / len(cleaned)
 
-    # 86 → enterprise_suffix_ratio 固定后缀占比
+    # 101 → enterprise_suffix_ratio 固定后缀占比
     enterprise_suffix_ratio = sum(
         1 for t in cleaned
         if any(t.endswith(suffix) for suffix in enterprise_suffix_dict)
@@ -1374,59 +1404,101 @@ def extract_column_features(text_list):
 
 
 
+
     # ==============================
-    # （27）ADDRESS 地址
+    # （27）ADDRESS 优化版
     # ==============================
 
-    # 87 → address_region_ratio 行政区划关键词比例
+    # 102 行政区划关键词比例
     address_region_ratio = sum(
         1 for t in cleaned
         if any(k in t for k in address_region_keyword_dict)
     ) / len(cleaned)
 
-    # 88 → address_road_keyword_ratio 道路关键词比例
+    # 103 道路关键词比例
     address_road_keyword_ratio = sum(
         1 for t in cleaned
         if any(k in t for k in address_road_keyword_dict)
     ) / len(cleaned)
 
-    # 89 → address_number_structure_ratio 门牌数字结构比例
+    # 104 门牌数字结构比例
     address_number_structure_ratio = sum(
         1 for t in cleaned
         if ADDRESS_NUMBER_PATTERN.search(t)
     ) / len(cleaned)
 
-    # 90 → address_length_reasonable_ratio 合理长度比例（8~60）
+    # 105 合理长度比例
     address_length_reasonable_ratio = sum(
         1 for t in cleaned
         if 8 <= len(t.strip()) <= 60
     ) / len(cleaned)
 
-    # 91 → address_contains_building_ratio 楼栋结构比例
+    # 106 楼栋结构比例
     address_contains_building_ratio = sum(
         1 for t in cleaned
-        if any(k in t for k in ["栋", "单元", "室", "楼", "层"])
+        if any(k in t for k in ["栋", "单元", "室", "楼", "层", "座", "幢"])
+    ) / len(cleaned)
+
+    # 107 多行政层级比例（至少出现两个行政单位）
+    address_multi_region_ratio = sum(
+        1 for t in cleaned
+        if sum(k in t for k in address_region_keyword_dict) >= 2
+    ) / len(cleaned)
+
+    # 108 地址结构强匹配（市 + 区 + 路 + 号）
+    address_strong_pattern_ratio = sum(
+        1 for t in cleaned
+        if re.search(r".+市.+区.+(路|街|大道).+\d+号", t)
+    ) / len(cleaned)
+
+    # 109 排除许可证关键词比例
+    address_no_permit_keyword_ratio = sum(
+        1 for t in cleaned
+        if not any(k in t for k in permit_strong_keyword_dict)
+    ) / len(cleaned)
+
+    # 110 道路关键词密度（出现次数/长度）
+    address_road_density = np.mean([
+        sum(k in t for k in address_road_keyword_dict) / len(t)
+        for t in cleaned
+    ])
+
+    # 111 数字位置集中在末尾比例（地址通常数字在末尾）
+    address_digit_tail_ratio = sum(
+        1 for t in cleaned
+        if re.search(r"\d+号?$", t.strip())
+    ) / len(cleaned)
+
+    # 地址中通常不含“第”
+    address_no_di_ratio = sum(
+        1 for t in cleaned
+        if "第" not in t
+    ) / len(cleaned)
+
+    address_contains_qu_ratio = sum(
+        1 for t in cleaned
+        if "区" in t
     ) / len(cleaned)
 
 
     # ==============================
     # （28）NAME 中文姓名
     # ==============================
-    # 92 → name_length_reasonable_ratio 合理长度比例（2~3）
+    # 107 → name_length_reasonable_ratio 合理长度比例（2~3）
     name_length_reasonable_ratio = sum(
         1 for t in cleaned
         if 2 <= len(t.strip()) <= 3
     ) / len(cleaned)
 
 
-    # 93 → name_all_chinese_ratio 全为中文比例
+    # 108 → name_all_chinese_ratio 全为中文比例
     name_all_chinese_ratio = sum(
         1 for t in cleaned
         if len(t) >= 2 and all('\u4e00' <= c <= '\u9fff' for c in t)
     ) / len(cleaned)
 
 
-    # 94 → name_surname_dict_ratio 首字在姓氏字典中的比例
+    # 109 → name_surname_dict_ratio 首字在姓氏字典中的比例
     name_surname_dict_ratio = sum(
         1 for t in cleaned
         if len(t) >= 2 and (
@@ -1436,14 +1508,14 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
 
-    # 95 → name_no_digit_ratio 不含数字比例
+    # 110 → name_no_digit_ratio 不含数字比例
     name_no_digit_ratio = sum(
         1 for t in cleaned
         if not any(c.isdigit() for c in t)
     ) / len(cleaned)
 
 
-    # 96 → name_short_length_stability 列内长度稳定性（2或3居多）
+    # 111 → name_short_length_stability 列内长度稳定性（2或3居多）
     short_lengths = [len(t) for t in cleaned if len(t) in (2, 3)]
     if short_lengths:
         name_short_length_stability = len(short_lengths) / len(cleaned)
@@ -1454,42 +1526,42 @@ def extract_column_features(text_list):
     # （29）MONEY 金额
     # ==============================
 
-    # 97 → money_numeric_ratio 纯数字或数字+小数比例
+    # 112 → money_numeric_ratio 纯数字或数字+小数比例
     money_numeric_ratio = sum(
         1 for t in cleaned
         if re.match(r'^[+-]?\d+(\.\d+)?$', t.replace(",", ""))
     ) / len(cleaned)
 
 
-    # 98 → money_decimal_ratio 含小数比例
+    # 113 → money_decimal_ratio 含小数比例
     money_decimal_ratio = sum(
         1 for t in cleaned
         if "." in t and re.match(r'^[+-]?\d+(\.\d+)?$', t.replace(",", ""))
     ) / len(cleaned)
 
 
-    # 99 → money_currency_symbol_ratio 含货币符号比例
+    # 114 → money_currency_symbol_ratio 含货币符号比例
     money_currency_symbol_ratio = sum(
         1 for t in cleaned
         if any(sym in t for sym in ["¥", "￥", "$", "€", "£"])
     ) / len(cleaned)
 
 
-    # 100 → money_comma_ratio 含千分位逗号比例
+    # 115 → money_comma_ratio 含千分位逗号比例
     money_comma_ratio = sum(
         1 for t in cleaned
         if "," in t
     ) / len(cleaned)
 
 
-    # 101 → money_reasonable_length_ratio 合理长度（1~15）
+    # 116 → money_reasonable_length_ratio 合理长度（1~15）
     money_reasonable_length_ratio = sum(
         1 for t in cleaned
         if 1 <= len(t.strip()) <= 15
     ) / len(cleaned)
 
 
-    # 102 →
+    # 117 →
     money_unit_ratio = sum(
         1 for t in cleaned
         if re.match(
@@ -1525,14 +1597,18 @@ def extract_column_features(text_list):
         officer_pattern_ratio,
         officer_end_with_hao_ratio,
         officer_digit_middle_ratio,
-        permit_keyword_ratio,
-        permit_contains_year_ratio,
-        permit_contains_parenthesis_ratio,
-        permit_dash_structure_ratio,
-        permit_province_abbr_ratio,
 
-        permit_no_di_ratio,
-        permit_xu_keyword_ratio,
+        permit_strict_keyword_ratio,
+        permit_wenzi_pattern_ratio,
+        permit_year_hao_ratio,
+        permit_year_parenthesis_ratio,
+        permit_long_digit_ratio,
+        permit_contains_zheng_ratio,
+        permit_contains_xuke_ratio,
+        permit_no_road_keyword_ratio,
+        permit_not_address_pattern_ratio,
+        permit_digit_not_tail_ratio,
+        permit_parenthesis_ratio,
 
         driving_length_18_ratio,
         driving_all_digit_ratio,
@@ -1544,7 +1620,7 @@ def extract_column_features(text_list):
         mac_colon_format_ratio,
         mac_dash_format_ratio,
         mac_plain_hex_12_ratio,
-        mac_strict_format_ratio,
+        mac_uppercase_ratio,
         mac_5_colon_ratio,
 
         url_regex_ratio,
@@ -1625,6 +1701,14 @@ def extract_column_features(text_list):
         address_number_structure_ratio,
         address_length_reasonable_ratio,
         address_contains_building_ratio,
+        address_multi_region_ratio,
+        address_strong_pattern_ratio,
+        address_no_permit_keyword_ratio,
+        address_road_density,
+        address_digit_tail_ratio,
+        address_no_di_ratio,
+        address_contains_qu_ratio,
+
 
         name_length_reasonable_ratio,
         name_all_chinese_ratio,
@@ -1972,11 +2056,18 @@ all_test_columns = {
     ],
 
     "ADDRESS": [
-        "北京市朝阳区建国路88号","广东省深圳市南山区科技园科苑路15号",
-        "上海市浦东新区世纪大道100号A座","杭州市西湖区文三路90号",
+        "北京市朝阳区建国路88号",
+        "广东省深圳市南山区科技园科苑路15号",
+        "上海市浦东新区世纪大道100号A座",
+        "杭州市西湖区文三路90号",
         "成都市高新区天府大道北段28号",
-        "广州市天河区体育西路123号","苏州市工业园区星湖街328号",
-        "600519","China","test@example.com"
+        "广州市天河区体育西路123号",
+        "苏州市工业园区星湖街328号",
+
+        "重庆市渝北区龙溪街道红锦大道3号附2号",
+        "南京市鼓楼区中山北路200号B座15层",
+
+
     ],
 
     "NAME": [
