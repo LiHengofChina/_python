@@ -4165,115 +4165,115 @@ name_col_10,赵宇,NAME
 name_col_10,2022/12/31,NAME
 
 
-money_col_1,100, MONEY
-money_col_1,200.50, MONEY
-money_col_1,3万元, MONEY
-money_col_1,¥5000, MONEY
-money_col_1,-1200, MONEY
-money_col_1,600519, MONEY
-money_col_1,张三, MONEY
-money_col_1,2023-01-01, MONEY
-money_col_1,粤B88888, MONEY
-money_col_1,ABC123, MONEY
+money_col_1,100,MONEY
+money_col_1,200.50,MONEY
+money_col_1,3万元,MONEY
+money_col_1,¥5000,MONEY
+money_col_1,-1200,MONEY
+money_col_1,600519,MONEY
+money_col_1,张三,MONEY
+money_col_1,2023-01-01,MONEY
+money_col_1,粤B88888,MONEY
+money_col_1,ABC123,MONEY
 
-money_col_2,1000, MONEY
-money_col_2,2500元, MONEY
-money_col_2,12.8万, MONEY
-money_col_2,$300, MONEY
-money_col_2,500 USD, MONEY
-money_col_2,110105199001011234, MONEY
-money_col_2,China, MONEY
-money_col_2,abc, MONEY
-money_col_2,192.168.1.1, MONEY
-money_col_2,2022-12-31, MONEY
+money_col_2,1000,MONEY
+money_col_2,2500元,MONEY
+money_col_2,12.8万,MONEY
+money_col_2,$300,MONEY
+money_col_2,500 USD,MONEY
+money_col_2,110105199001011234,MONEY
+money_col_2,China,MONEY
+money_col_2,abc,MONEY
+money_col_2,192.168.1.1,MONEY
+money_col_2,2022-12-31,MONEY
 
-money_col_3,800, MONEY
-money_col_3,900.75, MONEY
-money_col_3,100万元, MONEY
-money_col_3,￥8800, MONEY
-money_col_3,+3500, MONEY
-money_col_3,张伟, MONEY
-money_col_3,600000, MONEY
-money_col_3,JP, MONEY
-money_col_3,test@example.com, MONEY
-money_col_3,粤A12345, MONEY
+money_col_3,800,MONEY
+money_col_3,900.75,MONEY
+money_col_3,100万元,MONEY
+money_col_3,￥8800,MONEY
+money_col_3,+3500,MONEY
+money_col_3,张伟,MONEY
+money_col_3,600000,MONEY
+money_col_3,JP,MONEY
+money_col_3,test@example.com,MONEY
+money_col_3,粤A12345,MONEY
 
-money_col_4,15亿, MONEY
-money_col_4,3200元, MONEY
-money_col_4,780.00, MONEY
-money_col_4,1500.60, MONEY
-money_col_4,-50 USD, MONEY
-money_col_4,北京, MONEY
-money_col_4,20230909, MONEY
-money_col_4,110105198806158765, MONEY
-money_col_4,abc123, MONEY
-money_col_4,沪C88888, MONEY
+money_col_4,15亿,MONEY
+money_col_4,3200元,MONEY
+money_col_4,780.00,MONEY
+money_col_4,1500.60,MONEY
+money_col_4,-50 USD,MONEY
+money_col_4,北京,MONEY
+money_col_4,20230909,MONEY
+money_col_4,110105198806158765,MONEY
+money_col_4,abc123,MONEY
+money_col_4,沪C88888,MONEY
 
-money_col_5,999, MONEY
-money_col_5,10万元, MONEY
-money_col_5,3200, MONEY
-money_col_5,4500 RMB, MONEY
-money_col_5,￥750, MONEY
-money_col_5,张三, MONEY
-money_col_5,600519, MONEY
-money_col_5,粤B99999, MONEY
-money_col_5,2023/01/01, MONEY
-money_col_5,China, MONEY
+money_col_5,999,MONEY
+money_col_5,10万元,MONEY
+money_col_5,3200,MONEY
+money_col_5,4500 RMB,MONEY
+money_col_5,￥750,MONEY
+money_col_5,张三,MONEY
+money_col_5,600519,MONEY
+money_col_5,粤B99999,MONEY
+money_col_5,2023/01/01,MONEY
+money_col_5,China,MONEY
 
-money_col_6,10000, MONEY
-money_col_6,2500.88, MONEY
-money_col_6,5万, MONEY
-money_col_6,$1200, MONEY
-money_col_6,-300元, MONEY
-money_col_6,王五, MONEY
-money_col_6,110105199508073210, MONEY
-money_col_6,abc, MONEY
-money_col_6,JP, MONEY
-money_col_6,192.168.0.5, MONEY
+money_col_6,10000,MONEY
+money_col_6,2500.88,MONEY
+money_col_6,5万,MONEY
+money_col_6,$1200,MONEY
+money_col_6,-300元,MONEY
+money_col_6,王五,MONEY
+money_col_6,110105199508073210,MONEY
+money_col_6,abc,MONEY
+money_col_6,JP,MONEY
+money_col_6,192.168.0.5,MONEY
 
-money_col_7,700, MONEY
-money_col_7,850.60, MONEY
-money_col_7,20万元, MONEY
-money_col_7,￥3000, MONEY
-money_col_7,+500 USD, MONEY
-money_col_7,600888, MONEY
-money_col_7,张强, MONEY
-money_col_7,2023-10-01, MONEY
-money_col_7,粤C12345, MONEY
-money_col_7,China, MONEY
+money_col_7,700,MONEY
+money_col_7,850.60,MONEY
+money_col_7,20万元,MONEY
+money_col_7,￥3000,MONEY
+money_col_7,+500 USD,MONEY
+money_col_7,600888,MONEY
+money_col_7,张强,MONEY
+money_col_7,2023-10-01,MONEY
+money_col_7,粤C12345,MONEY
+money_col_7,China,MONEY
 
-money_col_8,1200, MONEY
-money_col_8,600.90, MONEY
-money_col_8,2亿, MONEY
-money_col_8,$4500, MONEY
-money_col_8,8800元, MONEY
-money_col_8,110105199001011234, MONEY
-money_col_8,上海市浦东新区, MONEY
-money_col_8,abc123, MONEY
-money_col_8,JP, MONEY
-money_col_8,粤B77777, MONEY
+money_col_8,1200,MONEY
+money_col_8,600.90,MONEY
+money_col_8,2亿,MONEY
+money_col_8,$4500,MONEY
+money_col_8,8800元,MONEY
+money_col_8,110105199001011234,MONEY
+money_col_8,上海市浦东新区,MONEY
+money_col_8,abc123,MONEY
+money_col_8,JP,MONEY
+money_col_8,粤B77777,MONEY
 
-money_col_9,500, MONEY
-money_col_9,999.99, MONEY
-money_col_9,8万元, MONEY
-money_col_9,￥6500, MONEY
-money_col_9,-1000, MONEY
-money_col_9,张伟, MONEY
-money_col_9,600000, MONEY
-money_col_9,2022-05-05, MONEY
-money_col_9,China, MONEY
-money_col_9,IP地址, MONEY
+money_col_9,500,MONEY
+money_col_9,999.99,MONEY
+money_col_9,8万元,MONEY
+money_col_9,￥6500,MONEY
+money_col_9,-1000,MONEY
+money_col_9,张伟,MONEY
+money_col_9,600000,MONEY
+money_col_9,2022-05-05,MONEY
+money_col_9,China,MONEY
+money_col_9,IP地址,MONEY
 
-money_col_10,300, MONEY
-money_col_10,450.75, MONEY
-money_col_10,1万, MONEY
-money_col_10,$999, MONEY
-money_col_10,7800 RMB, MONEY
-money_col_10,110105199508073210, MONEY
-money_col_10,abc, MONEY
-money_col_10,粤A88888, MONEY
-money_col_10,2023-06-06, MONEY
-money_col_10,张三, MONEY
+money_col_10,300,MONEY
+money_col_10,450.75,MONEY
+money_col_10,1万,MONEY
+money_col_10,$999,MONEY
+money_col_10,7800 RMB,MONEY
+money_col_10,110105199508073210,MONEY
+money_col_10,abc,MONEY
+money_col_10,粤A88888,MONEY
+money_col_10,2023-06-06,MONEY
+money_col_10,张三,MONEY
 
 
 
