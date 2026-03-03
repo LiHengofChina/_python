@@ -17,7 +17,9 @@ from sklearn.metrics import classification_report, f1_score
 # 必须包含 column_id,text,label
 # ==============================
 
-df = pd.read_csv("fit_data.csv", dtype={"text": str})
+df = pd.read_csv("fit_data.csv", dtype={"text": str}, skipinitialspace=True)
+df.columns = df.columns.str.strip()  # 兼容每列前导空格
+df["column_id"] = df["column_id"].str.strip()
 
 # print("原始数据前5行：")
 # print(df.head())
