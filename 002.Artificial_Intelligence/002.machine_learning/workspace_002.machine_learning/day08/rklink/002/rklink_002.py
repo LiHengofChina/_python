@@ -12,6 +12,7 @@ import sklearn.model_selection as ms
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, f1_score
+from sklearn.utils.class_weight import compute_class_weight
 
 # PMML 导出（需 pip install sklearn2pmml，且系统已安装 Java 11+）
 try:
@@ -1751,10 +1752,20 @@ X_test_df = pd.DataFrame(X_test, columns=feature_names)
 # sklearn2pmml 需要 y 带名称，否则会警告
 y_train_series = pd.Series(y_train, name="label")
 
+# 优化：易错类别提高权重（PINYIN_NAME/COUNTRY/CHARACTER_CODE/PERMIT/DEFAULT/ID_CARD）
+classes = np.unique(y_train)
+weights = compute_class_weight('balanced', classes=classes, y=y_train)
+class_weight = dict(zip(classes, weights))
+for cls in ['PINYIN_NAME', 'COUNTRY', 'CHARACTER_CODE', 'PERMIT', 'DEFAULT', 'ID_CARD']:
+    if cls in class_weight:
+        class_weight[cls] *= 1.5  # 提高 50%
+
 model = RandomForestClassifier(
-    n_estimators=100,
+    n_estimators=200,
+    max_depth=15,
+    min_samples_leaf=2,
     random_state=42,
-    class_weight='balanced'
+    class_weight=class_weight
 )
 
 # 使用 PMMLPipeline 以便导出 Java 可加载的 PMML（若已安装 sklearn2pmml）
