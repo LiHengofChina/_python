@@ -277,16 +277,72 @@ country_dict = set(
 # ==============================
 
 
-def is_reasonable_pinyin(text):
-    text = text.strip()
+# 拼音姓名格式：全小写字母，末尾可有数字防重复（如 zhangsan1）
+PINYIN_NAME_FORMAT = re.compile(r"^[a-z]+[0-9]*$")
 
-    if not re.fullmatch(r"[A-Za-z ]+", text):
+# 有效拼音音节集合（用于校验能否拼出汉字）
+def _load_pinyin_syllables():
+    try:
+        from pypinyin import lazy_pinyin, Style
+        import unicodedata
+        s = set()
+        for cp in range(0x4e00, 0x9fff):
+            try:
+                c = chr(cp)
+                if unicodedata.category(c) == 'Lo':
+                    for py in lazy_pinyin(c, style=Style.NORMAL):
+                        if py and py.isalpha():
+                            s.add(py.lower())
+            except Exception:
+                pass
+        return frozenset(s)
+    except ImportError:
+        # 无 pypinyin 时从本地 JSON 加载（与脚本同目录）
+        for base in [os.path.dirname(os.path.abspath(__file__)), ".", os.getcwd()]:
+            try:
+                path = os.path.join(base, "pinyin_syllables.json")
+                if os.path.isfile(path):
+                    with open(path, "r", encoding="utf-8") as f:
+                        return frozenset(json.load(f))
+            except Exception:
+                continue
+        return frozenset()  # 空集时该特征恒为 0
+
+PINYIN_SYLLABLES = _load_pinyin_syllables()
+
+
+def _is_valid_pinyin_syllable_sequence(text, syllables):
+    """贪心最长匹配：整串能否拆成有效拼音音节。text 已去空格、转小写、去掉末尾数字"""
+    if not text or not syllables:
         return False
+    # 去掉末尾数字
+    pure = re.sub(r"[0-9]+$", "", text).lower()
+    if not pure or not pure.isalpha():
+        return False
+    # 按长度降序，优先匹配长音节
+    sorted_syl = sorted(syllables, key=len, reverse=True)
+    pos = 0
+    while pos < len(pure):
+        found = False
+        for syl in sorted_syl:
+            if pure[pos:].startswith(syl):
+                pos += len(syl)
+                found = True
+                break
+        if not found:
+            return False
+    return True
 
+
+def is_reasonable_pinyin(text):
+    """拼音格式：字母（可含空格）+ 末尾可选数字"""
+    text = text.strip()
+    # 去掉空格后：字母 + 末尾可选数字
     pure = text.replace(" ", "")
-
-    # 允许大小写混合，但必须全部是字母
-    return pure.isalpha()
+    if not pure:
+        return False
+    # 允许 [a-zA-Z]+[0-9]* 或纯字母
+    return bool(re.fullmatch(r"[a-zA-Z]+[0-9]*", pure))
 
 
 # ==============================
@@ -645,7 +701,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 113
+        return [0] * 115
 
     lengths = [len(t) for t in cleaned]
 
@@ -1358,9 +1414,21 @@ def extract_column_features(text_list):
         if 6 <= len(t.strip()) <= 20
     ) / len(cleaned)
 
-    # 97 → pinyin_pure_alpha_ratio 100 字母
+    # 97 → pinyin_pure_alpha_ratio 字母+末尾可选数字
     pinyin_pure_alpha_ratio = sum(
         1 for t in cleaned if is_reasonable_pinyin(t)
+    ) / len(cleaned)
+
+    # 98 → pinyin_name_format_ratio 强格式：全小写字母+末尾可选数字，长度4~25
+    pinyin_name_format_ratio = sum(
+        1 for t in cleaned
+        if 4 <= len(t.strip()) <= 25 and PINYIN_NAME_FORMAT.match(t.strip().lower())
+    ) / len(cleaned)
+
+    # 99 → pinyin_valid_syllables_ratio 能否拆成有效拼音音节（贪心最长匹配）
+    pinyin_valid_syllables_ratio = sum(
+        1 for t in cleaned
+        if _is_valid_pinyin_syllable_sequence(t.strip(), PINYIN_SYLLABLES)
     ) / len(cleaned)
 
     # ==============================
@@ -1664,6 +1732,8 @@ def extract_column_features(text_list):
         pinyin_space_ratio,
         pinyin_length_reasonable_ratio,
         pinyin_pure_alpha_ratio,
+        pinyin_name_format_ratio,
+        pinyin_valid_syllables_ratio,
 
         enterprise_keyword_ratio,
         enterprise_length_reasonable_ratio,
@@ -1849,6 +1919,7 @@ _dicts_to_save = {
     "ID_CHECK_MAP": {str(k): v for k, v in ID_CHECK_MAP.items()},
     "VIN_WEIGHTS": VIN_WEIGHTS,
     "VIN_TRANS": {str(k): v for k, v in VIN_TRANS.items()},
+    "pinyin_syllables": sorted(PINYIN_SYLLABLES),
 }
 with open(os.path.join(_dict_dir, "all_dicts.json"), "w", encoding="utf-8") as f:
     json.dump(_dicts_to_save, f, ensure_ascii=False, indent=2)
