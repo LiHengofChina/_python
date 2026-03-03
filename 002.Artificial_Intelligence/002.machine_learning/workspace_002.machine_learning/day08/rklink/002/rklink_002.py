@@ -12,7 +12,6 @@ import sklearn.model_selection as ms
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, f1_score
-from sklearn.utils.class_weight import compute_class_weight
 
 # PMML 导出（需 pip install sklearn2pmml，且系统已安装 Java 11+）
 try:
@@ -1752,20 +1751,10 @@ X_test_df = pd.DataFrame(X_test, columns=feature_names)
 # sklearn2pmml 需要 y 带名称，否则会警告
 y_train_series = pd.Series(y_train, name="label")
 
-# 优化：易错类别提高权重（PINYIN_NAME/COUNTRY/CHARACTER_CODE/PERMIT/DEFAULT/ID_CARD）
-classes = np.unique(y_train)
-weights = compute_class_weight('balanced', classes=classes, y=y_train)
-class_weight = dict(zip(classes, weights))
-for cls in ['PINYIN_NAME', 'COUNTRY', 'CHARACTER_CODE', 'PERMIT', 'DEFAULT', 'ID_CARD']:
-    if cls in class_weight:
-        class_weight[cls] *= 1.5  # 提高 50%
-
 model = RandomForestClassifier(
-    n_estimators=200,
-    max_depth=15,
-    min_samples_leaf=2,
+    n_estimators=100,
     random_state=42,
-    class_weight=class_weight
+    class_weight='balanced'
 )
 
 # 使用 PMMLPipeline 以便导出 Java 可加载的 PMML（若已安装 sklearn2pmml）
@@ -1869,6 +1858,7 @@ print(f"已保存字典: {_dict_dir}/all_dicts.json")
 if HAS_SKLEARN2PMML and pipeline is not None:
     _pmml_path = os.path.join(_model_dir, "recognize_rf_model.pmml")
     try:
+        pipeline.verify(X_train_df)  # 设置验证数据，消除 sklearn2pmml 警告
         sklearn2pmml(pipeline, _pmml_path, with_repr=True)
         print(f"已保存 PMML 模型: {_pmml_path} （Java 可用 JPMML 加载）")
     except Exception as e:
