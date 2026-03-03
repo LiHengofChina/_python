@@ -1870,8 +1870,8 @@ print("=" * 60)
 # （7.5）保存模型
 # ==============================
 import os
-_script_dir = os.path.dirname(os.path.abspath(__file__))
-_model_dir = os.path.join(_script_dir, "model_output")
+# 直接保存到 mask-sdk 的 resources，无需手动拷贝
+_model_dir = r"D:\___workspace\workspace_2025_18_w_java_\datasharingplatform\mask-sdk\src\main\resources\recognize_model"
 os.makedirs(_model_dir, exist_ok=True)
 
 # joblib：Python 可加载
