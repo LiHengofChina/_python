@@ -636,44 +636,44 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 119
+        return [0] * 113
 
     lengths = [len(t) for t in cleaned]
 
     # ==============================
     # （1）PHONE
     # ==============================
-    # 0 avg_length
+    # 0 → avg_length
     avg_length = np.mean(lengths)
 
-    # 1 fixed_length_flag
+    # 1 → fixed_length_flag
     fixed_length_flag = 1 if len(set(lengths)) == 1 else 0
 
-    # 2 avg_digit_ratio
+    # 2 → avg_digit_ratio
     digit_ratios = []
     for t in cleaned:
         digits = sum(c.isdigit() for c in t)
         digit_ratios.append(digits / len(t))
     avg_digit_ratio = np.mean(digit_ratios)
 
-    # 3 phone_regex_ratio
+    # 3 → phone_regex_ratio
     phone_match = sum(1 for t in cleaned if PHONE_REGEX.match(t))
     phone_regex_ratio = phone_match / len(cleaned)
 
     # ==============================
     # （2）ID_CARD
     # ==============================
-    # 4 id_regex_ratio
+    # 4 → id_regex_ratio
     id_match = sum(1 for t in cleaned if ID_REGEX.match(t))
     id_regex_ratio = id_match / len(cleaned)
 
-    # 5 生日验证
+    # 5 → birth_valid_ratio 生日验证
     birth_valid_ratio = sum(
         1 for t in cleaned
         if len(t) >= 14 and t[6:14].isdigit() and valid_birth(t)
     ) / len(cleaned)
 
-    # 6 身份证校验
+    # 6 → id_check_ratio 身份证校验
     id_check_match = sum(
         1 for t in cleaned
         if id_card_check(t)
@@ -689,14 +689,14 @@ def extract_column_features(text_list):
     # ==============================
     # （3）BANK_CARD
     # ==============================
-    # 8 银行卡长度匹配比例（16-19位 + 全数字）
+    # 8 → bank_length_match_ratio 银行卡长度匹配比例（16-19位 + 全数字）
     bank_length_match = sum(
         1 for t in cleaned
         if 16 <= len(t) <= 19 and t.isdigit()
     )
     bank_length_match_ratio = bank_length_match / len(cleaned)
 
-    # 9 Luhn通过比例
+    # 9 → bank_luhn_ratio Luhn通过比例
     bank_luhn_match = sum(
         1 for t in cleaned
         if 16 <= len(t) <= 19 and t.isdigit() and luhn_check(t)
@@ -706,7 +706,7 @@ def extract_column_features(text_list):
     # ==============================
     # （4）CVV
     # ==============================
-    # 10 CVV 长度比例
+    # 10 → cvv_length_ratio CVV 长度比例
     cvv_match = sum(
         1 for t in cleaned
         if len(t) == 3 and t.isdigit()
@@ -716,7 +716,7 @@ def extract_column_features(text_list):
     # ==============================
     # （5）ZIP_CODE
     # ==============================
-    # 11 统计 6 位纯数字占比。
+    # 11 → zip6_digit_ratio 统计 6 位纯数字占比
     zip6_digit_match = sum(
         1 for t in cleaned
         if len(t) == 6 and t.isdigit()
@@ -730,14 +730,14 @@ def extract_column_features(text_list):
         prefix_stability_ratio = 1 if len(set(prefixes)) == 1 else 0
     else:
         prefix_stability_ratio = 0
-    # 13 统计以 00 或 000 结尾的比例。
+    # 13 → zip_zero_tail_ratio 统计以 00 或 000 结尾的比例
     zip_zero_tail_match = sum(
         1 for t in cleaned
         if len(t) == 6 and t.isdigit() and (t.endswith("00") or t.endswith("000"))
     )
     zip_zero_tail_ratio = zip_zero_tail_match / len(cleaned)
 
-    # 14 -> zip_dict_ratio
+    # 14 → zip_dict_ratio
     zip_dict_match = sum(
         1 for t in cleaned
         if t in zip_dict
@@ -747,7 +747,7 @@ def extract_column_features(text_list):
     # ==============================
     # （6）STOCK_CODE
     # ==============================
-    # 15 证券代码字典匹配比例
+    # 15 → stock_dict_ratio 证券代码字典匹配比例
     stock_dict_match = sum(
         1 for t in cleaned
         if t in stock_dict
@@ -758,7 +758,7 @@ def extract_column_features(text_list):
     # （7）FUND_CODE
     # ==============================
 
-    # 16 基金代码字典匹配比例
+    # 16 → fund_dict_ratio 基金代码字典匹配比例
     fund_dict_match = sum(
         1 for t in cleaned
         if t in fund_dict
@@ -768,28 +768,28 @@ def extract_column_features(text_list):
     # ==============================
     # （8）CREDIT_CODE 统一社会信用代码
     # ==============================
-    # 17 长度 = 18 且 全为数字 + 大写字母 的比例
+    # 17 → credit_length_match_ratio 长度=18且全为数字+大写字母的比例
     credit_length_match = sum(
         1 for t in cleaned
         if len(t) == 18 and all(c in CREDIT_CODE_CHARS for c in t)
     )
     credit_length_match_ratio = credit_length_match / len(cleaned)
 
-    # 18 第 3-8 位是纯数字的比例
+    # 18 → credit_region_digit_ratio 第3-8位是纯数字的比例
     credit_region_digit_match = sum(
         1 for t in cleaned
         if len(t) == 18 and t[2:8].isdigit()
     )
     credit_region_digit_ratio = credit_region_digit_match / len(cleaned)
 
-    # 19 行政区划 ID 就是 6 位数字：
+    # 19 → credit_region_dict_ratio 行政区划ID为6位数字
     credit_region_dict_match = sum(
         1 for t in cleaned
         if len(t) == 18 and t[2:8].isdigit() and t[2:8] in region_dict
     )
     credit_region_dict_ratio = credit_region_dict_match / len(cleaned)
 
-    # 20 实现统一社会信用代码校验算法
+    # 20 → credit_check_digit_ratio 统一社会信用代码校验
     credit_check_match = sum(
         1 for t in cleaned
         if credit_code_check(t)
@@ -799,28 +799,28 @@ def extract_column_features(text_list):
     # ==============================
     # （9）OFFICER_CARD 军官证
     # ==============================
-    # 21 -> 特殊汉字的比例
+    # 21 → officer_keyword_ratio 特殊汉字的比例
     officer_keyword_match = sum(
         1 for t in cleaned
         if any(k in t for k in ["军", "海", "空", "武", "字第", "号"])
     )
     officer_keyword_ratio = officer_keyword_match / len(cleaned)
 
-    # 22 -> 军官格式正则
+    # 22 → officer_pattern_ratio 军官格式正则
     officer_pattern_match = sum(
         1 for t in cleaned
         if OFFICER_PATTERN.match(t)
     )
     officer_pattern_ratio = officer_pattern_match / len(cleaned)
 
-    # 23 -> 最后一个字 "号"
+    # 23 → officer_end_with_hao_ratio 最后一个字"号"
     officer_end_with_hao_match = sum(
         1 for t in cleaned
         if t.endswith("号")
     )
     officer_end_with_hao_ratio = officer_end_with_hao_match / len(cleaned)
 
-    # 24 -> "字第" 和 "号" 之间一定是数字
+    # 24 → officer_digit_middle_ratio "字第"和"号"之间为数字
     officer_digit_middle_match = sum(
         1 for t in cleaned
         if DIGIT_MIDDLE_PATTERN.search(t)
@@ -831,7 +831,7 @@ def extract_column_features(text_list):
     # （10）PERMIT 优化版
     # ==============================
 
-    # 25 强许可证关键词比例（严格语义）
+    # 25 → permit_strict_keyword_ratio 强许可证关键词比例（严格语义）
     permit_strict_keyword_ratio = sum(
         1 for t in cleaned
         if any(k in t for k in [
@@ -840,25 +840,19 @@ def extract_column_features(text_list):
         ])
     ) / len(cleaned)
 
-    # 26 文号结构比例（字第xxx号）
+    # 26 → permit_wenzi_pattern_ratio 文号结构比例（字第xxx号）
     permit_wenzi_pattern_ratio = sum(
         1 for t in cleaned
         if re.search(r'字第\d{3,}号', t)
     ) / len(cleaned)
 
-    # 27 年份 + 号 结构比例
+    # 27 → permit_year_hao_ratio 年份+号结构比例
     permit_year_hao_ratio = sum(
         1 for t in cleaned
         if re.search(r'(19|20)\d{2}.*号', t)
     ) / len(cleaned)
 
-    # 28 年份 + 编号结构比例（括号）
-    permit_year_parenthesis_ratio = sum(
-        1 for t in cleaned
-        if re.search(r'[（(](19|20)\d{2}[)）]', t)
-    ) / len(cleaned)
-
-    # 29 数字连续长度 >=4 比例（编号特征）
+    # 28 → permit_long_digit_ratio 数字连续长度>=4比例（编号特征）
     permit_long_digit_ratio = sum(
         1 for t in cleaned
         if re.search(r'\d{4,}', t)
@@ -876,25 +870,19 @@ def extract_column_features(text_list):
         if "许可" in t
     ) / len(cleaned)
 
-    # 32 不包含道路关键词比例（抑制 ADDRESS 干扰）
+    # 32 → permit_no_road_keyword_ratio 不包含道路关键词比例（抑制ADDRESS）
     permit_no_road_keyword_ratio = sum(
         1 for t in cleaned
         if not any(k in t for k in address_road_keyword_dict)
     ) / len(cleaned)
 
-    # 33 不符合地址强结构比例（市+区+路）
+    # 33 → permit_not_address_pattern_ratio 不符合地址强结构比例（市+区+路）
     permit_not_address_pattern_ratio = sum(
         1 for t in cleaned
         if not re.search(r".+市.+区.+(路|街|大道)", t)
     ) / len(cleaned)
 
-    # 34 数字不在末尾比例（地址编号通常在末尾）
-    permit_digit_not_tail_ratio = sum(
-        1 for t in cleaned
-        if not re.search(r"\d+号?$", t.strip())
-    ) / len(cleaned)
-
-    # 35 包含括号比例
+    # 34 → permit_parenthesis_ratio 包含括号比例
     permit_parenthesis_ratio = sum(
         1 for t in cleaned
         if any(p in t for p in ["(", ")", "（", "）"])
@@ -906,14 +894,14 @@ def extract_column_features(text_list):
     # ==============================
     # （11）CAR_DRIVING_LICENSE
     # ==============================
-    # 34 → 长度为 18 的比例
+    # 35 → driving_length_18_ratio 长度为18的比例
     driving_length_18_match = sum(
         1 for t in cleaned
         if len(t) == 18
     )
     driving_length_18_ratio = driving_length_18_match / len(cleaned)
 
-    # 35 → 整列纯数字比例
+    # 36 → driving_all_digit_ratio 整列纯数字比例
     driving_all_digit_match = sum(
         1 for t in cleaned
         if t.isdigit()
@@ -1127,12 +1115,6 @@ def extract_column_features(text_list):
     plate_length_ratio = sum(
         1 for t in cleaned
         if len(t) in (7, 8)
-    ) / len(cleaned)
-
-    # 64 → plate_new_energy_ratio
-    plate_new_energy_ratio = sum(
-        1 for t in cleaned
-        if PLATE_NEW_ENERGY_REGEX.match(t.upper())
     ) / len(cleaned)
 
     # ==============================
@@ -1382,24 +1364,13 @@ def extract_column_features(text_list):
         if any(k in t for k in enterprise_keyword_dict)
     ) / len(cleaned)
 
-    # 99 enterprise_parenthesis_city_ratio 左括号 + 城市名 占比
-    CITY_PREFIXES = tuple(
-        [f"（{c}" for c in city_dict] +
-        [f"({c}" for c in city_dict]
-    )
-
-    enterprise_parenthesis_city_ratio = sum(
-        1 for t in cleaned
-        if any(prefix in t for prefix in CITY_PREFIXES)
-    ) / len(cleaned)
-
-    # 100 → enterprise_length_reasonable_ratio 长度较长比例（6~40）
+    # 99 → enterprise_length_reasonable_ratio 长度较长比例（6~40）
     enterprise_length_reasonable_ratio = sum(
         1 for t in cleaned
         if 6 <= len(t.strip()) <= 40
     ) / len(cleaned)
 
-    # 101 → enterprise_suffix_ratio 固定后缀占比
+    # 100 → enterprise_suffix_ratio 固定后缀占比
     enterprise_suffix_ratio = sum(
         1 for t in cleaned
         if any(t.endswith(suffix) for suffix in enterprise_suffix_dict)
@@ -1412,61 +1383,55 @@ def extract_column_features(text_list):
     # （27）ADDRESS 优化版
     # ==============================
 
-    # 102 行政区划关键词比例
+    # 101 → address_region_ratio 行政区划关键词比例
     address_region_ratio = sum(
         1 for t in cleaned
         if any(k in t for k in address_region_keyword_dict)
     ) / len(cleaned)
 
-    # 103 道路关键词比例
+    # 102 → address_road_keyword_ratio 道路关键词比例
     address_road_keyword_ratio = sum(
         1 for t in cleaned
         if any(k in t for k in address_road_keyword_dict)
     ) / len(cleaned)
 
-    # 104 门牌数字结构比例
+    # 103 → address_number_structure_ratio 门牌数字结构比例
     address_number_structure_ratio = sum(
         1 for t in cleaned
         if ADDRESS_NUMBER_PATTERN.search(t)
     ) / len(cleaned)
 
-    # 105 合理长度比例
+    # 104 → address_length_reasonable_ratio 合理长度比例
     address_length_reasonable_ratio = sum(
         1 for t in cleaned
         if 8 <= len(t.strip()) <= 60
     ) / len(cleaned)
 
-    # 106 楼栋结构比例
-    address_contains_building_ratio = sum(
-        1 for t in cleaned
-        if any(k in t for k in ["栋", "单元", "室", "楼", "层", "座", "幢"])
-    ) / len(cleaned)
-
-    # 107 多行政层级比例（至少出现两个行政单位）
+    # 105 → address_multi_region_ratio 多行政层级比例（至少两个行政单位）
     address_multi_region_ratio = sum(
         1 for t in cleaned
         if sum(k in t for k in address_region_keyword_dict) >= 2
     ) / len(cleaned)
 
-    # 108 地址结构强匹配（市 + 区 + 路 + 号）
+    # 106 → address_strong_pattern_ratio 地址结构强匹配（市+区+路+号）
     address_strong_pattern_ratio = sum(
         1 for t in cleaned
         if re.search(r".+市.+区.+(路|街|大道).+\d+号", t)
     ) / len(cleaned)
 
-    # 109 排除许可证关键词比例
+    # 107 → address_no_permit_keyword_ratio 排除许可证关键词比例
     address_no_permit_keyword_ratio = sum(
         1 for t in cleaned
         if not any(k in t for k in permit_strong_keyword_dict)
     ) / len(cleaned)
 
-    # 110 道路关键词密度（出现次数/长度）
+    # 108 → address_road_density 道路关键词密度（出现次数/长度）
     address_road_density = np.mean([
         sum(k in t for k in address_road_keyword_dict) / len(t)
         for t in cleaned
     ])
 
-    # 111 数字位置集中在末尾比例（地址通常数字在末尾）
+    # 109 → address_digit_tail_ratio 数字位置集中在末尾比例（地址通常数字在末尾）
     address_digit_tail_ratio = sum(
         1 for t in cleaned
         if re.search(r"\d+号?$", t.strip())
@@ -1478,12 +1443,13 @@ def extract_column_features(text_list):
         if "第" not in t
     ) / len(cleaned)
 
+    # 111 → address_contains_qu_ratio 含"区"比例
     address_contains_qu_ratio = sum(
         1 for t in cleaned
         if "区" in t
     ) / len(cleaned)
 
-    # 地址典型结尾比例（号/栋/室/楼/层，与 PERMIT 区分）
+    # 112 → address_typical_end_ratio 地址典型结尾比例（号/栋/室/楼/层，与PERMIT区分）
     address_typical_end_ratio = sum(
         1 for t in cleaned
         if re.search(r'(号|栋|室|楼|层)$', t.strip())
@@ -1492,21 +1458,21 @@ def extract_column_features(text_list):
     # ==============================
     # （28）NAME 中文姓名
     # ==============================
-    # 107 → name_length_reasonable_ratio 合理长度比例（2~3）
+    # 111 → name_length_reasonable_ratio 合理长度比例（2~3）
     name_length_reasonable_ratio = sum(
         1 for t in cleaned
         if 2 <= len(t.strip()) <= 3
     ) / len(cleaned)
 
 
-    # 108 → name_all_chinese_ratio 全为中文比例
+    # 112 → name_all_chinese_ratio 全为中文比例
     name_all_chinese_ratio = sum(
         1 for t in cleaned
         if len(t) >= 2 and all('\u4e00' <= c <= '\u9fff' for c in t)
     ) / len(cleaned)
 
 
-    # 109 → name_surname_dict_ratio 首字在姓氏字典中的比例
+    # 113 → name_surname_dict_ratio 首字在姓氏字典中的比例
     name_surname_dict_ratio = sum(
         1 for t in cleaned
         if len(t) >= 2 and (
@@ -1516,14 +1482,14 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
 
-    # 110 → name_no_digit_ratio 不含数字比例
+    # 114 → name_no_digit_ratio 不含数字比例
     name_no_digit_ratio = sum(
         1 for t in cleaned
         if not any(c.isdigit() for c in t)
     ) / len(cleaned)
 
 
-    # 111 → name_short_length_stability 列内长度稳定性（2或3居多）
+    # 115 → name_short_length_stability 列内长度稳定性（2或3居多）
     short_lengths = [len(t) for t in cleaned if len(t) in (2, 3)]
     if short_lengths:
         name_short_length_stability = len(short_lengths) / len(cleaned)
@@ -1534,35 +1500,28 @@ def extract_column_features(text_list):
     # （29）MONEY 金额
     # ==============================
 
-    # 112 → money_numeric_ratio 纯数字或数字+小数比例
+    # 116 → money_numeric_ratio 纯数字或数字+小数比例
     money_numeric_ratio = sum(
         1 for t in cleaned
         if re.match(r'^[+-]?\d+(\.\d+)?$', t.replace(",", ""))
     ) / len(cleaned)
 
 
-    # 113 → money_decimal_ratio 含小数比例
+    # 117 → money_decimal_ratio 含小数比例
     money_decimal_ratio = sum(
         1 for t in cleaned
         if "." in t and re.match(r'^[+-]?\d+(\.\d+)?$', t.replace(",", ""))
     ) / len(cleaned)
 
 
-    # 114 → money_currency_symbol_ratio 含货币符号比例
+    # 118 → money_currency_symbol_ratio 含货币符号比例
     money_currency_symbol_ratio = sum(
         1 for t in cleaned
         if any(sym in t for sym in ["¥", "￥", "$", "€", "£"])
     ) / len(cleaned)
 
 
-    # 115 → money_comma_ratio 含千分位逗号比例
-    money_comma_ratio = sum(
-        1 for t in cleaned
-        if "," in t
-    ) / len(cleaned)
-
-
-    # 116 → money_reasonable_length_ratio 合理长度（1~15）
+    # 119 → money_reasonable_length_ratio 合理长度（1~15）
     money_reasonable_length_ratio = sum(
         1 for t in cleaned
         if 1 <= len(t.strip()) <= 15
@@ -1570,6 +1529,7 @@ def extract_column_features(text_list):
 
 
     # 117 →
+    # 120 → money_unit_ratio
     money_unit_ratio = sum(
         1 for t in cleaned
         if re.match(
@@ -1609,13 +1569,11 @@ def extract_column_features(text_list):
         permit_strict_keyword_ratio,
         permit_wenzi_pattern_ratio,
         permit_year_hao_ratio,
-        permit_year_parenthesis_ratio,
         permit_long_digit_ratio,
         permit_contains_zheng_ratio,
         permit_contains_xuke_ratio,
         permit_no_road_keyword_ratio,
         permit_not_address_pattern_ratio,
-        permit_digit_not_tail_ratio,
         permit_parenthesis_ratio,
 
         driving_length_18_ratio,
@@ -1655,7 +1613,6 @@ def extract_column_features(text_list):
         plate_regex_ratio,
         plate_province_ratio,
         plate_length_ratio,
-        plate_new_energy_ratio,
 
 
         character_regex_ratio,
@@ -1700,7 +1657,6 @@ def extract_column_features(text_list):
         pinyin_pure_alpha_ratio,
 
         enterprise_keyword_ratio,
-        enterprise_parenthesis_city_ratio,
         enterprise_length_reasonable_ratio,
         enterprise_suffix_ratio,
 
@@ -1708,7 +1664,6 @@ def extract_column_features(text_list):
         address_road_keyword_ratio,
         address_number_structure_ratio,
         address_length_reasonable_ratio,
-        address_contains_building_ratio,
         address_multi_region_ratio,
         address_strong_pattern_ratio,
         address_no_permit_keyword_ratio,
@@ -1728,7 +1683,6 @@ def extract_column_features(text_list):
         money_numeric_ratio,
         money_decimal_ratio,
         money_currency_symbol_ratio,
-        money_comma_ratio,
         money_reasonable_length_ratio,
 
         money_unit_ratio,
@@ -1813,24 +1767,6 @@ model.fit(X_train, y_train)
 print("特征重要性：")
 print(model.feature_importances_)
 print("=" * 60)
-
-# ==============================
-# （7.5）特征选择：剔除零/近零重要性特征
-# ==============================
-FEATURE_IMPORTANCE_THRESHOLD = 1e-5
-sel_indices = np.where(model.feature_importances_ > FEATURE_IMPORTANCE_THRESHOLD)[0]
-if len(sel_indices) < model.feature_importances_.shape[0]:
-    print(f"特征选择：保留 {len(sel_indices)}/{len(model.feature_importances_)} 个特征")
-    X_train = X_train[:, sel_indices]
-    X_test = X_test[:, sel_indices]
-    model = RandomForestClassifier(
-        n_estimators=100,
-        random_state=42,
-        class_weight='balanced'
-    )
-    model.fit(X_train, y_train)
-else:
-    sel_indices = np.arange(model.feature_importances_.shape[0])
 
 # ==============================
 # （8）预测
@@ -2120,9 +2056,7 @@ all_test_columns = {
 
 for label_name, test_column in all_test_columns.items():
 
-    feature = np.array(extract_column_features(test_column))
-    feature = feature[sel_indices]
-    feature = np.array([feature])
+    feature = np.array([extract_column_features(test_column)])
 
     prediction = model.predict(feature)[0]
     probability = model.predict_proba(feature)[0]
