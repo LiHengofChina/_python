@@ -7,10 +7,19 @@
 import numpy as np
 import pandas as pd
 import re
+import joblib
 import sklearn.model_selection as ms
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, f1_score
+
+# PMML 导出（需 pip install sklearn2pmml，且系统已安装 Java 11+）
+try:
+    from sklearn2pmml import sklearn2pmml
+    from sklearn2pmml.pipeline import PMMLPipeline
+    HAS_SKLEARN2PMML = True
+except ImportError:
+    HAS_SKLEARN2PMML = False
 
 # ==============================
 # （1）加载数据
@@ -1735,21 +1744,36 @@ X_train, X_test, y_train, y_test = train_test_split(
 # （5）构建随机森林模型
 # ==============================
 
+N_FEATURES = X_train.shape[1]
+feature_names = [f"f{i}" for i in range(N_FEATURES)]
+X_train_df = pd.DataFrame(X_train, columns=feature_names)
+X_test_df = pd.DataFrame(X_test, columns=feature_names)
+# sklearn2pmml 需要 y 带名称，否则会警告
+y_train_series = pd.Series(y_train, name="label")
+
 model = RandomForestClassifier(
     n_estimators=100,
     random_state=42,
     class_weight='balanced'
 )
 
+# 使用 PMMLPipeline 以便导出 Java 可加载的 PMML（若已安装 sklearn2pmml）
+if HAS_SKLEARN2PMML:
+    pipeline = PMMLPipeline([("classifier", model)])
+else:
+    pipeline = None
+
 # ==============================
 # （6）交叉验证
 # ==============================
 
 if len(X_train) >= 5:
+    estimator = pipeline if pipeline is not None else model
+    _y = y_train_series if pipeline else y_train
     score = ms.cross_val_score(
-        model,
-        X_train,
-        y_train,
+        estimator,
+        X_train_df if pipeline else X_train,
+        _y,
         cv=4,
         scoring="f1_weighted"
     )
@@ -1762,17 +1786,92 @@ if len(X_train) >= 5:
 # （7）训练模型
 # ==============================
 
-model.fit(X_train, y_train)
+if pipeline is not None:
+    pipeline.fit(X_train_df, y_train_series)
+    model = pipeline.named_steps["classifier"]
+else:
+    model.fit(X_train, y_train)
 
 print("特征重要性：")
 print(model.feature_importances_)
 print("=" * 60)
 
 # ==============================
+# （7.5）保存模型
+# ==============================
+import os
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_model_dir = os.path.join(_script_dir, "model_output")
+os.makedirs(_model_dir, exist_ok=True)
+
+# joblib：Python 可加载
+joblib.dump(model, os.path.join(_model_dir, "recognize_rf_model.joblib"))
+print(f"已保存 joblib 模型: {_model_dir}/recognize_rf_model.joblib")
+
+# 特征名顺序（Java 端按此顺序构建特征向量）
+import json
+with open(os.path.join(_model_dir, "feature_names.json"), "w", encoding="utf-8") as f:
+    json.dump(feature_names, f, ensure_ascii=False, indent=2)
+print(f"已保存特征顺序: {_model_dir}/feature_names.json")
+
+# ==============================
+# 保存字典（Java 端特征提取用）
+# ==============================
+_dict_dir = os.path.join(_model_dir, "dicts")
+os.makedirs(_dict_dir, exist_ok=True)
+
+def _to_list(s):
+    lst = list(s) if isinstance(s, set) else list(s)
+    try:
+        return sorted(lst, key=str)
+    except TypeError:
+        return lst
+
+_dicts_to_save = {
+    "address_region_keyword_dict": _to_list(address_region_keyword_dict),
+    "address_road_keyword_dict": _to_list(address_road_keyword_dict),
+    "enterprise_keyword_dict": _to_list(enterprise_keyword_dict),
+    "enterprise_suffix_dict": _to_list(enterprise_suffix_dict),
+    "permit_strong_keyword_dict": _to_list(permit_strong_keyword_dict),
+    "province_abbr_dict": _to_list(province_abbr_dict),
+    "stock_dict": _to_list(stock_dict),
+    "fund_dict": _to_list(fund_dict),
+    "fund_name_dict": _to_list(fund_name_dict),
+    "city_dict": _to_list(city_dict),
+    "surname_dict": _to_list(surname_dict),
+    "country_dict": _to_list(country_dict),
+    "zip_dict": _to_list(zip_dict),
+    "region_dict": _to_list(region_dict),
+    "FUND_KEYWORDS": FUND_KEYWORDS,
+    "CREDIT_CODE_CHARS": CREDIT_CODE_CHARS,
+    "WEIGHTS": WEIGHTS,
+    "ID_WEIGHTS": ID_WEIGHTS,
+    "ID_CHECK_MAP": {str(k): v for k, v in ID_CHECK_MAP.items()},
+    "VIN_WEIGHTS": VIN_WEIGHTS,
+    "VIN_TRANS": {str(k): v for k, v in VIN_TRANS.items()},
+}
+with open(os.path.join(_dict_dir, "all_dicts.json"), "w", encoding="utf-8") as f:
+    json.dump(_dicts_to_save, f, ensure_ascii=False, indent=2)
+print(f"已保存字典: {_dict_dir}/all_dicts.json")
+
+# PMML：Java 可加载（需 sklearn2pmml + Java 11+）
+if HAS_SKLEARN2PMML and pipeline is not None:
+    _pmml_path = os.path.join(_model_dir, "recognize_rf_model.pmml")
+    try:
+        sklearn2pmml(pipeline, _pmml_path, with_repr=True)
+        print(f"已保存 PMML 模型: {_pmml_path} （Java 可用 JPMML 加载）")
+    except Exception as e:
+        print(f"PMML 导出失败（需 Java 11+）: {e}")
+else:
+    if not HAS_SKLEARN2PMML:
+        print("提示: pip install sklearn2pmml 可导出 PMML 供 Java 加载")
+print("=" * 60)
+
+# ==============================
 # （8）预测
 # ==============================
 
-pred = model.predict(X_test)
+pred = (pipeline.predict(X_test_df) if pipeline is not None else model.predict(X_test))
 
 print("测试集真实值：", y_test)
 print("测试集预测值：", pred)
@@ -2056,10 +2155,15 @@ all_test_columns = {
 
 for label_name, test_column in all_test_columns.items():
 
-    feature = np.array([extract_column_features(test_column)])
+    feature = extract_column_features(test_column)
+    feature_df = pd.DataFrame([feature], columns=feature_names)
 
-    prediction = model.predict(feature)[0]
-    probability = model.predict_proba(feature)[0]
+    if pipeline is not None:
+        prediction = pipeline.predict(feature_df)[0]
+        probability = pipeline.predict_proba(feature_df)[0]
+    else:
+        prediction = model.predict([feature])[0]
+        probability = model.predict_proba([feature])[0]
 
     print("\n==============================")
     print("测试类型:", label_name)
@@ -2073,7 +2177,7 @@ for label_name, test_column in all_test_columns.items():
     )
 
     print("置信度,概率分布:")
-    for cls, prob in sorted_probs[:5]:   # 只显示前3个最高概率
+    for cls, prob in sorted_probs[:5]:   # 只显示前5个最高概率
         print(f"{cls}: {prob:.4f}")
 
 
