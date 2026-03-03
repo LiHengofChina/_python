@@ -623,7 +623,8 @@ permit_strong_keyword_dict = {
     "食药监",
     "械",
     "消",
-    "药"
+    "药",
+    "字第",  # 许可证典型结构，地址通常不含
 }
 
 # ==============================
@@ -635,7 +636,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 118
+        return [0] * 119
 
     lengths = [len(t) for t in cleaned]
 
@@ -1482,6 +1483,11 @@ def extract_column_features(text_list):
         if "区" in t
     ) / len(cleaned)
 
+    # 地址典型结尾比例（号/栋/室/楼/层，与 PERMIT 区分）
+    address_typical_end_ratio = sum(
+        1 for t in cleaned
+        if re.search(r'(号|栋|室|楼|层)$', t.strip())
+    ) / len(cleaned)
 
     # ==============================
     # （28）NAME 中文姓名
@@ -1710,6 +1716,7 @@ def extract_column_features(text_list):
         address_digit_tail_ratio,
         address_no_di_ratio,
         address_contains_qu_ratio,
+        address_typical_end_ratio,
 
 
         name_length_reasonable_ratio,
@@ -1806,6 +1813,24 @@ model.fit(X_train, y_train)
 print("特征重要性：")
 print(model.feature_importances_)
 print("=" * 60)
+
+# ==============================
+# （7.5）特征选择：剔除零/近零重要性特征
+# ==============================
+FEATURE_IMPORTANCE_THRESHOLD = 1e-5
+sel_indices = np.where(model.feature_importances_ > FEATURE_IMPORTANCE_THRESHOLD)[0]
+if len(sel_indices) < model.feature_importances_.shape[0]:
+    print(f"特征选择：保留 {len(sel_indices)}/{len(model.feature_importances_)} 个特征")
+    X_train = X_train[:, sel_indices]
+    X_test = X_test[:, sel_indices]
+    model = RandomForestClassifier(
+        n_estimators=100,
+        random_state=42,
+        class_weight='balanced'
+    )
+    model.fit(X_train, y_train)
+else:
+    sel_indices = np.arange(model.feature_importances_.shape[0])
 
 # ==============================
 # （8）预测
@@ -2095,7 +2120,9 @@ all_test_columns = {
 
 for label_name, test_column in all_test_columns.items():
 
-    feature = np.array([extract_column_features(test_column)])
+    feature = np.array(extract_column_features(test_column))
+    feature = feature[sel_indices]
+    feature = np.array([feature])
 
     prediction = model.predict(feature)[0]
     probability = model.predict_proba(feature)[0]

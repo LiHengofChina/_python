@@ -3919,3 +3919,58 @@
  default_col_20, env-dev, DEFAULT
  default_col_20, release version, DEFAULT
  default_col_20, 原始 数据, DEFAULT
+
+ default_col_21, null_value, DEFAULT
+ default_col_21, undefined, DEFAULT
+ default_col_21, N/A, DEFAULT
+ default_col_21, --, DEFAULT
+ default_col_21, ..., DEFAULT
+ default_col_21, 待填写, DEFAULT
+ default_col_21, 暂无, DEFAULT
+ default_col_21, 其他, DEFAULT
+ default_col_21, 见附件, DEFAULT
+ default_col_21, 略, DEFAULT
+
+ default_col_22, id_001, DEFAULT
+ default_col_22, ref-123, DEFAULT
+ default_col_22, v2.0, DEFAULT
+ default_col_22, beta_test, DEFAULT
+ default_col_22, draft_01, DEFAULT
+ default_col_22, 草稿, DEFAULT
+ default_col_22, 版本v1, DEFAULT
+ default_col_22, 备注信息, DEFAULT
+ default_col_22, 说明文字, DEFAULT
+ default_col_22, 自定义字段, DEFAULT
+
+ default_col_23, true, DEFAULT
+ default_col_23, false, DEFAULT
+ default_col_23, yes, DEFAULT
+ default_col_23, no, DEFAULT
+ default_col_23, 1, DEFAULT
+ default_col_23, 0, DEFAULT
+ default_col_23, on, DEFAULT
+ default_col_23, off, DEFAULT
+ default_col_23, 是, DEFAULT
+ default_col_23, 否, DEFAULT
+
+ default_col_24, A, DEFAULT
+ default_col_24, B, DEFAULT
+ default_col_24, X, DEFAULT
+ default_col_24, 优, DEFAULT
+ default_col_24, 良, DEFAULT
+ default_col_24, 中, DEFAULT
+ default_col_24, 差, DEFAULT
+ default_col_24, 高, DEFAULT
+ default_col_24, 低, DEFAULT
+ default_col_24, 无, DEFAULT
+
+ default_col_25, 2024Q1, DEFAULT
+ default_col_25, H1, DEFAULT
+ default_col_25, Q3, DEFAULT
+ default_col_25, 批次A, DEFAULT
+ default_col_25, 批次-001, DEFAULT
+ default_col_25, 阶段1, DEFAULT
+ default_col_25, 类型X, DEFAULT
+ default_col_25, 分类-测试, DEFAULT
+ default_col_25, 状态_进行中, DEFAULT
+ default_col_25, 优先级P1, DEFAULT
