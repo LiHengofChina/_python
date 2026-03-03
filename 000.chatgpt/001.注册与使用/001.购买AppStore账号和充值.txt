@@ -15,9 +15,10 @@
 
 	购买账号：
 	https://id.guangyunchengfengxinxi.cn/detail/1578286983.html
-
+			
 	修改密码：
 	https://appleid.apple.com/sign-in
+
 
 	//=================== 余额0.11美元
 	账号
@@ -52,7 +53,7 @@
 
 	// "我的小程序" ————> PockytShop ————> App Store & iTRunes 
 
-（3）购买金额在 20-24美元
+（2）购买金额在 20-24美元
 
 （3）在 AppStore 里面登陆这个账号 
 
