@@ -701,7 +701,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 115
+        return [0] * 125
 
     lengths = [len(t) for t in cleaned]
 
@@ -1327,11 +1327,17 @@ def extract_column_features(text_list):
         if 2 <= len(t.strip()) <= 20
     ) / len(cleaned)
 
+    # 85 → country_ends_with_guo_ratio 以"国"结尾的比例（国家名常见，姓名极少以国结尾，用于与NAME区分）
+    country_ends_with_guo_ratio = sum(
+        1 for t in cleaned
+        if t.strip().endswith("国")
+    ) / len(cleaned)
+
     # ==============================
     # （23）FUNDS_NAME 基金名称
     # ==============================
 
-    # 85 → chinese_char_ratio 中文字符占比（结构型特征）
+    # 86 → chinese_char_ratio 中文字符占比（结构型特征）
     total_chars = sum(len(t) for t in cleaned)
     chinese_chars = sum(
         1 for t in cleaned for c in t
@@ -1339,19 +1345,19 @@ def extract_column_features(text_list):
     )
     chinese_char_ratio = chinese_chars / total_chars if total_chars > 0 else 0
 
-    # 86 → fund_keyword_ratio 行业关键词比例
+    # 87 → fund_keyword_ratio 行业关键词比例
     fund_keyword_ratio = sum(
         1 for t in cleaned
         if any(k in t for k in FUND_KEYWORDS)
     ) / len(cleaned)
 
-    # 87 → fund_name_dict_ratio 基金名称字典匹配比例
+    # 88 → fund_name_dict_ratio 基金名称字典匹配比例
     fund_name_dict_ratio = sum(
         1 for t in cleaned
         if t.strip() in fund_name_dict
     ) / len(cleaned)
 
-    # 88 → fund_length_reasonable_ratio 合理长度比例（4~30）
+    # 89 → fund_length_reasonable_ratio 合理长度比例（4~30）
     fund_length_reasonable_ratio = sum(
         1 for t in cleaned
         if 4 <= len(t.strip()) <= 30
@@ -1716,6 +1722,7 @@ def extract_column_features(text_list):
         country_alpha_ratio,
         country_chinese_ratio,
         country_short_length_ratio,
+        country_ends_with_guo_ratio,
 
         chinese_char_ratio,
         fund_keyword_ratio,
