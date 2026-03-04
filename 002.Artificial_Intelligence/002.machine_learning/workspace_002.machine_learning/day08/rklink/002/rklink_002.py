@@ -701,7 +701,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 125
+        return [0] * 128
 
     lengths = [len(t) for t in cleaned]
 
@@ -1622,6 +1622,20 @@ def extract_column_features(text_list):
         )
     ) / len(cleaned)
 
+    # 125 → not_character_length_16_ratio（列内无 16 位串比例，区分开户许可证 15 位 vs 中征码 16 位）
+    not_character_length_16_ratio = 1.0 - character_length_16_ratio
+    # 126 → default_like_keyword_ratio（含 unknown/config/test 等 DEFAULT 常见关键词，与车牌等区分）
+    DEFAULT_LIKE_KEYWORDS = ["unknown", "config", "test", "default", "value", "null", "param", "data", "meta"]
+    default_like_keyword_ratio = sum(
+        1 for t in cleaned
+        if any(k in t.lower() for k in DEFAULT_LIKE_KEYWORDS)
+    ) / len(cleaned)
+    # 127 → pinyin_lowercase_ascii_only_ratio（纯小写 a-z、长度 6-20，不依赖音节表，强化拼音名）
+    pinyin_lowercase_ascii_only_ratio = sum(
+        1 for t in cleaned
+        if (lambda s: len(s) >= 6 and len(s) <= 20 and s.isalpha() and s.islower())(t.strip().lower())
+    ) / len(cleaned)
+
     return [
         avg_length,
         fixed_length_flag,
@@ -1773,6 +1787,9 @@ def extract_column_features(text_list):
 
         money_unit_ratio,
 
+        not_character_length_16_ratio,
+        default_like_keyword_ratio,
+        pinyin_lowercase_ascii_only_ratio,
     ]
 
 # ==============================
@@ -1798,6 +1815,11 @@ for column_id, group in grouped:
 X = np.array(X)
 y = np.array(y)
 
+# 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
+N_FEATURES = X.shape[1]
+assert N_FEATURES == 128, f"特征维数应为 128（与 Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+feature_names = [f"f{i}" for i in range(N_FEATURES)]
+
 # print("=" * 60)
 # print("特征矩阵：")
 # print(X)
@@ -1820,9 +1842,6 @@ X_train, X_test, y_train, y_test = train_test_split(
 # ==============================
 # （5）构建随机森林模型
 # ==============================
-
-N_FEATURES = X_train.shape[1]
-feature_names = [f"f{i}" for i in range(N_FEATURES)]
 X_train_df = pd.DataFrame(X_train, columns=feature_names)
 X_test_df = pd.DataFrame(X_test, columns=feature_names)
 # sklearn2pmml 需要 y 带名称，否则会警告
@@ -1885,12 +1904,6 @@ os.makedirs(_model_dir, exist_ok=True)
 joblib.dump(model, os.path.join(_model_dir, "recognize_rf_model.joblib"))
 print(f"已保存 joblib 模型: {_model_dir}/recognize_rf_model.joblib")
 
-# 特征名顺序（Java 端按此顺序构建特征向量）
-import json
-with open(os.path.join(_model_dir, "feature_names.json"), "w", encoding="utf-8") as f:
-    json.dump(feature_names, f, ensure_ascii=False, indent=2)
-print(f"已保存特征顺序: {_model_dir}/feature_names.json")
-
 # ==============================
 # 保存字典（Java 端特征提取用）
 # ==============================
@@ -1932,18 +1945,28 @@ with open(os.path.join(_dict_dir, "all_dicts.json"), "w", encoding="utf-8") as f
     json.dump(_dicts_to_save, f, ensure_ascii=False, indent=2)
 print(f"已保存字典: {_dict_dir}/all_dicts.json")
 
-# PMML：Java 可加载（需 sklearn2pmml + Java 11+）
+# PMML + feature_names.json：Java 加载用，导出模型时一并保存/更新
 if HAS_SKLEARN2PMML and pipeline is not None:
     _pmml_path = os.path.join(_model_dir, "recognize_rf_model.pmml")
+    _feature_names_path = os.path.join(_model_dir, "feature_names.json")
     try:
         pipeline.verify(X_train_df)  # 设置验证数据，消除 sklearn2pmml 警告
         sklearn2pmml(pipeline, _pmml_path, with_repr=True)
         print(f"已保存 PMML 模型: {_pmml_path} （Java 可用 JPMML 加载）")
+        # 与 PMML 特征顺序一致，必须随模型输出同时更新，供 Java ColumnFeatureExtractor 对齐
+        with open(_feature_names_path, "w", encoding="utf-8") as f:
+            json.dump(feature_names, f, ensure_ascii=False, indent=2)
+        print(f"已保存/更新 feature_names.json: {_feature_names_path} （共 {len(feature_names)} 维，f0..f{len(feature_names)-1}，与 PMML 一致）")
     except Exception as e:
         print(f"PMML 导出失败（需 Java 11+）: {e}")
 else:
     if not HAS_SKLEARN2PMML:
         print("提示: pip install sklearn2pmml 可导出 PMML 供 Java 加载")
+    # 未导出 PMML 时也写入 feature_names.json，便于与 extract_column_features 维数一致
+    _feature_names_path = os.path.join(_model_dir, "feature_names.json")
+    with open(_feature_names_path, "w", encoding="utf-8") as f:
+        json.dump(feature_names, f, ensure_ascii=False, indent=2)
+    print(f"已保存 feature_names.json: {_feature_names_path} （共 {len(feature_names)} 维）")
 print("=" * 60)
 
 # ==============================
