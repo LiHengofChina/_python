@@ -673,9 +673,9 @@ def valid_datetime(text):
         return False
 
 # ==============================
-# 开启许可
+# 开启许可（开户许可证：1 位字母 + 14 位数字 = 15 位，与 Java 一致支持 A-Za-z）
 # ==============================
-ACCOUNT_OPENING_REGEX = re.compile(r'^[A-Z]\d{14}$')
+ACCOUNT_OPENING_REGEX = re.compile(r'^[A-Za-z]\d{14}$')
 
 permit_strong_keyword_dict = {
     "许可",
