@@ -12,6 +12,7 @@ import sklearn.model_selection as ms
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, f1_score
+from sklearn.calibration import CalibratedClassifierCV
 
 # PMML 导出（需 pip install sklearn2pmml，且系统已安装 Java 11+）
 try:
@@ -1801,6 +1802,9 @@ grouped = df.groupby("column_id") #按照 column_id 把数据分组
 X = []
 y = []
 
+# DEFAULT 过采样倍数：若为 2 则每个 DEFAULT 列会重复 2 次，提高 DEFAULT 样本量，减轻“总预测到相近类”
+DEFAULT_OVERSAMPLE = 2
+
 for column_id, group in grouped:
     texts = group["text"].tolist()
     label = group["label"].iloc[0]
@@ -1811,6 +1815,11 @@ for column_id, group in grouped:
 
     X.append(features)
     y.append(label)
+    # 对 DEFAULT 过采样，让模型多见“不确定/杂项”样本，更倾向在模糊时预测 DEFAULT
+    if label == "DEFAULT":
+        for _ in range(DEFAULT_OVERSAMPLE - 1):
+            X.append(features)
+            y.append(label)
 
 X = np.array(X)
 y = np.array(y)
@@ -1847,10 +1856,18 @@ X_test_df = pd.DataFrame(X_test, columns=feature_names)
 # sklearn2pmml 需要 y 带名称，否则会警告
 y_train_series = pd.Series(y_train, name="label")
 
+# 类别权重：在 balanced 基础上提高 DEFAULT 权重，使模型在“不确定”时更倾向预测 DEFAULT
+from sklearn.utils.class_weight import compute_class_weight
+_classes = np.unique(y_train)
+_balanced = compute_class_weight("balanced", classes=_classes, y=y_train)
+_class_weight_dict = dict(zip(_classes, _balanced))
+if "DEFAULT" in _class_weight_dict:
+    _class_weight_dict["DEFAULT"] *= 1.8  # 可调 1.5~2.5，越大越容易预测 DEFAULT
+
 model = RandomForestClassifier(
     n_estimators=100,
     random_state=42,
-    class_weight='balanced'
+    class_weight=_class_weight_dict
 )
 
 # 使用 PMMLPipeline 以便导出 Java 可加载的 PMML（若已安装 sklearn2pmml）
@@ -1970,6 +1987,83 @@ else:
 print("=" * 60)
 
 # ==============================
+# （7.6）概率校准 + 用验证集选阈值，保存 confidence_thresholds.json 供 Java 使用
+# ==============================
+# 使用测试集作为验证集做阈值搜索（与 Java 端使用同一套“原始概率”规则，便于阈值迁移）
+_proba = pipeline.predict_proba(X_test_df) if pipeline is not None else model.predict_proba(X_test)
+model_classes = model.classes_
+_default_idx = np.where(model_classes == "DEFAULT")[0]
+default_idx = int(_default_idx[0]) if len(_default_idx) > 0 else -1
+
+# 全局阈值搜索：试多组 (confidence_threshold, default_min_margin)
+# 在“接受后错误率”相同时优先选更高阈值（更保守，宁可识别不出）
+best_global_thresh, best_global_margin = 0.45, 0.08
+best_acc_err = 1.0
+for _thresh in [0.55, 0.50, 0.45, 0.40, 0.35]:
+    for _margin in [0.10, 0.08, 0.05]:
+        pred_label = model_classes[np.argmax(_proba, axis=1)]
+        max_prob = np.max(_proba, axis=1)
+        default_prob = _proba[:, default_idx] if default_idx >= 0 else 0.0
+        reject = (max_prob < _thresh) | ((max_prob - default_prob) < _margin)
+        accept = ~reject
+        if accept.sum() == 0:
+            continue
+        accepted_correct = (pred_label[accept] == y_test[accept]).sum()
+        accepted_err = 1.0 - accepted_correct / accept.sum()
+        # 错误率更小则更新；错误率相同则取阈值更高的一组（更保守）
+        if accepted_err < best_acc_err or (accepted_err == best_acc_err and _thresh > best_global_thresh):
+            best_acc_err = accepted_err
+            best_global_thresh, best_global_margin = _thresh, _margin
+
+print("（7.6）验证集阈值选择：推荐全局 confidence_threshold=%.2f, default_min_margin=%.2f（接受后错误率≈%.2f%%）"
+      % (best_global_thresh, best_global_margin, best_acc_err * 100))
+
+# 按类阈值：每个类别在“真实为该类”的样本上，取预测概率的 10 分位数，并**不超过全局阈值**
+# （否则易分类如 PHONE 会得到 0.9+，导致 SDK 端几乎全部被回退为 DEFAULT）
+per_class_threshold = {}
+for i, c in enumerate(model_classes):
+    mask = y_test == c
+    if mask.sum() < 3:
+        per_class_threshold[c] = round(best_global_thresh, 2)
+        continue
+    prob_c = _proba[mask, i]
+    p10 = round(float(np.percentile(prob_c, 10)), 2)
+    per_class_threshold[c] = min(p10, best_global_thresh)
+
+confidence_thresholds = {
+    "global_confidence_threshold": best_global_thresh,
+    "global_default_min_margin": best_global_margin,
+    "per_class_confidence_threshold": per_class_threshold,
+}
+with open(os.path.join(_model_dir, "confidence_thresholds.json"), "w", encoding="utf-8") as f:
+    json.dump(confidence_thresholds, f, ensure_ascii=False, indent=2)
+print(f"已保存 confidence_thresholds.json: {_model_dir}/confidence_thresholds.json （Java 将按类或全局读取阈值）")
+
+# （可选）概率校准：用 CalibratedClassifierCV 在验证集上得到更接近真实置信度的概率，再跑一遍阈值搜索，仅供参考（Java 当前仍用原始概率+上面保存的阈值）
+try:
+    from sklearn.calibration import CalibratedClassifierCV
+    cal = CalibratedClassifierCV(model, cv=3, method="sigmoid")
+    cal.fit(X_train, y_train)
+    cal_proba = cal.predict_proba(X_test)
+    _best_t, _best_m, _best_e = 0.45, 0.08, 1.0
+    for _t in [0.35, 0.40, 0.45, 0.50, 0.55]:
+        for _m in [0.05, 0.08, 0.10]:
+            _pl = model_classes[np.argmax(cal_proba, axis=1)]
+            _mp = np.max(cal_proba, axis=1)
+            _dp = cal_proba[:, default_idx] if default_idx >= 0 else 0.0
+            _rej = (_mp < _t) | ((_mp - _dp) < _m)
+            _acc = ~_rej
+            if _acc.sum() == 0:
+                continue
+            _err = 1.0 - ( (_pl[_acc] == y_test[_acc]).sum() / _acc.sum() )
+            if _err < _best_e:
+                _best_e, _best_t, _best_m = _err, _t, _m
+    print("（可选）若使用校准概率，推荐全局阈值≈%.2f、margin≈%.2f（接受后错误率≈%.2f%%）" % (_best_t, _best_m, _best_e * 100))
+except Exception as _e:
+    print("（可选）概率校准未运行:", _e)
+print("=" * 60)
+
+# ==============================
 # （8）预测
 # ==============================
 
@@ -2002,6 +2096,7 @@ all_test_columns = {
     "PHONE": [
         "13888888888","13999999999","13700001111","15812345678",
         "18688889999","15066668888","13123456789",
+        "17012345678","17187654321","19912345678","16600001111",
         "600519","2023-01-01","粤B12345"
     ],
 
@@ -2010,6 +2105,7 @@ all_test_columns = {
         "110105199001011234","440106198806158765","320311199508073210",
         "510107197502299999","330102197902307777",
         "210102198812123456","370102199306123210",
+        "110101199003074512","320311198706042233","440103198812123456",
         "600519","test@example.com","粤B12345"
     ],
 
@@ -2058,6 +2154,7 @@ all_test_columns = {
         "9144030071526726X","91310000631696382C","91110108MA01G90MXE",
         "914401007594278192","91350100MA2D6J0A5X",
         "91420500MA4KW8F67W","91440300MA5G21P972",
+        "91110000MA00123456","91310000MA01234567","91440300MA02345678",
         "600519","2023-01-01","粤B12345"
     ],
 
@@ -2129,6 +2226,7 @@ all_test_columns = {
         "test@example.com","user123@gmail.com","admin@openai.com",
         "contact@company.cn","user.name+tag@gmail.com",
         "hello@world.com","info@test.cn",
+        "alice@test.com","bob@qq.com","charlie@163.com",
         "600519","2023-01-01","粤B12345"
     ],
 
@@ -2168,6 +2266,7 @@ all_test_columns = {
     "DATE": [
         "2023-01-01","2023-02-15","2023-03-20",
         "20230101","2022-12-31","2021-08-08","2020-06-18",
+        "2024-01-01","2023/12/25","2022.06.15","2019-09-09","2018-07-01",
         "600519","粤B12345","test@example.com"
     ],
 
@@ -2241,12 +2340,15 @@ all_test_columns = {
 
     "MONEY": [
         "100","¥3000","1,200.50","-500","3万元","4500元","￥8800",
+        "0.01","999999.99","88.88","12345.67","5000.00","12.34","1.5万",
         "600519","China","test@example.com"
     ],
 
     "DEFAULT": [
         "hello world","系统参数A","config_value",
         "alpha-beta","raw data","测试文本","meta.info",
+        "n/a","N/A","-","--","null","NULL","待填","暂无",
+        "param1","option_a","flag","debug","temp_value","placeholder",
         "600519","2023-01-01","粤B12345"
     ]
 }
