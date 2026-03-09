@@ -355,6 +355,9 @@ IPV4_REGEX = re.compile(
     r'(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$'
 )
 
+# Informix INET 格式：.A0000.00000.00001. 对应 10.0.0.1
+INFORMIX_IP_REGEX = re.compile(r'^\.[A-Fa-f0-9]{1,4}\d*\.\d+\.\d+\.$')
+
 IPV6_REGEX = re.compile(
     r'^('
     r'([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|'
@@ -993,6 +996,12 @@ def extract_column_features(text_list):
     ipv6_regex_ratio = sum(
         1 for t in cleaned
         if IPV6_REGEX.match(t)
+    ) / len(cleaned)
+
+    # 38.5 Informix INET 格式 IP 比例（.A0000.00000.00001. 对应 10.0.0.1）
+    informix_ip_ratio = sum(
+        1 for t in cleaned
+        if INFORMIX_IP_REGEX.match(t)
     ) / len(cleaned)
 
     # ==============================
@@ -1679,6 +1688,7 @@ def extract_column_features(text_list):
         ipv4_regex_ratio,
         ipv4_dot_ratio,
         ipv6_regex_ratio,
+        informix_ip_ratio,
 
         mac_regex_ratio,
         mac_colon_format_ratio,
@@ -1826,7 +1836,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 128, f"特征维数应为 128（与 Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 129, f"特征维数应为 129（与 Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
