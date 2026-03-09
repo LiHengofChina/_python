@@ -705,7 +705,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 128
+        return [0] * 130
 
     lengths = [len(t) for t in cleaned]
 
@@ -1646,6 +1646,9 @@ def extract_column_features(text_list):
         if (lambda s: len(s) >= 6 and len(s) <= 20 and s.isalpha() and s.islower())(t.strip().lower())
     ) / len(cleaned)
 
+    # 128 → unique_value_ratio 列内取值多样性（唯一值数/总数），区分护照等高多样性 vs C10001002 等系统代码低多样性
+    unique_value_ratio = len(set(t.strip() for t in cleaned)) / len(cleaned)
+
     return [
         avg_length,
         fixed_length_flag,
@@ -1801,6 +1804,7 @@ def extract_column_features(text_list):
         not_character_length_16_ratio,
         default_like_keyword_ratio,
         pinyin_lowercase_ascii_only_ratio,
+        unique_value_ratio,
     ]
 
 # ==============================
@@ -1836,7 +1840,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 129, f"特征维数应为 129（与 Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 130, f"特征维数应为 130（与 Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
