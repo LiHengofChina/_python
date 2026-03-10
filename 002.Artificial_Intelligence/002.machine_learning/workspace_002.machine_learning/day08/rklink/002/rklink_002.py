@@ -4,6 +4,8 @@
 随机森林
 """
 
+import json
+import os
 import numpy as np
 import pandas as pd
 import re
@@ -418,6 +420,20 @@ def extract_region_ids(nodes):
 # 开始提取
 extract_region_ids(zip_data)
 
+# ==============================
+# 加载 bank_bin_prefixes（用于 bank_bin_prefix_ratio 特征）
+# 训练用字典：脚本同目录下的 bank_bin/bank_bin_prefixes.json
+# all_dicts.json 是给 Java SDK 用的，训练时只用模型侧字典
+# ==============================
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_bank_bin_training_path = os.path.join(_script_dir, "bank_bin", "bank_bin_prefixes.json")
+bank_bin_prefixes = set()
+if os.path.exists(_bank_bin_training_path):
+    try:
+        with open(_bank_bin_training_path, "r", encoding="utf-8") as f:
+            bank_bin_prefixes = set(json.load(f))
+    except Exception:
+        pass
 
 # ==============================
 # 年份正则
@@ -705,7 +721,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 130
+        return [0] * 131  # 与 Java ColumnFeatureExtractor.N_FEATURES 一致
 
     lengths = [len(t) for t in cleaned]
 
@@ -772,10 +788,17 @@ def extract_column_features(text_list):
     )
     bank_luhn_ratio = bank_luhn_match / len(cleaned)
 
+    # 10 → bank_bin_prefix_ratio 前6位在银行卡BIN前缀字典中的比例（16-19位数字）
+    bank_bin_prefix_match = sum(
+        1 for t in cleaned
+        if 16 <= len(t) <= 19 and t.isdigit() and len(t) >= 6 and t[:6] in bank_bin_prefixes
+    )
+    bank_bin_prefix_ratio = bank_bin_prefix_match / len(cleaned)
+
     # ==============================
     # （4）CVV
     # ==============================
-    # 10 → cvv_length_ratio CVV 长度比例
+    # 11 → cvv_length_ratio CVV 长度比例
     cvv_match = sum(
         1 for t in cleaned
         if len(t) == 3 and t.isdigit()
@@ -792,21 +815,21 @@ def extract_column_features(text_list):
     )
     zip6_digit_ratio = zip6_digit_match / len(cleaned)
 
-    # 12 统计前两位是否“稳定”。
+    # 13 → prefix_stability_ratio 统计前两位是否“稳定”。
     prefixes = [t[:2] for t in cleaned if len(t) == 6 and t.isdigit()]
 
     if prefixes:
         prefix_stability_ratio = 1 if len(set(prefixes)) == 1 else 0
     else:
         prefix_stability_ratio = 0
-    # 13 → zip_zero_tail_ratio 统计以 00 或 000 结尾的比例
+    # 14 → zip_zero_tail_ratio 统计以 00 或 000 结尾的比例
     zip_zero_tail_match = sum(
         1 for t in cleaned
         if len(t) == 6 and t.isdigit() and (t.endswith("00") or t.endswith("000"))
     )
     zip_zero_tail_ratio = zip_zero_tail_match / len(cleaned)
 
-    # 14 → zip_dict_ratio
+    # 15 → zip_dict_ratio
     zip_dict_match = sum(
         1 for t in cleaned
         if t in zip_dict
@@ -816,7 +839,7 @@ def extract_column_features(text_list):
     # ==============================
     # （6）STOCK_CODE
     # ==============================
-    # 15 → stock_dict_ratio 证券代码字典匹配比例
+    # 16 → stock_dict_ratio 证券代码字典匹配比例
     stock_dict_match = sum(
         1 for t in cleaned
         if t in stock_dict
@@ -827,7 +850,7 @@ def extract_column_features(text_list):
     # （7）FUND_CODE
     # ==============================
 
-    # 16 → fund_dict_ratio 基金代码字典匹配比例
+    # 17 → fund_dict_ratio 基金代码字典匹配比例
     fund_dict_match = sum(
         1 for t in cleaned
         if t in fund_dict
@@ -927,13 +950,13 @@ def extract_column_features(text_list):
         if re.search(r'\d{4,}', t)
     ) / len(cleaned)
 
-    # 30 包含“证”字比例（核心结构）
+    # 30 → permit_contains_zheng_ratio 包含“证”字比例（核心结构）
     permit_contains_zheng_ratio = sum(
         1 for t in cleaned
         if "证" in t
     ) / len(cleaned)
 
-    # 31 包含“许可”字比例
+    # 31 → permit_contains_xuke_ratio 包含“许可”字比例
     permit_contains_xuke_ratio = sum(
         1 for t in cleaned
         if "许可" in t
@@ -980,25 +1003,25 @@ def extract_column_features(text_list):
     # ==============================
     # （12）IP
     # ==============================
-    # 36 IPv4 正则匹配比例
+    # 37 → ipv4_regex_ratio IPv4 正则匹配比例
     ipv4_regex_ratio = sum(
         1 for t in cleaned
         if IPV4_REGEX.match(t)
     ) / len(cleaned)
 
-    # 37 IPv4 含 3 个点的比例
+    # 38 → ipv4_dot_ratio IPv4 含 3 个点的比例
     ipv4_dot_ratio = sum(
         1 for t in cleaned
         if t.count('.') == 3
     ) / len(cleaned)
 
-    # 38 IPv6 正则匹配比例
+    # 39 → ipv6_regex_ratio IPv6 正则匹配比例
     ipv6_regex_ratio = sum(
         1 for t in cleaned
         if IPV6_REGEX.match(t)
     ) / len(cleaned)
 
-    # 38.5 Informix INET 格式 IP 比例（.A0000.00000.00001. 对应 10.0.0.1）
+    # 40 → informix_ip_ratio Informix INET 格式 IP 比例（.A0000.00000.00001. 对应 10.0.0.1）
     informix_ip_ratio = sum(
         1 for t in cleaned
         if INFORMIX_IP_REGEX.match(t)
@@ -1648,6 +1671,9 @@ def extract_column_features(text_list):
 
     # 128 → unique_value_ratio 列内取值多样性（唯一值数/总数），区分护照等高多样性 vs C10001002 等系统代码低多样性
     unique_value_ratio = len(set(t.strip() for t in cleaned)) / len(cleaned)
+    # 130 → all_same_value_flag 整列全部相同值的标志（1=全部相同，0=有不同值），强信号区分系统代码列
+    _unique_count = len(set(t.strip() for t in cleaned))
+    all_same_value_flag = 1.0 if _unique_count == 1 else 0.0
 
     return [
         avg_length,
@@ -1660,6 +1686,7 @@ def extract_column_features(text_list):
         region_prefix_ratio,
         bank_length_match_ratio,
         bank_luhn_ratio,
+        bank_bin_prefix_ratio,
         cvv_length_ratio,
         zip6_digit_ratio,
         prefix_stability_ratio,
@@ -1805,6 +1832,7 @@ def extract_column_features(text_list):
         default_like_keyword_ratio,
         pinyin_lowercase_ascii_only_ratio,
         unique_value_ratio,
+        all_same_value_flag,
     ]
 
 # ==============================
@@ -1840,7 +1868,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 130, f"特征维数应为 130（与 Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 131, f"特征维数应为 131（与 Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
@@ -1921,6 +1949,25 @@ else:
 
 print("特征重要性：")
 print(model.feature_importances_)
+# 过滤重要性为 0 的特征（含浮点精度导致的近零值），重新训练
+_imp = model.feature_importances_
+_keep_idx = [i for i in range(len(_imp)) if _imp[i] > 1e-15]
+_drop_idx = [i for i in range(len(_imp)) if _imp[i] <= 1e-15]
+if _drop_idx:
+    print(f"移除零重要性特征: f{_drop_idx}，保留 {len(_keep_idx)} 维")
+    feature_names = [f"f{i}" for i in _keep_idx]
+    X_train = X_train[:, _keep_idx]
+    X_test = X_test[:, _keep_idx]
+    X_train_df = pd.DataFrame(X_train, columns=feature_names)
+    X_test_df = pd.DataFrame(X_test, columns=feature_names)
+    if pipeline is not None:
+        pipeline.fit(X_train_df, y_train_series)
+        model = pipeline.named_steps["classifier"]
+    else:
+        model.fit(X_train, y_train)
+    print("已用过滤后特征重新训练")
+# 用于预测时从完整特征向量选取子集（过滤后或全部，与 feature_names 一致）
+_feature_indices = [int(n[1:]) for n in feature_names]
 print("=" * 60)
 
 # ==============================
@@ -1971,10 +2018,17 @@ _dicts_to_save = {
     "VIN_WEIGHTS": VIN_WEIGHTS,
     "VIN_TRANS": {str(k): v for k, v in VIN_TRANS.items()},
     "pinyin_syllables": sorted(PINYIN_SYLLABLES),
+    "bank_bin_prefixes": sorted(bank_bin_prefixes),
 }
 with open(os.path.join(_dict_dir, "all_dicts.json"), "w", encoding="utf-8") as f:
     json.dump(_dicts_to_save, f, ensure_ascii=False, indent=2)
-print(f"已保存字典: {_dict_dir}/all_dicts.json")
+print(f"已保存字典: {_dict_dir}/all_dicts.json （供 Java SDK 使用）")
+# 银行卡 BIN 前缀同步保存到训练侧字典（与 all_dicts 内容一致）
+_bank_bin_training_dir = os.path.join(_script_dir, "bank_bin")
+os.makedirs(_bank_bin_training_dir, exist_ok=True)
+with open(os.path.join(_bank_bin_training_dir, "bank_bin_prefixes.json"), "w", encoding="utf-8") as f:
+    json.dump(sorted(bank_bin_prefixes), f, ensure_ascii=False, indent=2)
+print(f"已保存银行卡BIN前缀: {_bank_bin_training_dir}/bank_bin_prefixes.json （供训练使用）")
 
 # PMML + feature_names.json：Java 加载用，导出模型时一并保存/更新
 if HAS_SKLEARN2PMML and pipeline is not None:
@@ -2124,22 +2178,11 @@ all_test_columns = {
     ],
 
 
-    "BANK_CARDX": [
-        # "6222021234567893","6222021234567802","6222021234567810",
-        # "6222021234567828","6222021234567836",
-        # "6222021234567844","6222021234567852",
-        # "110105199001011234","600519","China",
-        #
-        "2020200101376034",
-        "2020200103484315",
-        "2020200103490262",
-        "2020200103497325",
-        "2020200103629836",
-        "2020200103669949",
-        "2020200103826721",
-        "2020200103842025",
-        "2020200103842033",
-        "2020200104157977",
+    "BANK_CARD": [
+        "6222021234567893","6222021234567802","6222021234567810",
+        "6222021234567828","6222021234567836",
+        "6222021234567844","6222021234567852",
+        "110105199001011234","600519","China"
     ],
 
     "CVV": [
@@ -2385,14 +2428,15 @@ all_test_columns = {
 for label_name, test_column in all_test_columns.items():
 
     feature = extract_column_features(test_column)
-    feature_df = pd.DataFrame([feature], columns=feature_names)
+    feature_subset = [feature[i] for i in _feature_indices]
+    feature_df = pd.DataFrame([feature_subset], columns=feature_names)
 
     if pipeline is not None:
         prediction = pipeline.predict(feature_df)[0]
         probability = pipeline.predict_proba(feature_df)[0]
     else:
-        prediction = model.predict([feature])[0]
-        probability = model.predict_proba([feature])[0]
+        prediction = model.predict([feature_subset])[0]
+        probability = model.predict_proba([feature_subset])[0]
 
     print("\n==============================")
     print("测试类型:", label_name)
