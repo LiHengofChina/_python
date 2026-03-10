@@ -2291,7 +2291,7 @@ all_test_columns = {
         "600519","粤B12345","China"
     ],
 
-    "PASSPORTX": [
+    "PASSPORT": [
         "E12345678",
         "G98765432",
         "P12345678",
