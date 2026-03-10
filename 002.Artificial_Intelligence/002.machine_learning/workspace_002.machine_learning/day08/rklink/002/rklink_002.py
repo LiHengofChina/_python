@@ -721,7 +721,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 131  # 与 Java ColumnFeatureExtractor.N_FEATURES 一致
+        return [0] * 132  # 与 Java ColumnFeatureExtractor.N_FEATURES 一致
 
     lengths = [len(t) for t in cleaned]
 
@@ -1671,7 +1671,7 @@ def extract_column_features(text_list):
 
     # 128 → unique_value_ratio 列内取值多样性（唯一值数/总数），区分护照等高多样性 vs C10001002 等系统代码低多样性
     unique_value_ratio = len(set(t.strip() for t in cleaned)) / len(cleaned)
-    # 130 → all_same_value_flag 整列全部相同值的标志（1=全部相同，0=有不同值），强信号区分系统代码列
+    # 131 → all_same_value_flag 整列全部相同值的标志（1=全部相同，0=有不同值），强信号区分系统代码列
     _unique_count = len(set(t.strip() for t in cleaned))
     all_same_value_flag = 1.0 if _unique_count == 1 else 0.0
 
@@ -1868,7 +1868,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 131, f"特征维数应为 131（与 Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 132, f"特征维数应为 132（与 Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
@@ -1949,24 +1949,6 @@ else:
 
 print("特征重要性：")
 print(model.feature_importances_)
-# 过滤重要性为 0 的特征（含浮点精度导致的近零值），重新训练
-_imp = model.feature_importances_
-_keep_idx = [i for i in range(len(_imp)) if _imp[i] > 1e-15]
-_drop_idx = [i for i in range(len(_imp)) if _imp[i] <= 1e-15]
-if _drop_idx:
-    print(f"移除零重要性特征: f{_drop_idx}，保留 {len(_keep_idx)} 维")
-    feature_names = [f"f{i}" for i in _keep_idx]
-    X_train = X_train[:, _keep_idx]
-    X_test = X_test[:, _keep_idx]
-    X_train_df = pd.DataFrame(X_train, columns=feature_names)
-    X_test_df = pd.DataFrame(X_test, columns=feature_names)
-    if pipeline is not None:
-        pipeline.fit(X_train_df, y_train_series)
-        model = pipeline.named_steps["classifier"]
-    else:
-        model.fit(X_train, y_train)
-    print("已用过滤后特征重新训练")
-# 用于预测时从完整特征向量选取子集（过滤后或全部，与 feature_names 一致）
 _feature_indices = [int(n[1:]) for n in feature_names]
 print("=" * 60)
 
@@ -2178,11 +2160,29 @@ all_test_columns = {
     ],
 
 
-    "BANK_CARD": [
-        "6222021234567893","6222021234567802","6222021234567810",
-        "6222021234567828","6222021234567836",
-        "6222021234567844","6222021234567852",
-        "110105199001011234","600519","China"
+    "BANK_CARDX": [
+        # "6222021234567893",
+        # "6222021234567802",
+        # "6222021234567810",
+        # "6222021234567828",
+        # "6222021234567836",
+        # "6222021234567844",
+        # "6222021234567852",
+        # "6222021234567860",
+        # "6222021234567878",
+        # "6222021234567886",
+
+
+        "2020200101376034",
+        "2020200103484315",
+        "2020200103490262",
+        "2020200103497325",
+        "2020200103629836",
+        "2020200103669949",
+        "2020200103826721",
+        "2020200103842025",
+        "2020200103842033",
+        "2020200104157977",
     ],
 
     "CVV": [
