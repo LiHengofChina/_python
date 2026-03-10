@@ -301,7 +301,7 @@ def _load_pinyin_syllables():
         # 无 pypinyin 时从本地 JSON 加载（与脚本同目录）
         for base in [os.path.dirname(os.path.abspath(__file__)), ".", os.getcwd()]:
             try:
-                path = os.path.join(base, "pinyin_syllables.json")
+                path = os.path.join(base, "pinyin/pinyin_syllables.json")
                 if os.path.isfile(path):
                     with open(path, "r", encoding="utf-8") as f:
                         return frozenset(json.load(f))
@@ -2292,28 +2292,28 @@ all_test_columns = {
     ],
 
     "PASSPORTX": [
-        # "E12345678",
-        # "G98765432",
-        # "P12345678",
-        # "D12345678",
-        # "E87654321",
-        # "G12349876",
-        # "P87651234",
-        # "600519",
-        # "粤B12345",
-        # "2023-01-01",
-        "C10001002",
-        "C10001002",
-        "C10001002",
-        "C10001002",
-        "C10001002",
-        "C10001002",
-        "C10001002",
-        "C10001002",
-        "C10001002",
-        "C10001002",
-        "C10001002",
-        "C10001002",
+        "E12345678",
+        "G98765432",
+        "P12345678",
+        "D12345678",
+        "E87654321",
+        "G12349876",
+        "P87651234",
+        "600519",
+        "粤B12345",
+        "2023-01-01",
+        # "C10001002",
+        # "C10001002",
+        # "C10001002",
+        # "C10001002",
+        # "C10001002",
+        # "C10001002",
+        # "C10001002",
+        # "C10001002",
+        # "C10001002",
+        # "C10001002",
+        # "C10001002",
+        # "C10001002",
     ],
 
     "ACCOUNT_OPENING": [
