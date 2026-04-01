@@ -721,7 +721,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 132  # 与 Java ColumnFeatureExtractor.N_FEATURES 一致
+        return [0] * 131  # 与 Java ColumnFeatureExtractor.N_FEATURES 一致
 
     lengths = [len(t) for t in cleaned]
 
@@ -796,17 +796,7 @@ def extract_column_features(text_list):
     bank_bin_prefix_ratio = bank_bin_prefix_match / len(cleaned)
 
     # ==============================
-    # （4）CVV
-    # ==============================
-    # 11 → cvv_length_ratio CVV 长度比例
-    cvv_match = sum(
-        1 for t in cleaned
-        if len(t) == 3 and t.isdigit()
-    )
-    cvv_length_ratio = cvv_match / len(cleaned)
-
-    # ==============================
-    # （5）ZIP_CODE
+    # （4）ZIP_CODE（接在银行卡特征之后，为 f11，与 Java 一致）
     # ==============================
     # 11 → zip6_digit_ratio 统计 6 位纯数字占比
     zip6_digit_match = sum(
@@ -1671,7 +1661,7 @@ def extract_column_features(text_list):
 
     # 128 → unique_value_ratio 列内取值多样性（唯一值数/总数），区分护照等高多样性 vs C10001002 等系统代码低多样性
     unique_value_ratio = len(set(t.strip() for t in cleaned)) / len(cleaned)
-    # 131 → all_same_value_flag 整列全部相同值的标志（1=全部相同，0=有不同值），强信号区分系统代码列
+    # 129 → all_same_value_flag 整列全部相同值的标志（1=全部相同，0=有不同值），强信号区分系统代码列
     _unique_count = len(set(t.strip() for t in cleaned))
     all_same_value_flag = 1.0 if _unique_count == 1 else 0.0
 
@@ -1687,7 +1677,6 @@ def extract_column_features(text_list):
         bank_length_match_ratio,
         bank_luhn_ratio,
         bank_bin_prefix_ratio,
-        cvv_length_ratio,
         zip6_digit_ratio,
         prefix_stability_ratio,
         zip_zero_tail_ratio,
@@ -1868,7 +1857,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 132, f"特征维数应为 132（与 Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 131, f"特征维数应为 131（与 Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
@@ -2183,11 +2172,6 @@ all_test_columns = {
         "2020200103842025",
         "2020200103842033",
         "2020200104157977",
-    ],
-
-    "CVV": [
-        "123","456","789","321","654","987","147",
-        "600519","2023-01-01","粤B12345"
     ],
 
     "ZIP_CODE": [
