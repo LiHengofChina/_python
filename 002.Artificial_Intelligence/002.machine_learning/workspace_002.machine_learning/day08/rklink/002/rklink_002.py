@@ -375,30 +375,10 @@ IPV6_REGEX = re.compile(
 )
 
 # ==============================
-# 加载 邮编代码
+# 加载行政区划树 JSON（仅用于 region_dict；已移除邮政编码 ZIP_CODE 类别与 zip_dict 特征）
 # ==============================
-
-import json
-
-# 读取本地邮编 JSON
 with open("zip_code/zip_code.txt", "r", encoding="utf-8") as f:
     zip_data = json.load(f)
-
-zip_dict = set()
-
-# 递归提取 postcode
-def extract_postcodes(nodes):
-    for node in nodes:
-        if "postcode" in node and node["postcode"]:
-            zip_dict.add(str(node["postcode"]).strip())
-
-        if "children" in node and node["children"]:
-            extract_postcodes(node["children"])
-
-# 开始提取
-extract_postcodes(zip_data)
-
-
 
 # ==============================
 # 构建 行政区划代码 字典（6位 ID）
@@ -721,7 +701,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 131  # 与 Java ColumnFeatureExtractor.N_FEATURES 一致
+        return [0] * 127  # 与 Java ColumnFeatureExtractor.N_FEATURES 一致（已移除 4 维邮编特征）
 
     lengths = [len(t) for t in cleaned]
 
@@ -796,40 +776,9 @@ def extract_column_features(text_list):
     bank_bin_prefix_ratio = bank_bin_prefix_match / len(cleaned)
 
     # ==============================
-    # （4）ZIP_CODE（接在银行卡特征之后，为 f11，与 Java 一致）
+    # （5）STOCK_CODE（原 ZIP_CODE 四维邮编特征已删除，维数 131→127）
     # ==============================
-    # 11 → zip6_digit_ratio 统计 6 位纯数字占比
-    zip6_digit_match = sum(
-        1 for t in cleaned
-        if len(t) == 6 and t.isdigit()
-    )
-    zip6_digit_ratio = zip6_digit_match / len(cleaned)
-
-    # 13 → prefix_stability_ratio 统计前两位是否“稳定”。
-    prefixes = [t[:2] for t in cleaned if len(t) == 6 and t.isdigit()]
-
-    if prefixes:
-        prefix_stability_ratio = 1 if len(set(prefixes)) == 1 else 0
-    else:
-        prefix_stability_ratio = 0
-    # 14 → zip_zero_tail_ratio 统计以 00 或 000 结尾的比例
-    zip_zero_tail_match = sum(
-        1 for t in cleaned
-        if len(t) == 6 and t.isdigit() and (t.endswith("00") or t.endswith("000"))
-    )
-    zip_zero_tail_ratio = zip_zero_tail_match / len(cleaned)
-
-    # 15 → zip_dict_ratio
-    zip_dict_match = sum(
-        1 for t in cleaned
-        if t in zip_dict
-    )
-    zip_dict_ratio = zip_dict_match / len(cleaned)
-
-    # ==============================
-    # （6）STOCK_CODE
-    # ==============================
-    # 16 → stock_dict_ratio 证券代码字典匹配比例
+    # → stock_dict_ratio 证券代码字典匹配比例
     stock_dict_match = sum(
         1 for t in cleaned
         if t in stock_dict
@@ -1677,10 +1626,6 @@ def extract_column_features(text_list):
         bank_length_match_ratio,
         bank_luhn_ratio,
         bank_bin_prefix_ratio,
-        zip6_digit_ratio,
-        prefix_stability_ratio,
-        zip_zero_tail_ratio,
-        zip_dict_ratio,
         stock_dict_ratio,
         fund_dict_ratio,
         credit_length_match_ratio,
@@ -1857,7 +1802,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 131, f"特征维数应为 131（与 Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 127, f"特征维数应为 127（与 Java ColumnFeatureExtractor 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
@@ -1979,7 +1924,6 @@ _dicts_to_save = {
     "city_dict": _to_list(city_dict),
     "surname_dict": _to_list(surname_dict),
     "country_dict": _to_list(country_dict),
-    "zip_dict": _to_list(zip_dict),
     "region_dict": _to_list(region_dict),
     "FUND_KEYWORDS": FUND_KEYWORDS,
     "CREDIT_CODE_CHARS": CREDIT_CODE_CHARS,
@@ -2172,14 +2116,6 @@ all_test_columns = {
         "2020200103842025",
         "2020200103842033",
         "2020200104157977",
-    ],
-
-    "ZIP_CODE": [
-        "100000","200000","300000","400000",
-        "710000","610000","510000",
-        "600519","test@example.com","110105199001011234",
-        "100000","200000","300000","400000","710000","610000","510000",
-        "600519","test@example.com","110105199001011234"
     ],
 
     "STOCK_CODE": [
