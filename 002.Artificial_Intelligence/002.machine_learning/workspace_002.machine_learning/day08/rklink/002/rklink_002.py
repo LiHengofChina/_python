@@ -974,16 +974,16 @@ def extract_column_features(text_list):
 
 
     # ==============================
-    # （11）CAR_DRIVING_LICENSE
+    # （11）通用辅助特征（与 Java ColumnFeatureExtractor f35/f36 对齐；用于身份证等 18 位数字列）
     # ==============================
-    # 35 → driving_length_18_ratio 长度为18的比例
+    # 35 → driving_length_18_ratio 长度为 18 的样本占比
     driving_length_18_match = sum(
         1 for t in cleaned
         if len(t) == 18
     )
     driving_length_18_ratio = driving_length_18_match / len(cleaned)
 
-    # 36 → driving_all_digit_ratio 整列纯数字比例
+    # 36 → driving_all_digit_ratio 整列纯数字串占比
     driving_all_digit_match = sum(
         1 for t in cleaned
         if t.isdigit()
@@ -2231,19 +2231,6 @@ all_test_columns = {
         "营业执照20200123",               # 噪音（非许可证）
         "1234567890"                     # 强噪音
     ],
-
-
-    "CAR_DRIVING_LICENCE": [
-            "110105199001011234",
-            "110105198806158765",
-            "110105199508073210",
-            "11010519750228999X",
-            "110105199912317777",
-            "110105200001018888",
-            "110105198003056666",
-            "110105199607077777"
-    ],
-
 
 
     "IP": [
