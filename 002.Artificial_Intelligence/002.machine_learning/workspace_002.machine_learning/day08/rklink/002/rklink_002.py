@@ -155,7 +155,7 @@ def luhn_check(card_number):
         return False
 
 # ==============================
-# 加载 证券和基金 代码 数据
+# 加载证券代码相关字典（A 股段 + 场内等辅助段，特征 fund_dict_ratio 与 Java 一致）
 # ==============================
 # 读取本地字典
 stock_df = pd.read_csv("stock_fund/stock_code_dict.csv", dtype=str)
@@ -163,7 +163,7 @@ fund_df = pd.read_csv("stock_fund/fund_code_dict.csv", dtype=str)
 
 # 构建字典
 stock_dict = set(stock_df["code"].astype(str))
-fund_dict = set(fund_df["基金代码"].astype(str))
+fund_dict = set(fund_df["证券代码"].astype(str))
 
 
 # ==============================
@@ -837,10 +837,10 @@ def extract_column_features(text_list):
     stock_dict_ratio = stock_dict_match / len(cleaned)
 
     # ==============================
-    # （7）FUND_CODE
+    # （7）辅助证券代码字典（特征名仍为 fund_dict_ratio，与训练/Java 导出一致）
     # ==============================
 
-    # 17 → fund_dict_ratio 基金代码字典匹配比例
+    # 17 → fund_dict_ratio 列样本命中 fund_dict（场内等代码表）比例，辅助识别 STOCK_CODE
     fund_dict_match = sum(
         1 for t in cleaned
         if t in fund_dict
@@ -1357,7 +1357,7 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
     # ==============================
-    # （23）FUNDS_NAME 基金名称
+    # （23）FUNDS_NAME 产品名称（原基金名称类）
     # ==============================
 
     # 86 → chinese_char_ratio 中文字符占比（结构型特征）
@@ -2192,13 +2192,15 @@ all_test_columns = {
         "603259",
         "000001",
         "000858",
-        "002415"
-    ],
-
-    "FUNDS": [
-        "000001","110011","519674","160119","003095",
-        "001234","002345",
-        "600519","粤B12345","China"
+        "002415",
+        "110011",
+        "519674",
+        "160119",
+        "003095",
+        "001234",
+        "002345",
+        "粤B12345",
+        "China",
     ],
 
 
