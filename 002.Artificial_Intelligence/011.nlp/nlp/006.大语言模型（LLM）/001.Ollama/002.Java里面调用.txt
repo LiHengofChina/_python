@@ -1,0 +1,18 @@
+
+在 Java 里调 Ollama，本质就是 发 HTTP 请求 到本机（或内网）上的 Ollama 服务。
+
+
+1. 兼容 OpenAI 的接口（你领导那种 .../v1 最常见）
+	地址一般是：http://主机:11434/v1/chat/completions
+
+	请求体用 JSON：model、messages（角色 + 内容），和调 OpenAI 一样。
+
+	在 Java 里可以用任意一种：
+
+	Spring：RestTemplate / WebClient
+	OkHttp、Apache HttpClient
+	OpenAI 官方 Java SDK：
+	把 baseUrl 设成 http://192.168.x.x:11434/v1，key 可随便填（若服务端不校验）
+2. Ollama 原生接口
+	例如：POST http://主机:11434/api/chat，body 
+	里带 model、messages 等（字段和 OpenAI 略有不同，以 Ollama API 文档 为准）。
