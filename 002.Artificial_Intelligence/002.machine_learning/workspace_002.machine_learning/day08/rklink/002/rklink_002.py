@@ -16,14 +16,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, f1_score
 from sklearn.calibration import CalibratedClassifierCV
 
-# PMML 导出（需 pip install sklearn2pmml，且系统已安装 Java 11+）
-try:
-    from sklearn2pmml import sklearn2pmml
-    from sklearn2pmml.pipeline import PMMLPipeline
-    HAS_SKLEARN2PMML = True
-except ImportError:
-    HAS_SKLEARN2PMML = False
-
 # ==============================
 # （1）加载数据
 # 必须包含 column_id,text,label
@@ -1790,11 +1782,6 @@ X_train, X_test, y_train, y_test = train_test_split(
 # ==============================
 # （5）构建随机森林模型
 # ==============================
-X_train_df = pd.DataFrame(X_train, columns=feature_names)
-X_test_df = pd.DataFrame(X_test, columns=feature_names)
-# sklearn2pmml 需要 y 带名称，否则会警告
-y_train_series = pd.Series(y_train, name="label")
-
 # 类别权重：在 balanced 基础上提高 DEFAULT 权重，使模型在“不确定”时更倾向预测 DEFAULT
 from sklearn.utils.class_weight import compute_class_weight
 _classes = np.unique(y_train)
@@ -1809,23 +1796,15 @@ model = RandomForestClassifier(
     class_weight=_class_weight_dict
 )
 
-# 使用 PMMLPipeline 以便导出 Java 可加载的 PMML（若已安装 sklearn2pmml）
-if HAS_SKLEARN2PMML:
-    pipeline = PMMLPipeline([("classifier", model)])
-else:
-    pipeline = None
-
 # ==============================
 # （6）交叉验证
 # ==============================
 
 if len(X_train) >= 5:
-    estimator = pipeline if pipeline is not None else model
-    _y = y_train_series if pipeline else y_train
     score = ms.cross_val_score(
-        estimator,
-        X_train_df if pipeline else X_train,
-        _y,
+        model,
+        X_train,
+        y_train,
         cv=4,
         scoring="f1_weighted"
     )
@@ -1838,11 +1817,7 @@ if len(X_train) >= 5:
 # （7）训练模型
 # ==============================
 
-if pipeline is not None:
-    pipeline.fit(X_train_df, y_train_series)
-    model = pipeline.named_steps["classifier"]
-else:
-    model.fit(X_train, y_train)
+model.fit(X_train, y_train)
 
 print("特征重要性：")
 print(model.feature_importances_)
@@ -1853,8 +1828,8 @@ print("=" * 60)
 # （7.5）保存模型
 # ==============================
 import os
-# 直接保存到 mask-sdk 的 resources，无需手动拷贝
-_model_dir = r"D:\___workspace\workspace_2025_18_w_java_\datasharingplatform\mask-sdk\src\main\resources\recognize_model"
+# 主输出：recognize-service（Python 识别微服务）项目下的模型包目录
+_model_dir = r"D:\___workspace\workspace_2025_18_w_java_\datasharingplatform\recognize-service\model_freeze\mask_scan"
 os.makedirs(_model_dir, exist_ok=True)
 
 # joblib：Python 可加载
@@ -1862,7 +1837,7 @@ joblib.dump(model, os.path.join(_model_dir, "recognize_rf_model.joblib"))
 print(f"已保存 joblib 模型: {_model_dir}/recognize_rf_model.joblib")
 
 # ==============================
-# 保存字典（Java 端特征提取用）
+# 保存字典（与特征提取逻辑一致）
 # ==============================
 _dict_dir = os.path.join(_model_dir, "dicts")
 os.makedirs(_dict_dir, exist_ok=True)
@@ -1900,7 +1875,7 @@ _dicts_to_save = {
 }
 with open(os.path.join(_dict_dir, "all_dicts.json"), "w", encoding="utf-8") as f:
     json.dump(_dicts_to_save, f, ensure_ascii=False, indent=2)
-print(f"已保存字典: {_dict_dir}/all_dicts.json （供 Java SDK 使用）")
+print(f"已保存字典: {_dict_dir}/all_dicts.json （特征提取与推理侧加载）")
 # 银行卡 BIN 前缀同步保存到训练侧字典（与 all_dicts 内容一致）
 _bank_bin_training_dir = os.path.join(_script_dir, "bank_bin")
 os.makedirs(_bank_bin_training_dir, exist_ok=True)
@@ -1908,35 +1883,18 @@ with open(os.path.join(_bank_bin_training_dir, "bank_bin_prefixes.json"), "w", e
     json.dump(sorted(bank_bin_prefixes), f, ensure_ascii=False, indent=2)
 print(f"已保存银行卡BIN前缀: {_bank_bin_training_dir}/bank_bin_prefixes.json （供训练使用）")
 
-# PMML + feature_names.json：Java 加载用，导出模型时一并保存/更新
-if HAS_SKLEARN2PMML and pipeline is not None:
-    _pmml_path = os.path.join(_model_dir, "recognize_rf_model.pmml")
-    _feature_names_path = os.path.join(_model_dir, "feature_names.json")
-    try:
-        pipeline.verify(X_train_df)  # 设置验证数据，消除 sklearn2pmml 警告
-        sklearn2pmml(pipeline, _pmml_path, with_repr=True)
-        print(f"已保存 PMML 模型: {_pmml_path} （Java 可用 JPMML 加载）")
-        # 与 PMML 特征顺序一致，必须随模型输出同时更新，供 Java ColumnFeatureExtractor 对齐
-        with open(_feature_names_path, "w", encoding="utf-8") as f:
-            json.dump(feature_names, f, ensure_ascii=False, indent=2)
-        print(f"已保存/更新 feature_names.json: {_feature_names_path} （共 {len(feature_names)} 维，f0..f{len(feature_names)-1}，与 PMML 一致）")
-    except Exception as e:
-        print(f"PMML 导出失败（需 Java 11+）: {e}")
-else:
-    if not HAS_SKLEARN2PMML:
-        print("提示: pip install sklearn2pmml 可导出 PMML 供 Java 加载")
-    # 未导出 PMML 时也写入 feature_names.json，便于与 extract_column_features 维数一致
-    _feature_names_path = os.path.join(_model_dir, "feature_names.json")
-    with open(_feature_names_path, "w", encoding="utf-8") as f:
-        json.dump(feature_names, f, ensure_ascii=False, indent=2)
-    print(f"已保存 feature_names.json: {_feature_names_path} （共 {len(feature_names)} 维）")
+# feature_names.json：与 extract_column_features 维顺序一致
+_feature_names_path = os.path.join(_model_dir, "feature_names.json")
+with open(_feature_names_path, "w", encoding="utf-8") as f:
+    json.dump(feature_names, f, ensure_ascii=False, indent=2)
+print(f"已保存 feature_names.json: {_feature_names_path} （共 {len(feature_names)} 维）")
 print("=" * 60)
 
 # ==============================
-# （7.6）概率校准 + 用验证集选阈值，保存 confidence_thresholds.json 供 Java 使用
+# （7.6）概率校准 + 用验证集选阈值，保存 confidence_thresholds.json
 # ==============================
-# 使用测试集作为验证集做阈值搜索（与 Java 端使用同一套“原始概率”规则，便于阈值迁移）
-_proba = pipeline.predict_proba(X_test_df) if pipeline is not None else model.predict_proba(X_test)
+# 使用测试集作为验证集做阈值搜索（原始 predict_proba）
+_proba = model.predict_proba(X_test)
 model_classes = model.classes_
 _default_idx = np.where(model_classes == "DEFAULT")[0]
 default_idx = int(_default_idx[0]) if len(_default_idx) > 0 else -1
@@ -1983,11 +1941,25 @@ confidence_thresholds = {
 }
 with open(os.path.join(_model_dir, "confidence_thresholds.json"), "w", encoding="utf-8") as f:
     json.dump(confidence_thresholds, f, ensure_ascii=False, indent=2)
-print(f"已保存 confidence_thresholds.json: {_model_dir}/confidence_thresholds.json （Java 将按类或全局读取阈值）")
+print(f"已保存 confidence_thresholds.json: {_model_dir}/confidence_thresholds.json （可按类或全局读取阈值）")
 
-# （可选）概率校准：用 CalibratedClassifierCV 在验证集上得到更接近真实置信度的概率，再跑一遍阈值搜索，仅供参考（Java 当前仍用原始概率+上面保存的阈值）
+# 说明文件：避免与同级 Paddle model_freeze 混淆
+_readme_path = os.path.join(_model_dir, "README.txt")
+with open(_readme_path, "w", encoding="utf-8") as _rf:
+    _rf.write(
+        "mask_scan — 列类型识别模型包（sklearn RandomForest + joblib）\n"
+        "============================================================\n"
+        "本目录为 Python/Django 推理使用，格式为 joblib + JSON，不是 Paddle Fluid 的 __model__ 权重。\n"
+        "主要文件：\n"
+        "  recognize_rf_model.joblib  — 模型\n"
+        "  dicts/all_dicts.json       — 特征用字典\n"
+        "  feature_names.json         — 特征名 f0..fN\n"
+        "  confidence_thresholds.json — 可选阈值\n"
+    )
+print(f"已写入说明: {_readme_path}")
+
+# （可选）概率校准：用 CalibratedClassifierCV 在验证集上得到更接近真实置信度的概率，再跑一遍阈值搜索，仅供参考
 try:
-    from sklearn.calibration import CalibratedClassifierCV
     cal = CalibratedClassifierCV(model, cv=3, method="sigmoid")
     cal.fit(X_train, y_train)
     cal_proba = cal.predict_proba(X_test)
@@ -2013,7 +1985,7 @@ print("=" * 60)
 # （8）预测
 # ==============================
 
-pred = (pipeline.predict(X_test_df) if pipeline is not None else model.predict(X_test))
+pred = model.predict(X_test)
 
 print("测试集真实值：", y_test)
 print("测试集预测值：", pred)
@@ -2301,14 +2273,8 @@ for label_name, test_column in all_test_columns.items():
 
     feature = extract_column_features(test_column)
     feature_subset = [feature[i] for i in _feature_indices]
-    feature_df = pd.DataFrame([feature_subset], columns=feature_names)
-
-    if pipeline is not None:
-        prediction = pipeline.predict(feature_df)[0]
-        probability = pipeline.predict_proba(feature_df)[0]
-    else:
-        prediction = model.predict([feature_subset])[0]
-        probability = model.predict_proba([feature_subset])[0]
+    prediction = model.predict([feature_subset])[0]
+    probability = model.predict_proba([feature_subset])[0]
 
     print("\n==============================")
     print("测试类型:", label_name)
