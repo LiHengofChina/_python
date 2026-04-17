@@ -164,6 +164,8 @@ fund_df = pd.read_csv("stock_fund/fund_code_dict.csv", dtype=str)
 # 构建字典
 stock_dict = set(stock_df["code"].astype(str))
 fund_dict = set(fund_df["证券代码"].astype(str))
+# 证券代码与基金代码在业务上合并识别；两路字典命中统一用并集（与 Java RecognizeDicts 一致）
+stock_fund_code_union = stock_dict | fund_dict
 
 
 # ==============================
@@ -701,7 +703,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 127  # 与 Java ColumnFeatureExtractor.N_FEATURES 一致（已移除 4 维邮编特征）
+        return [0] * 121  # 与 Java ColumnFeatureExtractor.N_FEATURES 一致（已删 6 维低贡献/冗余特征）
 
     lengths = [len(t) for t in cleaned]
 
@@ -776,24 +778,14 @@ def extract_column_features(text_list):
     bank_bin_prefix_ratio = bank_bin_prefix_match / len(cleaned)
 
     # ==============================
-    # （5）STOCK_CODE（原 ZIP_CODE 四维邮编特征已删除，维数 131→127）
+    # （5）STOCK_CODE（原 ZIP_CODE 四维邮编特征已删除；另删 6 维低贡献/冗余，维数 127→121）
     # ==============================
-    # → stock_dict_ratio 证券代码字典匹配比例
-    stock_dict_match = sum(
-        1 for t in cleaned
-        if t in stock_dict
-    )
+    # → stock_dict_ratio：命中「证券字典 ∪ 基金代码字典」比例（两表合并使用）
+    stock_dict_match = sum(1 for t in cleaned if t in stock_fund_code_union)
     stock_dict_ratio = stock_dict_match / len(cleaned)
 
-    # ==============================
-    # （7）辅助证券代码字典（特征名仍为 fund_dict_ratio，与训练/Java 导出一致）
-    # ==============================
-
-    # 17 → fund_dict_ratio 列样本命中 fund_dict（场内等代码表）比例，辅助识别 STOCK_CODE
-    fund_dict_match = sum(
-        1 for t in cleaned
-        if t in fund_dict
-    )
+    # fund_dict_ratio：特征名历史沿用；语义与 stock_dict_ratio 相同，均为并集命中（与 Java 一致）
+    fund_dict_match = sum(1 for t in cleaned if t in stock_fund_code_union)
     fund_dict_ratio = fund_dict_match / len(cleaned)
 
     # ==============================
@@ -862,16 +854,9 @@ def extract_column_features(text_list):
     # （10）PERMIT 优化版
     # ==============================
 
-    # 25 → permit_strict_keyword_ratio 强许可证关键词比例（严格语义）
-    permit_strict_keyword_ratio = sum(
-        1 for t in cleaned
-        if any(k in t for k in [
-            "许可证", "经营许可证", "生产许可证",
-            "批准文号", "登记证", "备案号"
-        ])
-    ) / len(cleaned)
+    # （已移除 permit_strict_keyword_ratio：RF 重要性为 0，与 zheng/xuke 等强重叠）
 
-    # 26 → permit_wenzi_pattern_ratio 文号结构比例（字第xxx号）
+    # 25 → permit_wenzi_pattern_ratio 文号结构比例（字第xxx号）
     permit_wenzi_pattern_ratio = sum(
         1 for t in cleaned
         if re.search(r'字第\d{3,}号', t)
@@ -895,13 +880,9 @@ def extract_column_features(text_list):
         if "证" in t
     ) / len(cleaned)
 
-    # 31 → permit_contains_xuke_ratio 包含“许可”字比例
-    permit_contains_xuke_ratio = sum(
-        1 for t in cleaned
-        if "许可" in t
-    ) / len(cleaned)
+    # （已移除 permit_contains_xuke_ratio：RF 重要性≈0）
 
-    # 32 → permit_no_road_keyword_ratio 不包含道路关键词比例（抑制ADDRESS）
+    # 31 → permit_no_road_keyword_ratio 不包含道路关键词比例（抑制ADDRESS）
     permit_no_road_keyword_ratio = sum(
         1 for t in cleaned
         if not any(k in t for k in address_road_keyword_dict)
@@ -948,13 +929,9 @@ def extract_column_features(text_list):
         if IPV4_REGEX.match(t)
     ) / len(cleaned)
 
-    # 38 → ipv4_dot_ratio IPv4 含 3 个点的比例
-    ipv4_dot_ratio = sum(
-        1 for t in cleaned
-        if t.count('.') == 3
-    ) / len(cleaned)
+    # （已移除 ipv4_dot_ratio：与 ipv4_regex 高度冗余）
 
-    # 39 → ipv6_regex_ratio IPv6 正则匹配比例
+    # 38 → ipv6_regex_ratio IPv6 正则匹配比例
     ipv6_regex_ratio = sum(
         1 for t in cleaned
         if IPV6_REGEX.match(t)
@@ -987,13 +964,9 @@ def extract_column_features(text_list):
         if re.fullmatch(r'([0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}', t)
     ) / len(cleaned)
 
-    # 42 → mac_plain_hex_12_ratio（纯 12 位十六进制比例）
-    mac_plain_hex_12_ratio = sum(
-        1 for t in cleaned
-        if re.fullmatch(r'[0-9A-Fa-f]{12}', t)
-    ) / len(cleaned)
+    # （已移除 mac_plain_hex_12_ratio：与 mac_regex/分格式特征重叠）
 
-    # 43 → MAC 全为大写十六进制比例
+    # 42 → MAC 全为大写十六进制比例
     mac_uppercase_ratio = sum(
         1 for t in cleaned
         if re.fullmatch(r'([0-9A-F]{2}:){5}[0-9A-F]{2}', t)
@@ -1107,13 +1080,9 @@ def extract_column_features(text_list):
         if VIN_REGEX.match(t)
     ) / len(cleaned)
 
-    # 57 → 长度为 17 的比例
-    vin_length_ratio = sum(
-        1 for t in cleaned
-        if len(t) == 17
-    ) / len(cleaned)
+    # （已移除 vin_length_ratio：VIN 正则已约束 17 位，与 vin_regex 冗余）
 
-    # 58 → VIN 校验位合法比例
+    # 57 → VIN 校验位合法比例
     vin_check_digit_ratio = sum(
         1 for t in cleaned
         if vin_check_digit_valid(t)
@@ -1594,15 +1563,15 @@ def extract_column_features(text_list):
         )
     ) / len(cleaned)
 
-    # 125 → not_character_length_16_ratio（列内无 16 位串比例，区分开户许可证 15 位 vs 中征码 16 位）
-    not_character_length_16_ratio = 1.0 - character_length_16_ratio
-    # 126 → default_like_keyword_ratio（含 unknown/config/test 等 DEFAULT 常见关键词，与车牌等区分）
+    # （已移除 not_character_length_16_ratio：与 character_length_16 线性完全相关 1−x）
+
+    # default_like_keyword_ratio（含 unknown/config/test 等 DEFAULT 常见关键词，与车牌等区分）
     DEFAULT_LIKE_KEYWORDS = ["unknown", "config", "test", "default", "value", "null", "param", "data", "meta"]
     default_like_keyword_ratio = sum(
         1 for t in cleaned
         if any(k in t.lower() for k in DEFAULT_LIKE_KEYWORDS)
     ) / len(cleaned)
-    # 127 → pinyin_lowercase_ascii_only_ratio（纯小写 a-z、长度 6-20，不依赖音节表，强化拼音名）
+    # pinyin_lowercase_ascii_only_ratio（纯小写 a-z、长度 6-20，不依赖音节表，强化拼音名）
     pinyin_lowercase_ascii_only_ratio = sum(
         1 for t in cleaned
         if (lambda s: len(s) >= 6 and len(s) <= 20 and s.isalpha() and s.islower())(t.strip().lower())
@@ -1637,12 +1606,10 @@ def extract_column_features(text_list):
         officer_end_with_hao_ratio,
         officer_digit_middle_ratio,
 
-        permit_strict_keyword_ratio,
         permit_wenzi_pattern_ratio,
         permit_year_hao_ratio,
         permit_long_digit_ratio,
         permit_contains_zheng_ratio,
-        permit_contains_xuke_ratio,
         permit_no_road_keyword_ratio,
         permit_not_address_pattern_ratio,
         permit_parenthesis_ratio,
@@ -1650,14 +1617,12 @@ def extract_column_features(text_list):
         driving_length_18_ratio,
         driving_all_digit_ratio,
         ipv4_regex_ratio,
-        ipv4_dot_ratio,
         ipv6_regex_ratio,
         informix_ip_ratio,
 
         mac_regex_ratio,
         mac_colon_format_ratio,
         mac_dash_format_ratio,
-        mac_plain_hex_12_ratio,
         mac_uppercase_ratio,
         mac_5_colon_ratio,
 
@@ -1676,7 +1641,6 @@ def extract_column_features(text_list):
         email_at_ratio,
 
         vin_regex_ratio,
-        vin_length_ratio,
         vin_check_digit_ratio,
         vin_region_prefix_ratio,
         vin_no_colon_ratio,
@@ -1762,7 +1726,6 @@ def extract_column_features(text_list):
 
         money_unit_ratio,
 
-        not_character_length_16_ratio,
         default_like_keyword_ratio,
         pinyin_lowercase_ascii_only_ratio,
         unique_value_ratio,
@@ -1802,7 +1765,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 127, f"特征维数应为 127（与 Java ColumnFeatureExtractor 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 121, f"特征维数应为 121（与 Java ColumnFeatureExtractor 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
