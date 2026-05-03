@@ -1,6 +1,10 @@
 
+
+
 //============================== 给项目配置虚拟环境
 //============================== 给项目配置虚拟环境
+
+
 
 Settings
 	-> Project:xxx
@@ -16,6 +20,7 @@ Settings
  					//===================  存在虚拟环境
 					interpreter: E:\_python\002.Artificial_Intelligence\001.Day01_03\workspace_001.Day01_03\venv\Scripts\python.ex
 							  //这时是为了使用它
+
 
 
 

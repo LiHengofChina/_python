@@ -1,0 +1,38 @@
+
+当前【最值得投入】的方向。
+
+//================================================== AI Agent系统架构（新目标）
+//================================================== AI Agent系统架构（新目标）
+
+（1）大模型应用开发
+		提示工程（Prompt Engineering）、RAG（检索增强生成）、Function Calling / Tool Use
+		//我的Java后端能力可以用于构建工具（Tools）供Agent调用
+
+（2）Agent框架
+		LangChain、LlamaIndex、AutoGen（微软）、Semantic Kernel（微软，C#/.NET但理念相通）
+		//这些框架底层很多用Python，但我可以用Java思维理解架构模式
+
+（3）Agent设计模式
+		ReAct、Plan-and-Execute、Reflection、Multi-Agent协作
+		//这是架构师的强项——设计系统行为
+
+（4）MCP（Model Context Protocol）
+		Anthropic推出的协议，用于AI应用与数据源/工具的标准化连接
+		//你学这个非常对路！MCP本质是架构协议，类似API网关、消息协议，很适合Java架构师深入
+
+（4）AI服务架构
+		模型推理服务部署（vLLM、TGI）、模型编排、缓存策略、流式响应、成本控制
+		//这是我的老本行，分布式系统、高并发、容错、可观测性全部可以迁移
+
+//================================================== 补足AI Agent所需的“模型侧”知识
+//================================================== 补足AI Agent所需的“模型侧”知识
+
+我不需要成为算法专家，但需要理解模型的能力边界：
+
+	LLM工作原理：Transformer基础、Token、上下文窗口、温度等概念
+	Embedding与向量数据库：Milvus、Qdrant、Chroma（用于RAG）
+	Fine-tuning概念：知道什么时候需要微调，什么时候不需要
+
+
+一个展示你AI Agent项目的GitHub仓库
+

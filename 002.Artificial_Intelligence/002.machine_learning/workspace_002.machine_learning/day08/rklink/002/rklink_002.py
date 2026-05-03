@@ -1828,8 +1828,8 @@ print("=" * 60)
 # （7.5）保存模型
 # ==============================
 import os
-# 主输出：recognize-service（Python 识别微服务）项目下的模型包目录
-_model_dir = r"D:\___workspace\workspace_2025_18_w_java_\datasharingplatform\recognize-service\model_freeze\mask_scan"
+# 主输出：recognize_service（Django 识别服务）项目下的模型包目录
+_model_dir = r"D:\___workspace\workspace_2025_18_w_java_\datasharingplatform\recognize_service\model_freeze\mask_scan"
 os.makedirs(_model_dir, exist_ok=True)
 
 # joblib：Python 可加载
