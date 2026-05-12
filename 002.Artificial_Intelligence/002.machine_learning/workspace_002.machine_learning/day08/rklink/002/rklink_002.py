@@ -19,11 +19,23 @@ from sklearn.calibration import CalibratedClassifierCV
 # ==============================
 # （1）加载数据
 # 必须包含 column_id,text,label
+# 同目录下若有 fit_data_MIXED_append.csv 则自动合并（MIXED 列样本，与 recognize_service 对齐）
 # ==============================
 
-df = pd.read_csv("fit_data.csv", dtype={"text": str}, skipinitialspace=True)
+_rk002_dir = os.path.dirname(os.path.abspath(__file__))
+_fit_main = os.path.join(_rk002_dir, "fit_data.csv")
+_fit_mix = os.path.join(_rk002_dir, "fit_data_MIXED_append.csv")
+
+df = pd.read_csv(_fit_main, dtype={"text": str}, skipinitialspace=True)
 df.columns = df.columns.str.strip()  # 兼容每列前导空格
 df["column_id"] = df["column_id"].str.strip()
+
+if os.path.isfile(_fit_mix):
+    df_m = pd.read_csv(_fit_mix, dtype={"text": str}, skipinitialspace=True)
+    df_m.columns = df_m.columns.str.strip()
+    df_m["column_id"] = df_m["column_id"].astype(str).str.strip()
+    df = pd.concat([df, df_m], ignore_index=True)
+    print(f"已合并 MIXED 补充样本: {_fit_mix} （+{len(df_m)} 行）")
 
 # print("原始数据前5行：")
 # print(df.head())
@@ -477,6 +489,71 @@ def id_card_check(id_number):
     return ID_CHECK_MAP[remainder] == id_number[17]
 
 
+# ==============================
+# MIXED：行内嵌入型 5 维特征（与 datasharingplatform recognize_service infer 一致，总维数 121+5=126）
+# ==============================
+_EMBEDDED_PHONE = re.compile(r"1[3-9]\d{9}")
+_EMBEDDED_PASSPORT_BLOCK = re.compile(r"[A-Za-z]{1,2}\d{7,8}")
+
+
+def _mixed_embedded_phone_hit(text):
+    return bool(_EMBEDDED_PHONE.search(text))
+
+
+def _mixed_embedded_passport_hit(text):
+    u = text.upper()
+    for m in _EMBEDDED_PASSPORT_BLOCK.finditer(u):
+        seg = m.group(0)
+        if 8 <= len(seg) <= 10 and re.fullmatch(r"[A-Z]{1,2}\d{7,8}", seg):
+            return True
+    return False
+
+
+def _mixed_sliding_any(length, text, pred):
+    if len(text) < length:
+        return False
+    for i in range(0, len(text) - length + 1):
+        if pred(text[i : i + length]):
+            return True
+    return False
+
+
+def _mixed_embedded_id_valid_hit(text):
+    return _mixed_sliding_any(18, text, id_card_check)
+
+
+def _mixed_embedded_credit_valid_hit(text):
+    return _mixed_sliding_any(18, text, credit_code_check)
+
+
+def _mixed_has_chinese(text):
+    return any("\u4e00" <= c <= "\u9fff" for c in text)
+
+
+def _mixed_long_cn_digit_token_hit(text):
+    s = text.strip()
+    if len(s) < 10:
+        return False
+    if not _mixed_has_chinese(s):
+        return False
+    if not any(c.isdigit() for c in s):
+        return False
+    if " " in s or "、" in s or "，" in s:
+        return True
+    return len(s) >= 18
+
+
+def _mixed_embedding_ratios(cleaned):
+    n = len(cleaned)
+    if n == 0:
+        return (0.0, 0.0, 0.0, 0.0, 0.0)
+    r_phone = sum(1 for t in cleaned if _mixed_embedded_phone_hit(t)) / n
+    r_id = sum(1 for t in cleaned if _mixed_embedded_id_valid_hit(t)) / n
+    r_pass = sum(1 for t in cleaned if _mixed_embedded_passport_hit(t)) / n
+    r_credit = sum(1 for t in cleaned if _mixed_embedded_credit_valid_hit(t)) / n
+    r_long = sum(1 for t in cleaned if _mixed_long_cn_digit_token_hit(t)) / n
+    return (r_phone, r_id, r_pass, r_credit, r_long)
+
 
 # ==============================
 # 省级简称字典
@@ -695,7 +772,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 121  # 与 Java ColumnFeatureExtractor.N_FEATURES 一致（已删 6 维低贡献/冗余特征）
+        return [0] * 126  # 121 基础维 + 5 维 MIXED 嵌入（与 recognize_service ColumnFeatureExtractor 一致）
 
     lengths = [len(t) for t in cleaned]
 
@@ -1575,6 +1652,14 @@ def extract_column_features(text_list):
     _unique_count = len(set(t.strip() for t in cleaned))
     all_same_value_flag = 1.0 if _unique_count == 1 else 0.0
 
+    (
+        mixed_embed_phone_ratio,
+        mixed_embed_id_valid_ratio,
+        mixed_embed_passport_ratio,
+        mixed_embed_credit_valid_ratio,
+        mixed_long_cn_digit_token_ratio,
+    ) = _mixed_embedding_ratios(cleaned)
+
     return [
         avg_length,
         fixed_length_flag,
@@ -1722,6 +1807,12 @@ def extract_column_features(text_list):
         pinyin_lowercase_ascii_only_ratio,
         unique_value_ratio,
         all_same_value_flag,
+
+        mixed_embed_phone_ratio,
+        mixed_embed_id_valid_ratio,
+        mixed_embed_passport_ratio,
+        mixed_embed_credit_valid_ratio,
+        mixed_long_cn_digit_token_ratio,
     ]
 
 # ==============================
@@ -1757,7 +1848,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 121, f"特征维数应为 121（与 Java ColumnFeatureExtractor 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 126, f"特征维数应为 126（121 基础 + 5 MIXED 嵌入，与 recognize_service 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
@@ -2262,7 +2353,20 @@ all_test_columns = {
         "n/a","N/A","-","--","null","NULL","待填","暂无",
         "param1","option_a","flag","debug","temp_value","placeholder",
         "600519","2023-01-01","粤B12345"
-    ]
+    ],
+
+    "MIXED": [
+        "张三 13800001234 E12345678",
+        "李四 13912345678 G23456789",
+        "北京科技有限公司 15800001111 91110000MA00123456",
+        "上海恒远数据有限公司 13912345678 91310000MA01234567",
+        "联系人王五 手机18611112222 证件110101199003074512",
+        "客户赵六，护照号G23456789，统一码91440300MA02345678",
+        "深圳创新股份公司 经办陈七 17733334444 P34567890 主体91110000MA00123456",
+        "备注：周八 13200001111 E45678901 开票信息",
+        "杭州云联有限公司 15122223333 91510100MA03456789",
+        "武汉华泰软件有限公司 13698765432 G56789012",
+    ],
 }
 
 # ==============================
