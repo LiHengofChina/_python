@@ -19,12 +19,13 @@ from sklearn.calibration import CalibratedClassifierCV
 # ==============================
 # （1）加载数据
 # 必须包含 column_id,text,label
-# 同目录下若有 fit_data_MIXED_append.csv 则自动合并（MIXED 列样本）
+# 同目录下若有 fit_data_MIXED_append.csv / fit_data_NAME_append.csv 则自动合并
 # ==============================
 
 _rk002_dir = os.path.dirname(os.path.abspath(__file__))
 _fit_main = os.path.join(_rk002_dir, "fit_data.csv")
 _fit_mix = os.path.join(_rk002_dir, "fit_data_MIXED_append.csv")
+_fit_name = os.path.join(_rk002_dir, "fit_data_NAME_append.csv")
 
 df = pd.read_csv(_fit_main, dtype={"text": str}, skipinitialspace=True)
 df.columns = df.columns.str.strip()  # 兼容每列前导空格
@@ -36,6 +37,13 @@ if os.path.isfile(_fit_mix):
     df_m["column_id"] = df_m["column_id"].astype(str).str.strip()
     df = pd.concat([df, df_m], ignore_index=True)
     print(f"已合并 MIXED 补充样本: {_fit_mix} （+{len(df_m)} 行）")
+
+if os.path.isfile(_fit_name):
+    df_n = pd.read_csv(_fit_name, dtype={"text": str}, skipinitialspace=True)
+    df_n.columns = df_n.columns.str.strip()
+    df_n["column_id"] = df_n["column_id"].astype(str).str.strip()
+    df = pd.concat([df, df_n], ignore_index=True)
+    print(f"已合并 NAME 补充样本: {_fit_name} （+{len(df_n)} 行，含 2~3 字中文姓名）")
 
 # print("原始数据前5行：")
 # print(df.head())
@@ -2023,7 +2031,7 @@ default_idx = int(_default_idx[0]) if len(_default_idx) > 0 else -1
 
 # 全局阈值搜索：试多组 (confidence_threshold, default_min_margin)
 # 在“接受后错误率”相同时优先选更高阈值（更保守，宁可识别不出）
-best_global_thresh, best_global_margin = 0.45, 0.08
+best_global_thresh, best_global_margin = 0.40, 0.08
 best_acc_err = 1.0
 for _thresh in [0.55, 0.50, 0.45, 0.40, 0.35]:
     for _margin in [0.10, 0.08, 0.05]:
@@ -2041,8 +2049,13 @@ for _thresh in [0.55, 0.50, 0.45, 0.40, 0.35]:
             best_acc_err = accepted_err
             best_global_thresh, best_global_margin = _thresh, _margin
 
-print("（7.6）验证集阈值选择：推荐全局 confidence_threshold=%.2f, default_min_margin=%.2f（接受后错误率≈%.2f%%）"
+print("（7.6）验证集阈值搜索：confidence_threshold=%.2f, default_min_margin=%.2f（接受后错误率≈%.2f%%）"
       % (best_global_thresh, best_global_margin, best_acc_err * 100))
+
+# 全局上限：搜索可能给出 0.55（错误率相同时偏保守），部署侧统一压到 0.40
+GLOBAL_THRESHOLD_CAP = 0.40
+best_global_thresh = min(best_global_thresh, GLOBAL_THRESHOLD_CAP)
+print("（7.6）应用全局上限：confidence_threshold=%.2f" % best_global_thresh)
 
 # 按类阈值：每个类别在“真实为该类”的样本上，取预测概率的 10 分位数，并**不超过全局阈值**
 # （否则易分类如 PHONE 会得到 0.9+，导致 SDK 端几乎全部被回退为 DEFAULT）
@@ -2055,6 +2068,12 @@ for i, c in enumerate(model_classes):
     prob_c = _proba[mask, i]
     p10 = round(float(np.percentile(prob_c, 10)), 2)
     per_class_threshold[c] = min(p10, best_global_thresh)
+
+# NAME：列级预测置信度普遍偏低，单独压低阈值（与 Java applyRecognizeOverrides 一致）
+if "NAME" in per_class_threshold:
+    per_class_threshold["NAME"] = min(per_class_threshold["NAME"], GLOBAL_THRESHOLD_CAP)
+else:
+    per_class_threshold["NAME"] = GLOBAL_THRESHOLD_CAP
 
 confidence_thresholds = {
     "global_confidence_threshold": best_global_thresh,
@@ -2086,7 +2105,7 @@ try:
     cal = CalibratedClassifierCV(model, cv=3, method="sigmoid")
     cal.fit(X_train, y_train)
     cal_proba = cal.predict_proba(X_test)
-    _best_t, _best_m, _best_e = 0.45, 0.08, 1.0
+    _best_t, _best_m, _best_e = 0.40, 0.08, 1.0
     for _t in [0.35, 0.40, 0.45, 0.50, 0.55]:
         for _m in [0.05, 0.08, 0.10]:
             _pl = model_classes[np.argmax(cal_proba, axis=1)]
@@ -2369,8 +2388,10 @@ all_test_columns = {
     ],
 
     "NAME": [
-        "张伟","王在芳","李娜","刘洋","陈杰","赵敏","黄磊",
-        "600519","13888888888","test@example.com"
+        # 来自 003.tmp.txt 样例（含重复，模拟真实列数据）
+        "付艳彤", "张勤民", "丁宏伟", "赵莉", "扁文生", "付艳彤", "左林娣", "徐海兰",
+        "郭明峰", "付艳彤", "保承仪", "李奕萱", "赵桂兰", "严江立", "藏坚强", "左林娣",
+        "胥淑英", "王定强", "张娟", "查先锋", "王青青", "石孝", "王敏", "马玲莉", "程海兰",
     ],
 
     "MONEY": [
@@ -2402,6 +2423,36 @@ all_test_columns = {
 }
 
 # ==============================
+# 推理后处理（与 Java RKLinkMaskSdkImpl.applyRecognizeOverrides 对齐）
+# ==============================
+
+def _looks_like_chinese_name_column(text_list):
+    """整列 2~3 字中文、无数字、无公司/集团后缀，姓氏字典命中率 ≥75%。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    n = len(cleaned)
+    surname_hit = 0
+    for t in cleaned:
+        if len(t) < 2 or len(t) > 3:
+            return False
+        if any(x in t for x in ("公司", "有限", "集团")):
+            return False
+        if any(c.isdigit() for c in t):
+            return False
+        if not all("\u4e00" <= c <= "\u9fff" for c in t):
+            return False
+        if (len(t) >= 2 and (t[:2] in surname_dict or t[0] in surname_dict)):
+            surname_hit += 1
+    return surname_hit / n >= 0.75
+
+
+def apply_recognize_overrides(predicted, text_list):
+    if predicted == "DEFAULT" and _looks_like_chinese_name_column(text_list):
+        return "NAME"
+    return predicted
+
+# ==============================
 # 循环预测
 # ==============================
 
@@ -2410,6 +2461,7 @@ for label_name, test_column in all_test_columns.items():
     feature = extract_column_features(test_column)
     feature_subset = [feature[i] for i in _feature_indices]
     prediction = model.predict([feature_subset])[0]
+    prediction = apply_recognize_overrides(prediction, test_column)
     probability = model.predict_proba([feature_subset])[0]
 
     print("\n==============================")
