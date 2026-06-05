@@ -19,7 +19,7 @@ from sklearn.calibration import CalibratedClassifierCV
 # ==============================
 # （1）加载数据
 # 必须包含 column_id,text,label
-# 同目录下若有 fit_data_MIXED_append.csv 则自动合并（MIXED 列样本，与 recognize_service 对齐）
+# 同目录下若有 fit_data_MIXED_append.csv 则自动合并（MIXED 列样本）
 # ==============================
 
 _rk002_dir = os.path.dirname(os.path.abspath(__file__))
@@ -490,7 +490,7 @@ def id_card_check(id_number):
 
 
 # ==============================
-# MIXED：行内嵌入型 5 维特征（与 datasharingplatform recognize_service infer 一致，总维数 121+5=126）
+# MIXED：行内嵌入型 5 维特征（121 基础 + 5 = 126，与 mask-sdk ColumnFeatureExtractor 一致）
 # ==============================
 _EMBEDDED_PHONE = re.compile(r"1[3-9]\d{9}")
 _EMBEDDED_PASSPORT_BLOCK = re.compile(r"[A-Za-z]{1,2}\d{7,8}")
@@ -772,7 +772,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 126  # 121 基础维 + 5 维 MIXED 嵌入（与 recognize_service ColumnFeatureExtractor 一致）
+        return [0] * 126  # 121 基础维 + 5 维 MIXED 嵌入（与 mask-sdk Java 一致）
 
     lengths = [len(t) for t in cleaned]
 
@@ -1848,7 +1848,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 126, f"特征维数应为 126（121 基础 + 5 MIXED 嵌入，与 recognize_service 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 126, f"特征维数应为 126（121 基础 + 5 MIXED 嵌入，与 mask-sdk Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
@@ -1919,13 +1919,32 @@ print("=" * 60)
 # （7.5）保存模型
 # ==============================
 import os
-# 主输出：recognize_service（Django 识别服务）项目下的模型包目录
-_model_dir = r"D:\___workspace\workspace_2025_18_w_java_\datasharingplatform\recognize_service\model_freeze\mask_scan"
+# 主输出：mask-sdk 内置 PMML 推理资源（Java JPMML 加载）
+# 可通过环境变量 MASK_SDK_RECOGNIZE_MODEL_DIR 覆盖
+_DEFAULT_SDK_MODEL_DIR = r"D:\___workspace\workspace_2025_18_w_java_\datasharingplatform\mask-sdk\src\main\resources\recognize_model"
+_model_dir = os.environ.get("MASK_SDK_RECOGNIZE_MODEL_DIR", _DEFAULT_SDK_MODEL_DIR).strip()
 os.makedirs(_model_dir, exist_ok=True)
 
-# joblib：Python 可加载
+# joblib：备份（Java 不读；便于 Python 侧对比）
 joblib.dump(model, os.path.join(_model_dir, "recognize_rf_model.joblib"))
 print(f"已保存 joblib 模型: {_model_dir}/recognize_rf_model.joblib")
+
+# PMML：Java SDK 决策树推理必需
+_pmml_path = os.path.join(_model_dir, "recognize_rf_model.pmml")
+try:
+    from sklearn2pmml import sklearn2pmml
+    from sklearn2pmml.pipeline import PMMLPipeline
+
+    _X_train_df = pd.DataFrame(X_train, columns=feature_names)
+    _pmml_pipe = PMMLPipeline([("classifier", model)])
+    _pmml_pipe.fit(_X_train_df, y_train)
+    sklearn2pmml(_pmml_pipe, _pmml_path, with_repr=True)
+    print(f"已保存 PMML 模型: {_pmml_path}")
+    print("可选后处理: python D:/___workspace/workspace_2025_18_w_java_/datasharingplatform/mask-sdk/scripts/merge_funds_into_stock_pmml.py")
+except ImportError:
+    print("未安装 sklearn2pmml，跳过 PMML 导出（Java 推理需要）。pip install sklearn2pmml")
+except Exception as _pmml_err:
+    print(f"PMML 导出失败: {_pmml_err}")
 
 # ==============================
 # 保存字典（与特征提取逻辑一致）
@@ -2038,14 +2057,15 @@ print(f"已保存 confidence_thresholds.json: {_model_dir}/confidence_thresholds
 _readme_path = os.path.join(_model_dir, "README.txt")
 with open(_readme_path, "w", encoding="utf-8") as _rf:
     _rf.write(
-        "mask_scan — 列类型识别模型包（sklearn RandomForest + joblib）\n"
+        "recognize_model — mask-sdk 列类型识别模型包（RandomForest + PMML）\n"
         "============================================================\n"
-        "本目录为 Python/Django 推理使用，格式为 joblib + JSON，不是 Paddle Fluid 的 __model__ 权重。\n"
+        "本目录由 E 盘 rklink_002.py 训练输出，供 Java mask-sdk JPMML 本地推理。\n"
         "主要文件：\n"
-        "  recognize_rf_model.joblib  — 模型\n"
-        "  dicts/all_dicts.json       — 特征用字典\n"
-        "  feature_names.json         — 特征名 f0..fN\n"
-        "  confidence_thresholds.json — 可选阈值\n"
+        "  recognize_rf_model.pmml      — Java 推理（必需）\n"
+        "  recognize_rf_model.joblib    — 备份\n"
+        "  dicts/all_dicts.json         — 特征用字典\n"
+        "  feature_names.json           — f0..f125（126 维）\n"
+        "  confidence_thresholds.json   — 可选阈值\n"
     )
 print(f"已写入说明: {_readme_path}")
 
