@@ -71,12 +71,36 @@ if os.path.isfile(_fit_phone):
 PHONE_REGEX = re.compile(r"^1[3-9]\d{9}$")
 LANDLINE_PHONE_REGEX = re.compile(
     r'^(\+?86[- ]?)?('
-    r'0\d{2,3}[- ]?\d{7,8}|'
-    r'400[- ]?\d{3}[- ]?\d{4}|'
-    r'800[- ]?\d{7,8}|'
-    r'86[- ]?\d{2,3}[- ]?\d{7,8}'
+    r'0\d{2,3}[- ]?\d{7,8}|'           # 0+区号+本地号，如 010-62503000、021-12345678
+    r'[2-689]\d{1,2}[- ]?\d{7,8}|'      # 无长途冠码区号，如 755-83301199
+    r'400[- ]?\d{3}[- ]?\d{4}|'         # 400 客服
+    r'800[- ]?\d{7,8}|'                 # 800 被叫付费
+    r'86[- ]?\d{2,3}[- ]?\d{7,8}|'      # 国际格式 +86/86-区号-号码
+    r'9[56]\d{3,6}|'                    # 95/96 全国统一客服短号（5~8 位）
+    r'12\d{3}|'                         # 12xxx 政务/公共服务（5 位）
+    r'100\d{2,4}|'                      # 100xx 运营商客服
+    r'[2-8]\d{2,3}[- ]?\d{4}|'          # 本地固话带横杠，如 6250-3000
+    r'[2-8]\d{6,7}'                     # 本地固话 7~8 位无区号，如 88886666
     r')$'
 )
+ISO_DATE_REGEX = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+ISO_DATE_TIME_REGEX = re.compile(r'^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$')
+
+def _looks_like_iso_date_digits(norm):
+    """去横杠后 8 位 YYYYMMDD，避免与本地固话 [2-8]\\d{6,7} 冲突。"""
+    if len(norm) != 8 or not norm.isdigit():
+        return False
+    try:
+        y, m, d = int(norm[:4]), int(norm[4:6]), int(norm[6:8])
+        return 1900 <= y <= 2100 and 1 <= m <= 12 and 1 <= d <= 31
+    except ValueError:
+        return False
+
+def _is_date_like_phone_exclusion(text):
+    s = str(text).strip()
+    if ISO_DATE_REGEX.match(s) or ISO_DATE_TIME_REGEX.match(s):
+        return True
+    return _looks_like_iso_date_digits(_normalize_phone_digits(s))
 
 def _normalize_phone_digits(text):
     norm = re.sub(r'[\s\-+]', '', str(text).strip())
@@ -94,11 +118,14 @@ def is_mobile_phone_value(text):
 
 def is_landline_phone_value(text):
     s = str(text).strip()
-    if not s or is_mobile_phone_value(s):
+    if not s or is_mobile_phone_value(s) or _is_date_like_phone_exclusion(s):
         return False
     if LANDLINE_PHONE_REGEX.match(s):
         return True
-    return bool(LANDLINE_PHONE_REGEX.match(_normalize_phone_digits(s)))
+    norm = _normalize_phone_digits(s)
+    if _looks_like_iso_date_digits(norm):
+        return False
+    return bool(LANDLINE_PHONE_REGEX.match(norm))
 
 def is_phone_value(text):
     return is_mobile_phone_value(text) or is_landline_phone_value(text)
@@ -2197,9 +2224,11 @@ all_test_columns = {
 
 
     "PHONE": [
-        # 平台截图：固话/400/800 带横杠
+        # 与 MaskSdkDemo2 landlinePhoneSamples 一致
         "400-100-5678","010-62503000","400-830-8300","86-755-83301199","800-9009999",
-        "400-100-5678","010-62503000","400-830-8300","86-755-83301199","800-9009999",
+        "021-12345678","020-87654321","0755-83301199","0571-88889999","028-12345678",
+        "0531-86378901","029-87654321","022-12345678","024-12345678","0311-12345678",
+        "95588","95599","95388","12345","12306","6250-3000","88886666",
         # "13888888888","13999999999","13700001111","15812345678",
         # "18688889999","15066668888","13123456789",
         # "17012345678","17187654321","19912345678","16600001111",
