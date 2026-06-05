@@ -19,7 +19,7 @@ from sklearn.calibration import CalibratedClassifierCV
 # ==============================
 # （1）加载数据
 # 必须包含 column_id,text,label
-# 同目录下若有 fit_data_MIXED_append.csv / fit_data_NAME_append.csv / fit_data_DATE_append.csv 则自动合并
+# 同目录下若有 fit_data_*_append.csv 则自动合并
 # ==============================
 
 _rk002_dir = os.path.dirname(os.path.abspath(__file__))
@@ -27,6 +27,7 @@ _fit_main = os.path.join(_rk002_dir, "fit_data.csv")
 _fit_mix = os.path.join(_rk002_dir, "fit_data_MIXED_append.csv")
 _fit_name = os.path.join(_rk002_dir, "fit_data_NAME_append.csv")
 _fit_date = os.path.join(_rk002_dir, "fit_data_DATE_append.csv")
+_fit_phone = os.path.join(_rk002_dir, "fit_data_PHONE_append.csv")
 
 df = pd.read_csv(_fit_main, dtype={"text": str}, skipinitialspace=True)
 df.columns = df.columns.str.strip()  # 兼容每列前导空格
@@ -53,6 +54,13 @@ if os.path.isfile(_fit_date):
     df = pd.concat([df, df_d], ignore_index=True)
     print(f"已合并 DATE 补充样本: {_fit_date} （+{len(df_d)} 行，与截图列一致）")
 
+if os.path.isfile(_fit_phone):
+    df_p = pd.read_csv(_fit_phone, dtype={"text": str}, skipinitialspace=True)
+    df_p.columns = df_p.columns.str.strip()
+    df_p["column_id"] = df_p["column_id"].astype(str).str.strip()
+    df = pd.concat([df, df_p], ignore_index=True)
+    print(f"已合并 PHONE 补充样本: {_fit_phone} （+{len(df_p)} 行，含固话/400/800）")
+
 # print("原始数据前5行：")
 # print(df.head())
 # print("=" * 60)
@@ -61,6 +69,39 @@ if os.path.isfile(_fit_date):
 # 手机号、身份证 正则规则
 # ==============================
 PHONE_REGEX = re.compile(r"^1[3-9]\d{9}$")
+LANDLINE_PHONE_REGEX = re.compile(
+    r'^(\+?86[- ]?)?('
+    r'0\d{2,3}[- ]?\d{7,8}|'
+    r'400[- ]?\d{3}[- ]?\d{4}|'
+    r'800[- ]?\d{7,8}|'
+    r'86[- ]?\d{2,3}[- ]?\d{7,8}'
+    r')$'
+)
+
+def _normalize_phone_digits(text):
+    norm = re.sub(r'[\s\-+]', '', str(text).strip())
+    if norm.startswith('86') and len(norm) > 11:
+        norm = norm[2:]
+    return norm
+
+def is_mobile_phone_value(text):
+    s = str(text).strip()
+    if not s:
+        return False
+    if PHONE_REGEX.match(s):
+        return True
+    return bool(PHONE_REGEX.match(_normalize_phone_digits(s)))
+
+def is_landline_phone_value(text):
+    s = str(text).strip()
+    if not s or is_mobile_phone_value(s):
+        return False
+    if LANDLINE_PHONE_REGEX.match(s):
+        return True
+    return bool(LANDLINE_PHONE_REGEX.match(_normalize_phone_digits(s)))
+
+def is_phone_value(text):
+    return is_mobile_phone_value(text) or is_landline_phone_value(text)
 ID_REGEX = re.compile(r"^\d{17}[\dXx]$")
 
 def valid_birth(id_number):
@@ -808,9 +849,10 @@ def extract_column_features(text_list):
         digit_ratios.append(digits / len(t))
     avg_digit_ratio = np.mean(digit_ratios)
 
-    # 3 → phone_regex_ratio
-    phone_match = sum(1 for t in cleaned if PHONE_REGEX.match(t))
-    phone_regex_ratio = phone_match / len(cleaned)
+    # 3 → phone_regex_ratio = 手机占比 + 固话占比（混合列相加，互斥划分，上限 1.0）
+    mobile_phone_ratio = sum(1 for t in cleaned if is_mobile_phone_value(t)) / len(cleaned)
+    landline_phone_ratio = sum(1 for t in cleaned if is_landline_phone_value(t)) / len(cleaned)
+    phone_regex_ratio = min(1.0, mobile_phone_ratio + landline_phone_ratio)
 
     # ==============================
     # （2）ID_CARD
@@ -1656,12 +1698,7 @@ def extract_column_features(text_list):
         1 for t in cleaned
         if any(k in t.lower() for k in DEFAULT_LIKE_KEYWORDS)
     ) / len(cleaned)
-    # pinyin_lowercase_ascii_only_ratio（纯小写 a-z、长度 6-20，不依赖音节表，强化拼音名）
-    pinyin_lowercase_ascii_only_ratio = sum(
-        1 for t in cleaned
-        if (lambda s: len(s) >= 6 and len(s) <= 20 and s.isalpha() and s.islower())(t.strip().lower())
-    ) / len(cleaned)
-
+    # f119 槽位已改为 landline_phone_ratio（见 PHONE 段）；拼音名仍由 pinyin_* 多维特征覆盖
     # 128 → unique_value_ratio 列内取值多样性（唯一值数/总数），区分护照等高多样性 vs C10001002 等系统代码低多样性
     unique_value_ratio = len(set(t.strip() for t in cleaned)) / len(cleaned)
     # 129 → all_same_value_flag 整列全部相同值的标志（1=全部相同，0=有不同值），强信号区分系统代码列
@@ -1820,7 +1857,7 @@ def extract_column_features(text_list):
         money_unit_ratio,
 
         default_like_keyword_ratio,
-        pinyin_lowercase_ascii_only_ratio,
+        landline_phone_ratio,
         unique_value_ratio,
         all_same_value_flag,
 
@@ -2053,19 +2090,19 @@ for _thresh in [0.55, 0.50, 0.45, 0.40, 0.35]:
         accepted_correct = (pred_label[accept] == y_test[accept]).sum()
         accepted_err = 1.0 - accepted_correct / accept.sum()
         # 错误率更小则更新；错误率相同则取阈值更高的一组（更保守）
-        if accepted_err < best_acc_err or (accepted_err == best_acc_err and _thresh > best_global_thresh):
+        if accepted_err < best_acc_err or (accepted_err == best_acc_err and _thresh < best_global_thresh):
             best_acc_err = accepted_err
             best_global_thresh, best_global_margin = _thresh, _margin
 
 print("（7.6）验证集阈值搜索：confidence_threshold=%.2f, default_min_margin=%.2f（接受后错误率≈%.2f%%）"
       % (best_global_thresh, best_global_margin, best_acc_err * 100))
 
-# 全局上限：搜索可能给出 0.55（错误率相同时偏保守），部署侧统一压到 0.40
+# 全局部署阈值 0.40（验证集搜索在错误率相同时优先更低阈值，再统一压上限）
 GLOBAL_THRESHOLD_CAP = 0.40
 best_global_thresh = min(best_global_thresh, GLOBAL_THRESHOLD_CAP)
-print("（7.6）应用全局上限：confidence_threshold=%.2f" % best_global_thresh)
+print("（7.6）部署全局阈值：confidence_threshold=%.2f" % best_global_thresh)
 
-# 按类阈值：每个类别在“真实为该类”的样本上，取预测概率的 10 分位数，并**不超过全局阈值**
+# 按类阈值：不超过全局阈值 GLOBAL_THRESHOLD_CAP
 # （否则易分类如 PHONE 会得到 0.9+，导致 SDK 端几乎全部被回退为 DEFAULT）
 per_class_threshold = {}
 for i, c in enumerate(model_classes):
@@ -2075,13 +2112,11 @@ for i, c in enumerate(model_classes):
         continue
     prob_c = _proba[mask, i]
     p10 = round(float(np.percentile(prob_c, 10)), 2)
-    per_class_threshold[c] = min(p10, best_global_thresh)
+    per_class_threshold[c] = min(p10, GLOBAL_THRESHOLD_CAP)
 
-# NAME：列级预测置信度普遍偏低，单独压低阈值（与 Java applyRecognizeOverrides 一致）
-if "NAME" in per_class_threshold:
-    per_class_threshold["NAME"] = min(per_class_threshold["NAME"], GLOBAL_THRESHOLD_CAP)
-else:
-    per_class_threshold["NAME"] = GLOBAL_THRESHOLD_CAP
+for c in list(per_class_threshold.keys()):
+    per_class_threshold[c] = min(per_class_threshold[c], GLOBAL_THRESHOLD_CAP)
+best_global_thresh = GLOBAL_THRESHOLD_CAP
 
 confidence_thresholds = {
     "global_confidence_threshold": best_global_thresh,
@@ -2162,10 +2197,13 @@ all_test_columns = {
 
 
     "PHONE": [
-        "13888888888","13999999999","13700001111","15812345678",
-        "18688889999","15066668888","13123456789",
-        "17012345678","17187654321","19912345678","16600001111",
-        "600519","2023-01-01","粤B12345"
+        # 平台截图：固话/400/800 带横杠
+        "400-100-5678","010-62503000","400-830-8300","86-755-83301199","800-9009999",
+        "400-100-5678","010-62503000","400-830-8300","86-755-83301199","800-9009999",
+        # "13888888888","13999999999","13700001111","15812345678",
+        # "18688889999","15066668888","13123456789",
+        # "17012345678","17187654321","19912345678","16600001111",
+        # "600519","2023-01-01","粤B12345"
     ],
 
 
@@ -2466,6 +2504,11 @@ def _looks_like_chinese_name_column(text_list):
 
 
 def apply_recognize_overrides(predicted, text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if cleaned:
+        phone_hit = sum(1 for t in cleaned if is_phone_value(t)) / len(cleaned)
+        if phone_hit >= 0.75 and predicted in ("IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN"):
+            return "PHONE"
     if predicted == "DEFAULT" and _looks_like_chinese_name_column(text_list):
         return "NAME"
     return predicted
