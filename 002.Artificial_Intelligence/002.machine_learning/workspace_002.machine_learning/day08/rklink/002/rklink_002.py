@@ -19,13 +19,14 @@ from sklearn.calibration import CalibratedClassifierCV
 # ==============================
 # （1）加载数据
 # 必须包含 column_id,text,label
-# 同目录下若有 fit_data_MIXED_append.csv / fit_data_NAME_append.csv 则自动合并
+# 同目录下若有 fit_data_MIXED_append.csv / fit_data_NAME_append.csv / fit_data_DATE_append.csv 则自动合并
 # ==============================
 
 _rk002_dir = os.path.dirname(os.path.abspath(__file__))
 _fit_main = os.path.join(_rk002_dir, "fit_data.csv")
 _fit_mix = os.path.join(_rk002_dir, "fit_data_MIXED_append.csv")
 _fit_name = os.path.join(_rk002_dir, "fit_data_NAME_append.csv")
+_fit_date = os.path.join(_rk002_dir, "fit_data_DATE_append.csv")
 
 df = pd.read_csv(_fit_main, dtype={"text": str}, skipinitialspace=True)
 df.columns = df.columns.str.strip()  # 兼容每列前导空格
@@ -44,6 +45,13 @@ if os.path.isfile(_fit_name):
     df_n["column_id"] = df_n["column_id"].astype(str).str.strip()
     df = pd.concat([df, df_n], ignore_index=True)
     print(f"已合并 NAME 补充样本: {_fit_name} （+{len(df_n)} 行，含 2~3 字中文姓名）")
+
+if os.path.isfile(_fit_date):
+    df_d = pd.read_csv(_fit_date, dtype={"text": str}, skipinitialspace=True)
+    df_d.columns = df_d.columns.str.strip()
+    df_d["column_id"] = df_d["column_id"].astype(str).str.strip()
+    df = pd.concat([df, df_d], ignore_index=True)
+    print(f"已合并 DATE 补充样本: {_fit_date} （+{len(df_d)} 行，与截图列一致）")
 
 # print("原始数据前5行：")
 # print(df.head())
@@ -2318,10 +2326,20 @@ all_test_columns = {
 
 
     "DATE": [
-        "2023-01-01","2023-02-15","2023-03-20",
-        "20230101","2022-12-31","2021-08-08","2020-06-18",
-        "2024-01-01","2023/12/25","2022.06.15","2019-09-09","2018-07-01",
-        "600519","粤B12345","test@example.com"
+        # 与平台截图列一致：仅 YYYY-MM-DD，重复 2026-01-01 / 2025-12-31
+        # "2026-01-01","2026-01-01","2026-01-01","2026-01-01","2026-01-01",
+        # "2025-12-31","2025-12-31","2025-12-31",
+        # "2026-01-01","2026-01-01",
+"2025-12-31",
+"2025-12-31",
+"2025-12-31",
+"2025-12-31",
+"2025-12-31",
+"2025-12-31",
+"2025-12-31",
+"2025-12-31",
+"2025-12-31",
+"2025-12-31",
     ],
 
     "DATE_TIME": [
