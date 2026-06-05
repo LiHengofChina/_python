@@ -1929,22 +1929,34 @@ os.makedirs(_model_dir, exist_ok=True)
 joblib.dump(model, os.path.join(_model_dir, "recognize_rf_model.joblib"))
 print(f"已保存 joblib 模型: {_model_dir}/recognize_rf_model.joblib")
 
-# PMML：Java SDK 决策树推理必需
-_pmml_path = os.path.join(_model_dir, "recognize_rf_model.pmml")
+# PMML：Java SDK 决策树推理必需（sklearn2pmml 调 Java 时 Windows 反斜杠路径会被吃掉，先写脚本同目录再复制）
+import shutil
+
+_pmml_final = os.path.join(_model_dir, "recognize_rf_model.pmml")
+_pmml_staging = os.path.join(_rk002_dir, "recognize_rf_model.pmml")
 try:
     from sklearn2pmml import sklearn2pmml
     from sklearn2pmml.pipeline import PMMLPipeline
 
     _X_train_df = pd.DataFrame(X_train, columns=feature_names)
+    _y_train_s = pd.Series(y_train, name="label")
     _pmml_pipe = PMMLPipeline([("classifier", model)])
-    _pmml_pipe.fit(_X_train_df, y_train)
-    sklearn2pmml(_pmml_pipe, _pmml_path, with_repr=True)
-    print(f"已保存 PMML 模型: {_pmml_path}")
+    _pmml_pipe.fit(_X_train_df, _y_train_s)
+    try:
+        _pmml_pipe.verify(_X_train_df)
+    except Exception:
+        pass
+    # 路径用正斜杠传给 Java，避免 D:\xxx 变成 D:xxx
+    _pmml_java_path = os.path.abspath(_pmml_staging).replace("\\", "/")
+    sklearn2pmml(_pmml_pipe, _pmml_java_path, with_repr=True)
+    shutil.copy2(_pmml_staging, _pmml_final)
+    print(f"已保存 PMML 模型: {_pmml_final}")
     print("可选后处理: python D:/___workspace/workspace_2025_18_w_java_/datasharingplatform/mask-sdk/scripts/merge_funds_into_stock_pmml.py")
 except ImportError:
     print("未安装 sklearn2pmml，跳过 PMML 导出（Java 推理需要）。pip install sklearn2pmml")
 except Exception as _pmml_err:
     print(f"PMML 导出失败: {_pmml_err}")
+    print("提示: 若 IDE 打开了 recognize_model 目录，请先关闭相关文件后重试；或设置 MASK_SDK_RECOGNIZE_MODEL_DIR 到短路径目录。")
 
 # ==============================
 # 保存字典（与特征提取逻辑一致）
