@@ -129,6 +129,16 @@ def is_landline_phone_value(text):
 
 def is_phone_value(text):
     return is_mobile_phone_value(text) or is_landline_phone_value(text)
+
+def _digit_only_length(text):
+    """行内数字字符个数（去掉非数字后长度）。"""
+    return sum(1 for c in str(text) if c.isdigit())
+
+def _phone_digit_len_13_11_8_hit(text):
+    """电话常见纯数字长度：8 位本地号 / 11 位手机或区号+座机 / 13 位 86+手机。"""
+    n = _digit_only_length(text)
+    return n in (8, 11, 13)
+
 ID_REGEX = re.compile(r"^\d{17}[\dXx]$")
 
 def valid_birth(id_number):
@@ -856,7 +866,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 126  # 121 基础维 + 5 维 MIXED 嵌入（与 mask-sdk Java 一致）
+        return [0] * 129  # 121 基础 + 5 MIXED + 2 姓名 + 1 电话数字长度（与 mask-sdk Java 一致）
 
     lengths = [len(t) for t in cleaned]
 
@@ -880,6 +890,11 @@ def extract_column_features(text_list):
     mobile_phone_ratio = sum(1 for t in cleaned if is_mobile_phone_value(t)) / len(cleaned)
     landline_phone_ratio = sum(1 for t in cleaned if is_landline_phone_value(t)) / len(cleaned)
     phone_regex_ratio = min(1.0, mobile_phone_ratio + landline_phone_ratio)
+
+    # 3b → phone_digit_len_13_11_8_ratio 纯数字长度为 8/11/13 的占比（86+手机/11位手机座机/8位本地号）
+    phone_digit_len_13_11_8_ratio = sum(
+        1 for t in cleaned if _phone_digit_len_13_11_8_hit(t)
+    ) / len(cleaned)
 
     # ==============================
     # （2）ID_CARD
@@ -1674,6 +1689,17 @@ def extract_column_features(text_list):
     else:
         name_short_length_stability = 0
 
+    # 116 → name_han_char_ratio 列内字符全为汉字占比（100% 才适合判 NAME，与 CNY 等区分）
+    total_name_chars = sum(len(t) for t in cleaned)
+    han_name_chars = sum(1 for t in cleaned for c in t if '\u4e00' <= c <= '\u9fff')
+    name_han_char_ratio = han_name_chars / total_name_chars if total_name_chars > 0 else 0.0
+
+    # 117 → name_2_or_3_han_ratio 每行取值恰为 2 或 3 个汉字的比例（区分姓名 vs 永昌路支行等）
+    name_2_or_3_han_ratio = sum(
+        1 for t in cleaned
+        if 2 <= len(t) <= 3 and all('\u4e00' <= c <= '\u9fff' for c in t)
+    ) / len(cleaned)
+
     # ==============================
     # （29）MONEY 金额
     # ==============================
@@ -1893,6 +1919,10 @@ def extract_column_features(text_list):
         mixed_embed_passport_ratio,
         mixed_embed_credit_valid_ratio,
         mixed_long_cn_digit_token_ratio,
+
+        name_han_char_ratio,
+        name_2_or_3_han_ratio,
+        phone_digit_len_13_11_8_ratio,
     ]
 
 # ==============================
@@ -1928,7 +1958,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 126, f"特征维数应为 126（121 基础 + 5 MIXED 嵌入，与 mask-sdk Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 129, f"特征维数应为 129（121 基础 + 5 MIXED + 2 姓名 + 1 电话数字长度，与 mask-sdk Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
@@ -2103,7 +2133,7 @@ default_idx = int(_default_idx[0]) if len(_default_idx) > 0 else -1
 
 # 全局阈值搜索：试多组 (confidence_threshold, default_min_margin)
 # 在“接受后错误率”相同时优先选更高阈值（更保守，宁可识别不出）
-best_global_thresh, best_global_margin = 0.40, 0.08
+best_global_thresh, best_global_margin = 0.55, 0.08
 best_acc_err = 1.0
 for _thresh in [0.55, 0.50, 0.45, 0.40, 0.35]:
     for _margin in [0.10, 0.08, 0.05]:
@@ -2124,8 +2154,8 @@ for _thresh in [0.55, 0.50, 0.45, 0.40, 0.35]:
 print("（7.6）验证集阈值搜索：confidence_threshold=%.2f, default_min_margin=%.2f（接受后错误率≈%.2f%%）"
       % (best_global_thresh, best_global_margin, best_acc_err * 100))
 
-# 全局部署阈值 0.40（验证集搜索在错误率相同时优先更低阈值，再统一压上限）
-GLOBAL_THRESHOLD_CAP = 0.40
+# 全局部署阈值 0.55（验证集搜索在错误率相同时优先更低阈值，再统一压上限）
+GLOBAL_THRESHOLD_CAP = 0.55
 best_global_thresh = min(best_global_thresh, GLOBAL_THRESHOLD_CAP)
 print("（7.6）部署全局阈值：confidence_threshold=%.2f" % best_global_thresh)
 
@@ -2165,7 +2195,7 @@ with open(_readme_path, "w", encoding="utf-8") as _rf:
         "  recognize_rf_model.pmml      — Java 推理（必需）\n"
         "  recognize_rf_model.joblib    — 备份\n"
         "  dicts/all_dicts.json         — 特征用字典\n"
-        "  feature_names.json           — f0..f125（126 维）\n"
+        "  feature_names.json           — f0..f128（129 维）\n"
         "  confidence_thresholds.json   — 可选阈值\n"
     )
 print(f"已写入说明: {_readme_path}")
@@ -2473,10 +2503,49 @@ all_test_columns = {
     ],
 
     "NAME": [
-        # 来自 003.tmp.txt 样例（含重复，模拟真实列数据）
-        "付艳彤", "张勤民", "丁宏伟", "赵莉", "扁文生", "付艳彤", "左林娣", "徐海兰",
-        "郭明峰", "付艳彤", "保承仪", "李奕萱", "赵桂兰", "严江立", "藏坚强", "左林娣",
-        "胥淑英", "王定强", "张娟", "查先锋", "王青青", "石孝", "王敏", "马玲莉", "程海兰",
+        # # 来自 003.tmp.txt 样例（含重复，模拟真实列数据）
+        # "付艳彤", "张勤民", "丁宏伟", "赵莉", "扁文生", "付艳彤", "左林娣", "徐海兰",
+        # "郭明峰", "付艳彤", "保承仪", "李奕萱", "赵桂兰", "严江立", "藏坚强", "左林娣",
+        # "胥淑英", "王定强", "张娟", "查先锋", "王青青", "石孝", "王敏", "马玲莉", "程海兰",
+
+# "许梦佳",
+# "刘文军",
+# "台青",
+# "苌雷",
+# "柴立珍"
+
+# "CNY",
+# "CNY",
+# "CNY",
+# "CNY",
+# "CNY",
+# "CNY",
+# "CNY",
+# "CNY",
+# "CNY",
+# "CNY",
+# "CNY",
+# "CNY"
+
+# "永昌路支行",
+# "民族支行",
+# "白塔山支行"
+
+
+# "禁用",
+# "岗位",
+# "公司",
+# "左模糊",
+# "右模糊",
+# "根据X轴汇总求和",
+# "根据X轴汇总求平均值",
+# "栅格",
+
+
+"系统管理员",
+"审核人",
+"填报人",
+
     ],
 
     "MONEY": [
@@ -2508,7 +2577,7 @@ all_test_columns = {
 }
 
 # ==============================
-# 推理后处理（与 Java RKLinkMaskSdkImpl.applyRecognizeOverrides 对齐）
+# 推理后处理（与 Java RecognizeOverrideSupport.applyPythonAligned 对齐）
 # ==============================
 
 def _looks_like_chinese_name_column(text_list):
@@ -2532,12 +2601,43 @@ def _looks_like_chinese_name_column(text_list):
     return surname_hit / n >= 0.75
 
 
+def _name_column_han_char_ratio(text_list):
+    """列内所有字符中汉字占比（0~1）。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return 0.0
+    total = sum(len(t) for t in cleaned)
+    if total <= 0:
+        return 0.0
+    han = sum(1 for t in cleaned for c in t if '\u4e00' <= c <= '\u9fff')
+    return han / total
+
+
+def _name_column_2_or_3_han_row_ratio(text_list):
+    """列内「恰为 2 或 3 个汉字」的取值占比（0~1）。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return 0.0
+    hit = sum(
+        1 for t in cleaned
+        if 2 <= len(t) <= 3 and all('\u4e00' <= c <= '\u9fff' for c in t)
+    )
+    return hit / len(cleaned)
+
+
+NAME_2_OR_3_HAN_MIN_RATIO = 0.75
+
+
 def apply_recognize_overrides(predicted, text_list):
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if cleaned:
         phone_hit = sum(1 for t in cleaned if is_phone_value(t)) / len(cleaned)
         if phone_hit >= 0.75 and predicted in ("IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN"):
             return "PHONE"
+    if predicted == "NAME" and _name_column_han_char_ratio(text_list) < 1.0:
+        return "DEFAULT"
+    if predicted == "NAME" and _name_column_2_or_3_han_row_ratio(text_list) < NAME_2_OR_3_HAN_MIN_RATIO:
+        return "DEFAULT"
     if predicted == "DEFAULT" and _looks_like_chinese_name_column(text_list):
         return "NAME"
     return predicted
