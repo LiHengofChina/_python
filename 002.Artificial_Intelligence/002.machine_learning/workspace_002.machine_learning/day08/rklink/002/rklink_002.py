@@ -300,6 +300,16 @@ surname_dict = set(
 )
 
 
+def _surname_head_in_dict(text):
+    """姓名首字或复姓前两字是否在姓氏字典（百家姓）中。"""
+    t = str(text).strip()
+    if not t:
+        return False
+    if len(t) >= 2 and t[:2] in surname_dict:
+        return True
+    return t[0] in surname_dict
+
+
 # ==============================
 # 构建企业名称关键词字典
 # ==============================
@@ -1665,13 +1675,10 @@ def extract_column_features(text_list):
     ) / len(cleaned)
 
 
-    # 113 → name_surname_dict_ratio 首字在姓氏字典中的比例
+    # 113 → name_surname_dict_ratio 首字或复姓前两字在姓氏字典中的比例
     name_surname_dict_ratio = sum(
         1 for t in cleaned
-        if len(t) >= 2 and (
-            t[:2] in surname_dict or   # 复姓优先
-            t[0] in surname_dict
-        )
+        if len(t) >= 2 and _surname_head_in_dict(t)
     ) / len(cleaned)
 
 
@@ -1698,6 +1705,11 @@ def extract_column_features(text_list):
     name_2_or_3_han_ratio = sum(
         1 for t in cleaned
         if 2 <= len(t) <= 3 and all('\u4e00' <= c <= '\u9fff' for c in t)
+    ) / len(cleaned)
+
+    # 118 → name_surname_head_dict_ratio 首字或复姓前两字在姓氏字典中的比例（f129，与 f109 规则一致、强化姓名列信号）
+    name_surname_head_dict_ratio = sum(
+        1 for t in cleaned if _surname_head_in_dict(t)
     ) / len(cleaned)
 
     # ==============================
@@ -1923,6 +1935,7 @@ def extract_column_features(text_list):
         name_han_char_ratio,
         name_2_or_3_han_ratio,
         phone_digit_len_13_11_8_ratio,
+        name_surname_head_dict_ratio,
     ]
 
 # ==============================
@@ -1958,7 +1971,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 129, f"特征维数应为 129（121 基础 + 5 MIXED + 2 姓名 + 1 电话数字长度，与 mask-sdk Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 130, f"特征维数应为 130（121 基础 + 5 MIXED + 3 姓名 + 1 电话数字长度，与 mask-sdk Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
@@ -2195,7 +2208,7 @@ with open(_readme_path, "w", encoding="utf-8") as _rf:
         "  recognize_rf_model.pmml      — Java 推理（必需）\n"
         "  recognize_rf_model.joblib    — 备份\n"
         "  dicts/all_dicts.json         — 特征用字典\n"
-        "  feature_names.json           — f0..f128（129 维）\n"
+        "  feature_names.json           — f0..f129（130 维）\n"
         "  confidence_thresholds.json   — 可选阈值\n"
     )
 print(f"已写入说明: {_readme_path}")
@@ -2542,10 +2555,24 @@ all_test_columns = {
 # "栅格",
 
 
-"系统管理员",
-"审核人",
-"填报人",
+# "系统管理员",
+# "审核人",
+# "填报人",
 
+# "成功",
+# "成功",
+# "成功",
+# "成功",
+# "成功",
+
+
+"互开",
+"互开",
+"互开",
+"互开",
+"互开",
+"互开",
+"互开",
     ],
 
     "MONEY": [
@@ -2581,7 +2608,7 @@ all_test_columns = {
 # ==============================
 
 def _looks_like_chinese_name_column(text_list):
-    """整列 2~3 字中文、无数字、无公司/集团后缀，姓氏字典命中率 ≥75%。"""
+    """整列 2~3 字中文、无数字、无公司/集团后缀，首字或复姓前两字在姓氏字典命中率 ≥75%。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
@@ -2596,9 +2623,9 @@ def _looks_like_chinese_name_column(text_list):
             return False
         if not all("\u4e00" <= c <= "\u9fff" for c in t):
             return False
-        if (len(t) >= 2 and (t[:2] in surname_dict or t[0] in surname_dict)):
+        if _surname_head_in_dict(t):
             surname_hit += 1
-    return surname_hit / n >= 0.75
+    return surname_hit / n >= NAME_SURNAME_HEAD_MIN_RATIO
 
 
 def _name_column_han_char_ratio(text_list):
@@ -2625,7 +2652,67 @@ def _name_column_2_or_3_han_row_ratio(text_list):
     return hit / len(cleaned)
 
 
+def _name_column_surname_head_dict_ratio(text_list):
+    """列内首字或复姓前两字在姓氏字典中的占比（0~1）。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return 0.0
+    hit = sum(1 for t in cleaned if _surname_head_in_dict(t))
+    return hit / len(cleaned)
+
+
 NAME_2_OR_3_HAN_MIN_RATIO = 0.75
+# 姓名列：每一行首字或复姓前两字均须在姓氏字典中 → 列级占比须 100%
+NAME_SURNAME_HEAD_MIN_RATIO = 1.0
+
+# 部署置信度阈值（与 Java masks.recognize-confidence-threshold / RecognizeThresholdProvider 默认 0.55 一致）
+# 训练后会写入 confidence_thresholds.json；测试推理优先读该文件，可用环境变量覆盖
+DEFAULT_DEPLOY_CONFIDENCE_THRESHOLD = 0.55
+DEFAULT_DEPLOY_MIN_MARGIN = 0.08
+
+
+def apply_confidence_gate(predicted, probability, classes, confidence_threshold=0.55, default_min_margin=0.08):
+    """
+    置信度回退：与 Java RKLinkMaskSdkImpl 一致。
+    当预测类最高概率 < confidence_threshold，或 (最高概率 - DEFAULT 概率) < default_min_margin 时 → DEFAULT。
+    """
+    if predicted is None or predicted == "DEFAULT":
+        return predicted
+    proba = np.asarray(probability, dtype=float)
+    class_list = list(classes)
+    max_p = float(np.max(proba))
+    default_p = 0.0
+    if "DEFAULT" in class_list:
+        default_p = float(proba[class_list.index("DEFAULT")])
+    if max_p < confidence_threshold or (max_p - default_p) < default_min_margin:
+        return "DEFAULT"
+    return predicted
+
+
+def _load_deploy_confidence_config(model_dir=None):
+    """读取 confidence_thresholds.json；缺失时回退默认（与 Java RecognizeModelLoader 一致）。"""
+    thresh = DEFAULT_DEPLOY_CONFIDENCE_THRESHOLD
+    margin = DEFAULT_DEPLOY_MIN_MARGIN
+    env_thresh = os.environ.get("MASK_SDK_RECOGNIZE_CONFIDENCE_THRESHOLD", "").strip()
+    if env_thresh:
+        try:
+            thresh = float(env_thresh)
+        except ValueError:
+            pass
+    path = None
+    if model_dir:
+        path = os.path.join(model_dir, "confidence_thresholds.json")
+    if path and os.path.isfile(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+            if not env_thresh and cfg.get("global_confidence_threshold") is not None:
+                thresh = float(cfg["global_confidence_threshold"])
+            if cfg.get("global_default_min_margin") is not None:
+                margin = float(cfg["global_default_min_margin"])
+        except (OSError, ValueError, TypeError):
+            pass
+    return thresh, margin
 
 
 def apply_recognize_overrides(predicted, text_list):
@@ -2638,27 +2725,45 @@ def apply_recognize_overrides(predicted, text_list):
         return "DEFAULT"
     if predicted == "NAME" and _name_column_2_or_3_han_row_ratio(text_list) < NAME_2_OR_3_HAN_MIN_RATIO:
         return "DEFAULT"
+    if predicted == "NAME" and _name_column_surname_head_dict_ratio(text_list) < NAME_SURNAME_HEAD_MIN_RATIO:
+        return "DEFAULT"
     if predicted == "DEFAULT" and _looks_like_chinese_name_column(text_list):
         return "NAME"
     return predicted
 
 # ==============================
-# 循环预测
+# 循环预测（与 Java SDK：PMML → 置信度门控 → apply_recognize_overrides）
 # ==============================
+
+_deploy_confidence_threshold, _deploy_default_min_margin = _load_deploy_confidence_config(_model_dir)
+print("=" * 60)
+print("测试推理部署参数：confidence_threshold=%.2f, default_min_margin=%.2f（与 Java SDK 一致）"
+      % (_deploy_confidence_threshold, _deploy_default_min_margin))
 
 for label_name, test_column in all_test_columns.items():
 
     feature = extract_column_features(test_column)
     feature_subset = [feature[i] for i in _feature_indices]
-    prediction = model.predict([feature_subset])[0]
-    prediction = apply_recognize_overrides(prediction, test_column)
     probability = model.predict_proba([feature_subset])[0]
+    raw_prediction = model.predict([feature_subset])[0]
+    after_gate = apply_confidence_gate(
+        raw_prediction, probability, model.classes_,
+        _deploy_confidence_threshold, _deploy_default_min_margin,
+    )
+    prediction = apply_recognize_overrides(after_gate, test_column)
 
     print("\n==============================")
     print("测试类型:", label_name)
-    print("预测类别:", prediction)
+    print("模型预测:", raw_prediction)
+    if after_gate != raw_prediction:
+        print("置信度门控后:", after_gate)
+    if prediction != after_gate:
+        print("规则后处理:", prediction)
+    print("预测类别(最终):", prediction)
+    print("姓名特征 f129 name_surname_head_dict_ratio: %.4f（须=1.0 才保留 NAME）"
+          % feature[129])
 
-    # 打印概率排序（从高到低）
+    # 打印概率排序（从高到低）—— 仍为模型原始 predict_proba，不随后处理改变
     sorted_probs = sorted(
         zip(model.classes_, probability),
         key=lambda x: x[1],
