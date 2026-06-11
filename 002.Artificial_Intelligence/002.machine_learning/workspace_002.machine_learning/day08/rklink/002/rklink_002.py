@@ -130,6 +130,68 @@ def is_landline_phone_value(text):
 def is_phone_value(text):
     return is_mobile_phone_value(text) or is_landline_phone_value(text)
 
+PURE_100XX_SHORT_REGEX = re.compile(r'^100\d{2,4}$')
+YEAR_RANGE_REGEX = re.compile(r'^\d{4}-\d{4}$')
+PHONE_COLUMN_STRICT_RATIO = 0.75
+
+
+def _is_pure_100xx_short_code(text):
+    """纯 100xx 运营商/客服短号（如 10086、10099），非联系电话列。"""
+    norm = _normalize_phone_digits(str(text).strip())
+    return norm.isdigit() and len(norm) <= 6 and bool(PURE_100XX_SHORT_REGEX.match(norm))
+
+
+def _is_pure_7_8_digit_bare_code(text):
+    """无区号格式的裸 7~8 位数字（业务编号/工号等）。"""
+    s = str(text).strip()
+    if re.search(r'[- ]', s):
+        return False
+    norm = _normalize_phone_digits(s)
+    return norm.isdigit() and len(norm) in (7, 8)
+
+
+def _is_year_range_like(text):
+    return bool(YEAR_RANGE_REGEX.match(str(text).strip()))
+
+
+def _is_bare_10_digit_code(text):
+    """裸 10 位数字（常见日期/编号，非手机）。"""
+    s = str(text).strip()
+    if re.search(r'[- ]', s):
+        return False
+    norm = _normalize_phone_digits(s)
+    return norm.isdigit() and len(norm) == 10 and not is_mobile_phone_value(s)
+
+
+def _looks_like_strict_phone_column(text_list):
+    """
+    严格电话列：≥75% 为 11 位手机，或 ≥75% 命中电话规则且非纯 100xx/裸 7~8 位/学年/裸 10 位列。
+    与 Java PhoneRecognizeHeuristics.looksLikeStrictPhoneColumn 一致。
+    """
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    n = len(cleaned)
+    mobile_hit = sum(1 for t in cleaned if is_mobile_phone_value(t)) / n
+    if mobile_hit >= PHONE_COLUMN_STRICT_RATIO:
+        return True
+    phone_hit = sum(1 for t in cleaned if is_phone_value(t)) / n
+    if phone_hit < PHONE_COLUMN_STRICT_RATIO:
+        return False
+    pure_100 = sum(1 for t in cleaned if _is_pure_100xx_short_code(t)) / n
+    pure_78 = sum(1 for t in cleaned if _is_pure_7_8_digit_bare_code(t)) / n
+    year_rng = sum(1 for t in cleaned if _is_year_range_like(t)) / n
+    bare_10 = sum(1 for t in cleaned if _is_bare_10_digit_code(t)) / n
+    if pure_100 >= PHONE_COLUMN_STRICT_RATIO:
+        return False
+    if pure_78 >= PHONE_COLUMN_STRICT_RATIO:
+        return False
+    if year_rng >= PHONE_COLUMN_STRICT_RATIO:
+        return False
+    if bare_10 >= PHONE_COLUMN_STRICT_RATIO:
+        return False
+    return True
+
 def _digit_only_length(text):
     """行内数字字符个数（去掉非数字后长度）。"""
     return sum(1 for c in str(text) if c.isdigit())
@@ -2267,15 +2329,29 @@ all_test_columns = {
 
 
     "PHONE": [
-        # 与 MaskSdkDemo2 landlinePhoneSamples 一致
-        "400-100-5678","010-62503000","400-830-8300","86-755-83301199","800-9009999",
-        "021-12345678","020-87654321","0755-83301199","0571-88889999","028-12345678",
-        "0531-86378901","029-87654321","022-12345678","024-12345678","0311-12345678",
-        "95588","95599","95388","12345","12306","6250-3000","88886666",
-        # "13888888888","13999999999","13700001111","15812345678",
-        # "18688889999","15066668888","13123456789",
-        # "17012345678","17187654321","19912345678","16600001111",
-        # "600519","2023-01-01","粤B12345"
+        [
+            "13800001234", "13912345678", "13698765432", "15812345678", "18611112222",
+            "17733334444", "18855556666", "19977778888", "13200001111", "15122223333",
+        ],
+        [
+            "400-100-5678", "010-62503000", "400-830-8300", "86-755-83301199", "800-9009999",
+            "021-12345678", "020-87654321", "0755-83301199", "0571-88889999", "028-12345678",
+            "95588", "95599", "95388", "12345", "12306", "6250-3000", "88886666",
+        ],
+        ["450773", "439211", "342582", "374110"],
+        ["2011010201", "2011010201"],
+        ["2011010201", "2011010201"],
+        ["10086", "10099", "10091", "10099", "10099"],
+        ["400420", "100160", "100150"],
+        ["10093", "10051", "10087", "10082", "10099"],
+        ["10052", "10090", "10051", "10073", "10001"],
+        ["10099", "10099", "10099", "10099", "10099"],
+        ["10005", "10005", "10005", "10005", "10005"],
+        ["13609315050", "13893105080"],
+        ["2665418", "3174515", "3735978", "2669673"],
+        ["57741935", "73061385", "74179344", "73247184"],
+        ["10087", "10087", "10087", "10087"],
+        ["2025-2026", "2025-2026"],
     ],
 
 
@@ -2516,63 +2592,19 @@ all_test_columns = {
     ],
 
     "NAME": [
-        # # 来自 003.tmp.txt 样例（含重复，模拟真实列数据）
-        # "付艳彤", "张勤民", "丁宏伟", "赵莉", "扁文生", "付艳彤", "左林娣", "徐海兰",
-        # "郭明峰", "付艳彤", "保承仪", "李奕萱", "赵桂兰", "严江立", "藏坚强", "左林娣",
-        # "胥淑英", "王定强", "张娟", "查先锋", "王青青", "石孝", "王敏", "马玲莉", "程海兰",
-
-# "许梦佳",
-# "刘文军",
-# "台青",
-# "苌雷",
-# "柴立珍"
-
-# "CNY",
-# "CNY",
-# "CNY",
-# "CNY",
-# "CNY",
-# "CNY",
-# "CNY",
-# "CNY",
-# "CNY",
-# "CNY",
-# "CNY",
-# "CNY"
-
-# "永昌路支行",
-# "民族支行",
-# "白塔山支行"
-
-
-# "禁用",
-# "岗位",
-# "公司",
-# "左模糊",
-# "右模糊",
-# "根据X轴汇总求和",
-# "根据X轴汇总求平均值",
-# "栅格",
-
-
-# "系统管理员",
-# "审核人",
-# "填报人",
-
-# "成功",
-# "成功",
-# "成功",
-# "成功",
-# "成功",
-
-
-"互开",
-"互开",
-"互开",
-"互开",
-"互开",
-"互开",
-"互开",
+        ["张三", "王小小", "刘德华", "李四", "赵六", "孙七", "周八", "吴九", "郑十", "陈一"],
+        [
+            "付艳彤", "张勤民", "丁宏伟", "赵莉", "扁文生", "付艳彤", "左林娣", "徐海兰",
+            "郭明峰", "付艳彤", "保承仪", "李奕萱", "赵桂兰", "严江立", "藏坚强", "左林娣",
+            "胥淑英", "王定强", "张娟", "查先锋", "王青青", "石孝", "王敏", "马玲莉", "程海兰",
+        ],
+        ["许梦佳", "刘文军", "台青", "苌雷", "柴立珍"],
+        ["CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY"],
+        ["成功", "成功", "成功", "成功", "成功"],
+        ["互开", "互开", "互开", "互开", "互开", "互开", "互开"],
+        ["永昌路支行", "民族支行", "白塔山支行"],
+        ["禁用", "岗位", "公司", "左模糊", "右模糊", "根据X轴汇总求和", "根据X轴汇总求平均值", "栅格"],
+        ["系统管理员", "审核人", "填报人"],
     ],
 
     "MONEY": [
@@ -2602,6 +2634,20 @@ all_test_columns = {
         "武汉华泰软件有限公司 13698765432 G56789012",
     ],
 }
+
+
+def _iter_test_column_groups(all_groups_dict):
+    """支持单组 flat list 或多组 list[list]（与 MaskSdkDemo2 一致）。"""
+    for label_name, groups in all_groups_dict.items():
+        if not groups:
+            continue
+        if isinstance(groups[0], (list, tuple)):
+            total = len(groups)
+            for idx, column in enumerate(groups, start=1):
+                yield label_name, idx, total, column
+        else:
+            yield label_name, 1, 1, groups
+
 
 # ==============================
 # 推理后处理（与 Java RecognizeOverrideSupport.applyPythonAligned 对齐）
@@ -2718,9 +2764,11 @@ def _load_deploy_confidence_config(model_dir=None):
 def apply_recognize_overrides(predicted, text_list):
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if cleaned:
-        phone_hit = sum(1 for t in cleaned if is_phone_value(t)) / len(cleaned)
-        if phone_hit >= 0.75 and predicted in ("IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN"):
+        if _looks_like_strict_phone_column(text_list) and predicted in (
+                "IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN"):
             return "PHONE"
+    if predicted == "PHONE" and not _looks_like_strict_phone_column(text_list):
+        return "DEFAULT"
     if predicted == "NAME" and _name_column_han_char_ratio(text_list) < 1.0:
         return "DEFAULT"
     if predicted == "NAME" and _name_column_2_or_3_han_row_ratio(text_list) < NAME_2_OR_3_HAN_MIN_RATIO:
@@ -2740,7 +2788,7 @@ print("=" * 60)
 print("测试推理部署参数：confidence_threshold=%.2f, default_min_margin=%.2f（与 Java SDK 一致）"
       % (_deploy_confidence_threshold, _deploy_default_min_margin))
 
-for label_name, test_column in all_test_columns.items():
+for label_name, group_idx, group_total, test_column in _iter_test_column_groups(all_test_columns):
 
     feature = extract_column_features(test_column)
     feature_subset = [feature[i] for i in _feature_indices]
@@ -2753,7 +2801,10 @@ for label_name, test_column in all_test_columns.items():
     prediction = apply_recognize_overrides(after_gate, test_column)
 
     print("\n==============================")
-    print("测试类型:", label_name)
+    if group_total > 1:
+        print("测试类型:", "%s#%d/%d" % (label_name, group_idx, group_total))
+    else:
+        print("测试类型:", label_name)
     print("模型预测:", raw_prediction)
     if after_gate != raw_prediction:
         print("置信度门控后:", after_gate)
@@ -2762,6 +2813,8 @@ for label_name, test_column in all_test_columns.items():
     print("预测类别(最终):", prediction)
     print("姓名特征 f129 name_surname_head_dict_ratio: %.4f（须=1.0 才保留 NAME）"
           % feature[129])
+    print("电话严格校验 looks_like_strict_phone_column: %s"
+          % _looks_like_strict_phone_column(test_column))
 
     # 打印概率排序（从高到低）—— 仍为模型原始 predict_proba，不随后处理改变
     sorted_probs = sorted(
