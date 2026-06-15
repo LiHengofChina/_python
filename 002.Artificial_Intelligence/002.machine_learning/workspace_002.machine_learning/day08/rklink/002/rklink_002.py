@@ -2206,52 +2206,39 @@ model_classes = model.classes_
 _default_idx = np.where(model_classes == "DEFAULT")[0]
 default_idx = int(_default_idx[0]) if len(_default_idx) > 0 else -1
 
-# 全局阈值搜索：试多组 (confidence_threshold, default_min_margin)
-# 在“接受后错误率”相同时优先选更高阈值（更保守，宁可识别不出）
-best_global_thresh, best_global_margin = 0.55, 0.08
+# 部署按类阈值：默认 0.55，ADDRESS 单独 0.4（与 Java confidence_thresholds.json 一致）
+DEPLOY_GLOBAL_CONFIDENCE_THRESHOLD = 0.55
+DEPLOY_CLASS_CONFIDENCE_THRESHOLD = 0.55
+DEPLOY_ADDRESS_CONFIDENCE_THRESHOLD = 0.4
+DEPLOY_DEFAULT_MIN_MARGIN = 0.08
+
+# 全局 margin 仍用验证集搜索；按类阈值固定部署值，不再用 P10 压每类
+best_global_margin = 0.08
 best_acc_err = 1.0
-for _thresh in [0.55, 0.50, 0.45, 0.40, 0.35]:
-    for _margin in [0.10, 0.08, 0.05]:
-        pred_label = model_classes[np.argmax(_proba, axis=1)]
-        max_prob = np.max(_proba, axis=1)
-        default_prob = _proba[:, default_idx] if default_idx >= 0 else 0.0
-        reject = (max_prob < _thresh) | ((max_prob - default_prob) < _margin)
-        accept = ~reject
-        if accept.sum() == 0:
-            continue
-        accepted_correct = (pred_label[accept] == y_test[accept]).sum()
-        accepted_err = 1.0 - accepted_correct / accept.sum()
-        # 错误率更小则更新；错误率相同则取阈值更高的一组（更保守）
-        if accepted_err < best_acc_err or (accepted_err == best_acc_err and _thresh < best_global_thresh):
-            best_acc_err = accepted_err
-            best_global_thresh, best_global_margin = _thresh, _margin
-
-print("（7.6）验证集阈值搜索：confidence_threshold=%.2f, default_min_margin=%.2f（接受后错误率≈%.2f%%）"
-      % (best_global_thresh, best_global_margin, best_acc_err * 100))
-
-# 全局部署阈值 0.55（验证集搜索在错误率相同时优先更低阈值，再统一压上限）
-GLOBAL_THRESHOLD_CAP = 0.55
-best_global_thresh = min(best_global_thresh, GLOBAL_THRESHOLD_CAP)
-print("（7.6）部署全局阈值：confidence_threshold=%.2f" % best_global_thresh)
-
-# 按类阈值：不超过全局阈值 GLOBAL_THRESHOLD_CAP
-# （否则易分类如 PHONE 会得到 0.9+，导致 SDK 端几乎全部被回退为 DEFAULT）
-per_class_threshold = {}
-for i, c in enumerate(model_classes):
-    mask = y_test == c
-    if mask.sum() < 3:
-        per_class_threshold[c] = round(best_global_thresh, 2)
+for _margin in [0.10, 0.08, 0.05]:
+    pred_label = model_classes[np.argmax(_proba, axis=1)]
+    max_prob = np.max(_proba, axis=1)
+    default_prob = _proba[:, default_idx] if default_idx >= 0 else 0.0
+    reject = (max_prob < DEPLOY_GLOBAL_CONFIDENCE_THRESHOLD) | ((max_prob - default_prob) < _margin)
+    accept = ~reject
+    if accept.sum() == 0:
         continue
-    prob_c = _proba[mask, i]
-    p10 = round(float(np.percentile(prob_c, 10)), 2)
-    per_class_threshold[c] = min(p10, GLOBAL_THRESHOLD_CAP)
+    accepted_correct = (pred_label[accept] == y_test[accept]).sum()
+    accepted_err = 1.0 - accepted_correct / accept.sum()
+    if accepted_err < best_acc_err:
+        best_acc_err = accepted_err
+        best_global_margin = _margin
 
-for c in list(per_class_threshold.keys()):
-    per_class_threshold[c] = min(per_class_threshold[c], GLOBAL_THRESHOLD_CAP)
-best_global_thresh = GLOBAL_THRESHOLD_CAP
+print("（7.6）验证集 margin 搜索：default_min_margin=%.2f（接受后错误率≈%.2f%%）"
+      % (best_global_margin, best_acc_err * 100))
+print("（7.6）部署全局阈值：confidence_threshold=%.2f" % DEPLOY_GLOBAL_CONFIDENCE_THRESHOLD)
+
+per_class_threshold = {c: DEPLOY_CLASS_CONFIDENCE_THRESHOLD for c in model_classes}
+if "ADDRESS" in per_class_threshold:
+    per_class_threshold["ADDRESS"] = DEPLOY_ADDRESS_CONFIDENCE_THRESHOLD
 
 confidence_thresholds = {
-    "global_confidence_threshold": best_global_thresh,
+    "global_confidence_threshold": DEPLOY_GLOBAL_CONFIDENCE_THRESHOLD,
     "global_default_min_margin": best_global_margin,
     "per_class_confidence_threshold": per_class_threshold,
 }
@@ -2605,13 +2592,27 @@ all_test_columns = {
         # ["永昌路支行", "民族支行", "白塔山支行"],
         # ["禁用", "岗位", "公司", "左模糊", "右模糊", "根据X轴汇总求和", "根据X轴汇总求平均值", "栅格"],
         # ["系统管理员", "审核人", "填报人"],
-        ["汉族",
-        "汉族",
-        "汉族",
-        "汉族",
-        "汉族",
-        "汉族",
-        "汉族"]
+        # ["汉族",
+        # "汉族",
+        # "汉族",
+        # "汉族",
+        # "汉族",
+        # "汉族",
+        # "汉族"],
+        # ["法人"],
+        # ["法官证",
+        # "法官证",
+        # "法官证",
+        # "法官证",
+        # "法官证"]
+
+        ["银丰"],
+        ["海南"],
+        ["金融"],
+
+
+
+
     ],
 
     "MONEY": [
@@ -2718,7 +2719,10 @@ NAME_2_OR_3_HAN_MIN_RATIO = 0.75
 # 姓名列：每一行首字或复姓前两字均须在姓氏字典中 → 列级占比须 100%
 NAME_SURNAME_HEAD_MIN_RATIO = 1.0
 # 非姓名排除：民族「X族」、性别/占位等（保留百家姓「汉」，避免误伤真姓）
-EXCLUDED_NAME_EXACT_TOKENS = frozenset({"男", "女", "未知", "不详", "其他", "无", "暂无"})
+EXCLUDED_NAME_EXACT_TOKENS = frozenset({
+    "男", "女", "未知", "不详", "其他", "无", "暂无", "成功", "法人", "法官证",
+    "银丰", "海南", "金融",
+})
 EXCLUDED_NAME_COLUMN_MIN_RATIO = 0.75
 
 
@@ -2746,20 +2750,27 @@ DEFAULT_DEPLOY_CONFIDENCE_THRESHOLD = 0.55
 DEFAULT_DEPLOY_MIN_MARGIN = 0.08
 
 
-def apply_confidence_gate(predicted, probability, classes, confidence_threshold=0.55, default_min_margin=0.08):
+def apply_confidence_gate(predicted, probability, classes, confidence_threshold=0.55, default_min_margin=0.08,
+                          per_class_threshold=None):
     """
     置信度回退：与 Java RKLinkMaskSdkImpl 一致。
-    当预测类最高概率 < confidence_threshold，或 (最高概率 - DEFAULT 概率) < default_min_margin 时 → DEFAULT。
+    按预测类读取 per_class_threshold，缺失时用 confidence_threshold（全局默认 0.55）。
+    当预测类概率 < 类阈值，或 (预测类概率 - DEFAULT 概率) < default_min_margin 时 → DEFAULT。
     """
     if predicted is None or predicted == "DEFAULT":
         return predicted
     proba = np.asarray(probability, dtype=float)
     class_list = list(classes)
-    max_p = float(np.max(proba))
+    if predicted not in class_list:
+        return predicted
+    pred_p = float(proba[class_list.index(predicted)])
     default_p = 0.0
     if "DEFAULT" in class_list:
         default_p = float(proba[class_list.index("DEFAULT")])
-    if max_p < confidence_threshold or (max_p - default_p) < default_min_margin:
+    thresh = confidence_threshold
+    if per_class_threshold and predicted in per_class_threshold:
+        thresh = float(per_class_threshold[predicted])
+    if pred_p < thresh or (pred_p - default_p) < default_min_margin:
         return "DEFAULT"
     return predicted
 
@@ -2768,6 +2779,7 @@ def _load_deploy_confidence_config(model_dir=None):
     """读取 confidence_thresholds.json；缺失时回退默认（与 Java RecognizeModelLoader 一致）。"""
     thresh = DEFAULT_DEPLOY_CONFIDENCE_THRESHOLD
     margin = DEFAULT_DEPLOY_MIN_MARGIN
+    per_class = {"ADDRESS": 0.4}
     env_thresh = os.environ.get("MASK_SDK_RECOGNIZE_CONFIDENCE_THRESHOLD", "").strip()
     if env_thresh:
         try:
@@ -2785,9 +2797,12 @@ def _load_deploy_confidence_config(model_dir=None):
                 thresh = float(cfg["global_confidence_threshold"])
             if cfg.get("global_default_min_margin") is not None:
                 margin = float(cfg["global_default_min_margin"])
+            pc = cfg.get("per_class_confidence_threshold")
+            if isinstance(pc, dict):
+                per_class = {str(k): float(v) for k, v in pc.items()}
         except (OSError, ValueError, TypeError):
             pass
-    return thresh, margin
+    return thresh, margin, per_class
 
 
 def apply_recognize_overrides(predicted, text_list):
@@ -2814,10 +2829,11 @@ def apply_recognize_overrides(predicted, text_list):
 # 循环预测（与 Java SDK：PMML → 置信度门控 → apply_recognize_overrides）
 # ==============================
 
-_deploy_confidence_threshold, _deploy_default_min_margin = _load_deploy_confidence_config(_model_dir)
+_deploy_confidence_threshold, _deploy_default_min_margin, _deploy_per_class_threshold = _load_deploy_confidence_config(_model_dir)
 print("=" * 60)
-print("测试推理部署参数：confidence_threshold=%.2f, default_min_margin=%.2f（与 Java SDK 一致）"
-      % (_deploy_confidence_threshold, _deploy_default_min_margin))
+print("测试推理部署参数：global_threshold=%.2f, default_min_margin=%.2f, ADDRESS=%.2f（与 Java SDK 一致）"
+      % (_deploy_confidence_threshold, _deploy_default_min_margin,
+         _deploy_per_class_threshold.get("ADDRESS", _deploy_confidence_threshold)))
 
 for label_name, group_idx, group_total, test_column in _iter_test_column_groups(all_test_columns):
 
@@ -2828,6 +2844,7 @@ for label_name, group_idx, group_total, test_column in _iter_test_column_groups(
     after_gate = apply_confidence_gate(
         raw_prediction, probability, model.classes_,
         _deploy_confidence_threshold, _deploy_default_min_margin,
+        _deploy_per_class_threshold,
     )
     prediction = apply_recognize_overrides(after_gate, test_column)
 
