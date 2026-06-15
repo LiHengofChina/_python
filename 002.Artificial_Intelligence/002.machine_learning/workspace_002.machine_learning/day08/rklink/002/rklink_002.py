@@ -27,7 +27,8 @@ _fit_main = os.path.join(_rk002_dir, "fit_data.csv")
 _fit_mix = os.path.join(_rk002_dir, "fit_data_MIXED_append.csv")
 _fit_name = os.path.join(_rk002_dir, "fit_data_NAME_append.csv")
 _fit_date = os.path.join(_rk002_dir, "fit_data_DATE_append.csv")
-_fit_phone = os.path.join(_rk002_dir, "fit_data_PHONE_append.csv")
+_fit_landline = os.path.join(_rk002_dir, "fit_data_LANDLINE_append.csv")
+_fit_phone = os.path.join(_rk002_dir, "fit_data_PHONE_append.csv")  # 旧文件名，合并时自动标为 LANDLINE
 
 df = pd.read_csv(_fit_main, dtype={"text": str}, skipinitialspace=True)
 df.columns = df.columns.str.strip()  # 兼容每列前导空格
@@ -54,12 +55,20 @@ if os.path.isfile(_fit_date):
     df = pd.concat([df, df_d], ignore_index=True)
     print(f"已合并 DATE 补充样本: {_fit_date} （+{len(df_d)} 行，与截图列一致）")
 
-if os.path.isfile(_fit_phone):
-    df_p = pd.read_csv(_fit_phone, dtype={"text": str}, skipinitialspace=True)
-    df_p.columns = df_p.columns.str.strip()
-    df_p["column_id"] = df_p["column_id"].astype(str).str.strip()
-    df = pd.concat([df, df_p], ignore_index=True)
-    print(f"已合并 PHONE 补充样本: {_fit_phone} （+{len(df_p)} 行，含固话/400/800）")
+if os.path.isfile(_fit_landline):
+    df_ll = pd.read_csv(_fit_landline, dtype={"text": str}, skipinitialspace=True)
+    df_ll.columns = df_ll.columns.str.strip()
+    df_ll["column_id"] = df_ll["column_id"].astype(str).str.strip()
+    df_ll["label"] = "LANDLINE"
+    df = pd.concat([df, df_ll], ignore_index=True)
+    print(f"已合并 LANDLINE 补充样本: {_fit_landline} （+{len(df_ll)} 行，固话/400/800/95/12/100 等）")
+elif os.path.isfile(_fit_phone):
+    df_ll = pd.read_csv(_fit_phone, dtype={"text": str}, skipinitialspace=True)
+    df_ll.columns = df_ll.columns.str.strip()
+    df_ll["column_id"] = df_ll["column_id"].astype(str).str.strip()
+    df_ll["label"] = "LANDLINE"
+    df = pd.concat([df, df_ll], ignore_index=True)
+    print(f"已合并 LANDLINE 补充样本(legacy {_fit_phone}): +{len(df_ll)} 行")
 
 # print("原始数据前5行：")
 # print(df.head())
@@ -173,34 +182,51 @@ def _is_bare_10_digit_code(text):
     return norm.isdigit() and len(norm) == 10 and not is_mobile_phone_value(s)
 
 
-def _looks_like_strict_phone_column(text_list):
-    """
-    严格电话列：≥75% 为 11 位手机，或 ≥75% 命中电话规则且非纯 100xx/裸 7~8 位/学年/裸 10 位列。
-    与 Java PhoneRecognizeHeuristics.looksLikeStrictPhoneColumn 一致。
-    """
+def _landline_column_noise_excluded(text_list):
+    """固话列噪声：纯 100xx / 裸 7~8 位 / 学年 / 裸 10 位等占比过高则不算固话列。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return True
+    n = len(cleaned)
+    pure_100 = sum(1 for t in cleaned if _is_pure_100xx_short_code(t)) / n
+    pure_78 = sum(1 for t in cleaned if _is_pure_7_8_digit_bare_code(t)) / n
+    year_rng = sum(1 for t in cleaned if _is_year_range_like(t)) / n
+    bare_10 = sum(1 for t in cleaned if _is_bare_10_digit_code(t)) / n
+    return (pure_100 >= PHONE_COLUMN_STRICT_RATIO
+            or pure_78 >= PHONE_COLUMN_STRICT_RATIO
+            or year_rng >= PHONE_COLUMN_STRICT_RATIO
+            or bare_10 >= PHONE_COLUMN_STRICT_RATIO)
+
+
+def _looks_like_strict_mobile_column(text_list):
+    """严格手机列：≥75% 为 11 位手机号形态。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
     n = len(cleaned)
     mobile_hit = sum(1 for t in cleaned if is_mobile_phone_value(t)) / n
-    if mobile_hit >= PHONE_COLUMN_STRICT_RATIO:
-        return True
-    phone_hit = sum(1 for t in cleaned if is_phone_value(t)) / n
-    if phone_hit < PHONE_COLUMN_STRICT_RATIO:
+    return mobile_hit >= PHONE_COLUMN_STRICT_RATIO
+
+
+def _looks_like_strict_landline_column(text_list):
+    """严格固话列：≥75% 为固话形态，且非手机主导列、非典型噪声列。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
         return False
-    pure_100 = sum(1 for t in cleaned if _is_pure_100xx_short_code(t)) / n
-    pure_78 = sum(1 for t in cleaned if _is_pure_7_8_digit_bare_code(t)) / n
-    year_rng = sum(1 for t in cleaned if _is_year_range_like(t)) / n
-    bare_10 = sum(1 for t in cleaned if _is_bare_10_digit_code(t)) / n
-    if pure_100 >= PHONE_COLUMN_STRICT_RATIO:
+    n = len(cleaned)
+    landline_hit = sum(1 for t in cleaned if is_landline_phone_value(t)) / n
+    if landline_hit < PHONE_COLUMN_STRICT_RATIO:
         return False
-    if pure_78 >= PHONE_COLUMN_STRICT_RATIO:
+    if _looks_like_strict_mobile_column(text_list):
         return False
-    if year_rng >= PHONE_COLUMN_STRICT_RATIO:
-        return False
-    if bare_10 >= PHONE_COLUMN_STRICT_RATIO:
-        return False
-    return True
+    return not _landline_column_noise_excluded(text_list)
+
+
+def _looks_like_strict_phone_column(text_list):
+    """
+    严格电话列（手机或固话）：兼容旧逻辑；新类型请用 mobile/landline 分列判断。
+    """
+    return _looks_like_strict_mobile_column(text_list) or _looks_like_strict_landline_column(text_list)
 
 def _digit_only_length(text):
     """行内数字字符个数（去掉非数字后长度）。"""
@@ -2336,42 +2362,32 @@ all_test_columns = {
 
 
     "PHONE": [
-        # [
-        #     "13800001234", "13912345678", "13698765432", "15812345678", "18611112222",
-        #     "17733334444", "18855556666", "19977778888", "13200001111", "15122223333",
-        # ],
-        # [
-        #     "400-100-5678", "010-62503000", "400-830-8300", "86-755-83301199", "800-9009999",
-        #     "021-12345678", "020-87654321", "0755-83301199", "0571-88889999", "028-12345678",
-        #     "95588", "95599", "95388", "12345", "12306", "6250-3000", "88886666",
-        # ],
-        # ["450773", "439211", "342582", "374110"],
-        # ["2011010201", "2011010201"],
-        # ["2011010201", "2011010201"],
-        # ["10086", "10099", "10091", "10099", "10099"],
-        # ["400420", "100160", "100150"],
-        # ["10093", "10051", "10087", "10082", "10099"],
-        # ["10052", "10090", "10051", "10073", "10001"],
-        # ["10099", "10099", "10099", "10099", "10099"],
-        # ["10005", "10005", "10005", "10005", "10005"],
-        # ["13609315050", "13893105080"],
-        # ["2665418", "3174515", "3735978", "2669673"],
-        # ["57741935", "73061385", "74179344", "73247184"],
-        # ["10087", "10087", "10087", "10087"],
-        # ["2025-2026", "2025-2026"],
-        # [
-        # "300013",
-        # "300017",
-        # "300022",
-        # "300300312002",
-        # "300301",
-        # ],
+        [
+            "13800001234", "13912345678", "13698765432", "15812345678", "18611112222",
+            "17733334444", "18855556666", "19977778888", "13200001111", "15122223333",
+        ],
+        ["13609315050", "13893105080"],
         [
             "00000000000",
             "00000000000",
-            "00000000000"
-        ]
+            "00000000000",
+        ],
+    ],
 
+    "LANDLINE": [
+        [
+            "400-100-5678", "010-62503000", "400-830-8300", "86-755-83301199", "800-9009999",
+            "021-12345678", "020-87654321", "0755-83301199", "0571-88889999", "028-12345678",
+            "95588", "95599", "95388", "12345", "12306", "6250-3000", "88886666",
+        ],
+        ["450773", "439211", "342582", "374110"],
+        ["2011010201", "2011010201"],
+        ["10086", "10099", "10091", "10099", "10099"],
+        ["400420", "100160", "100150"],
+        ["10093", "10051", "10087", "10082", "10099"],
+        ["2665418", "3174515", "3735978", "2669673"],
+        ["57741935", "73061385", "74179344", "73247184"],
+        ["2025-2026", "2025-2026"],
     ],
 
 
@@ -2846,10 +2862,15 @@ def _load_deploy_confidence_config(model_dir=None):
 def apply_recognize_overrides(predicted, text_list):
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if cleaned:
-        if _looks_like_strict_phone_column(text_list) and predicted in (
-                "IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN"):
+        if _looks_like_strict_mobile_column(text_list) and predicted in (
+                "IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN", "LANDLINE"):
             return "PHONE"
-    if predicted == "PHONE" and not _looks_like_strict_phone_column(text_list):
+        if _looks_like_strict_landline_column(text_list) and predicted in (
+                "IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN", "PHONE"):
+            return "LANDLINE"
+    if predicted == "PHONE" and not _looks_like_strict_mobile_column(text_list):
+        return "DEFAULT"
+    if predicted == "LANDLINE" and not _looks_like_strict_landline_column(text_list):
         return "DEFAULT"
     if predicted == "NAME" and _looks_like_excluded_name_column(text_list):
         return "DEFAULT"
@@ -2899,8 +2920,10 @@ for label_name, group_idx, group_total, test_column in _iter_test_column_groups(
     print("预测类别(最终):", prediction)
     print("姓名特征 f129 name_surname_head_dict_ratio: %.4f（须=1.0 才保留 NAME）"
           % feature[129])
-    print("电话严格校验 looks_like_strict_phone_column: %s"
-          % _looks_like_strict_phone_column(test_column))
+    print("手机严格校验 looks_like_strict_mobile_column: %s"
+          % _looks_like_strict_mobile_column(test_column))
+    print("固话严格校验 looks_like_strict_landline_column: %s"
+          % _looks_like_strict_landline_column(test_column))
 
     # 打印概率排序（从高到低）—— 仍为模型原始 predict_proba，不随后处理改变
     sorted_probs = sorted(
