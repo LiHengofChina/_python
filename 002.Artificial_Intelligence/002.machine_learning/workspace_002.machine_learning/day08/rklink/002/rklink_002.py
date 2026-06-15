@@ -28,6 +28,7 @@ _fit_mix = os.path.join(_rk002_dir, "fit_data_MIXED_append.csv")
 _fit_name = os.path.join(_rk002_dir, "fit_data_NAME_append.csv")
 _fit_date = os.path.join(_rk002_dir, "fit_data_DATE_append.csv")
 _fit_landline = os.path.join(_rk002_dir, "fit_data_LANDLINE_append.csv")
+_fit_column_mixed = os.path.join(_rk002_dir, "fit_data_COLUMN_MIXED_append.csv")
 _fit_phone = os.path.join(_rk002_dir, "fit_data_PHONE_append.csv")  # 旧文件名，合并时自动标为 LANDLINE
 
 df = pd.read_csv(_fit_main, dtype={"text": str}, skipinitialspace=True)
@@ -69,6 +70,14 @@ elif os.path.isfile(_fit_phone):
     df_ll["label"] = "LANDLINE"
     df = pd.concat([df, df_ll], ignore_index=True)
     print(f"已合并 LANDLINE 补充样本(legacy {_fit_phone}): +{len(df_ll)} 行")
+
+if os.path.isfile(_fit_column_mixed):
+    df_cm = pd.read_csv(_fit_column_mixed, dtype={"text": str}, skipinitialspace=True)
+    df_cm.columns = df_cm.columns.str.strip()
+    df_cm["column_id"] = df_cm["column_id"].astype(str).str.strip()
+    df_cm["label"] = "COLUMN_MIXED"
+    df = pd.concat([df, df_cm], ignore_index=True)
+    print(f"已合并 COLUMN_MIXED 补充样本: {_fit_column_mixed} （+{len(df_cm)} 行，多行混合列）")
 
 # print("原始数据前5行：")
 # print(df.head())
@@ -1083,12 +1092,100 @@ def _looks_like_strict_datetime_column(text_list):
     return hit >= PHONE_COLUMN_STRICT_RATIO
 
 
+# ==============================
+# COLUMN_MIXED：多行混合（每格单一敏感形态，不同行类型不同）
+# ==============================
+
+COLUMN_MIXED_MIN_SINGLE_ROW_RATIO = 0.67
+COLUMN_MIXED_MAX_DOMINANT_KIND_RATIO = 0.75
+COLUMN_MIXED_MAX_INTRA_CELL_MULTI_RATIO = 0.25
+
+
+def _row_intra_cell_multi_embed_hit(text):
+    """单格内嵌 ≥2 类敏感形态 → MIXED 单行，非 COLUMN_MIXED。"""
+    hits = 0
+    if _mixed_embedded_phone_or_landline_hit(text):
+        hits += 1
+    if _mixed_embedded_id_valid_hit(text):
+        hits += 1
+    if _mixed_embedded_passport_hit(text):
+        hits += 1
+    if _mixed_embedded_credit_valid_hit(text):
+        hits += 1
+    return hits >= 2
+
+
+def _row_single_sensitive_kind(text):
+    if _row_intra_cell_multi_embed_hit(text):
+        return None
+    s = str(text).strip()
+    if not s:
+        return None
+    if is_mobile_phone_value(s):
+        return "PHONE"
+    if is_landline_phone_value(s):
+        return "LANDLINE"
+    if ID_REGEX.match(s) and id_card_check(s):
+        return "ID_CARD"
+    if PASSPORT_REGEX.match(s.upper()):
+        return "PASSPORT"
+    if len(s) == 18 and credit_code_check(s):
+        return "CREDIT_CODE"
+    if EMAIL_REGEX.match(s):
+        return "EMAIL"
+    return None
+
+
+def _looks_like_column_mixed_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if len(cleaned) < 2:
+        return False
+    n = len(cleaned)
+    kinds = [_row_single_sensitive_kind(t) for t in cleaned]
+    labeled = [k for k in kinds if k]
+    if len(labeled) < 2:
+        return False
+    from collections import Counter
+    c = Counter(labeled)
+    if len(c) < 2:
+        return False
+    if len(labeled) / n < COLUMN_MIXED_MIN_SINGLE_ROW_RATIO:
+        return False
+    intra_multi = sum(1 for t in cleaned if _row_intra_cell_multi_embed_hit(t)) / n
+    if intra_multi > COLUMN_MIXED_MAX_INTRA_CELL_MULTI_RATIO:
+        return False
+    if max(c.values()) / n >= COLUMN_MIXED_MAX_DOMINANT_KIND_RATIO:
+        return False
+    return True
+
+
+def _column_mixed_kind_diversity_ratio(cleaned):
+    kinds = set(k for t in cleaned if (k := _row_single_sensitive_kind(t)))
+    if len(kinds) < 2:
+        return 0.0
+    return min(1.0, (len(kinds) - 1) / 4.0)
+
+
+def _column_mixed_single_type_row_ratio(cleaned):
+    if not cleaned:
+        return 0.0
+    hit = sum(1 for t in cleaned if _row_single_sensitive_kind(t))
+    return hit / len(cleaned)
+
+
+def _column_mixed_intra_cell_multi_row_ratio(cleaned):
+    if not cleaned:
+        return 0.0
+    hit = sum(1 for t in cleaned if _row_intra_cell_multi_embed_hit(t))
+    return hit / len(cleaned)
+
+
 def extract_column_features(text_list):
 
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 133  # 121 基础 + 5 MIXED + 3 姓名 + 1 电话数字长度 + 3 紧凑日期（与 mask-sdk Java 一致）
+        return [0] * 136  # 121 基础 + 5 MIXED + 3 姓名 + 1 电话 + 3 紧凑日期 + 3 COLUMN_MIXED（与 mask-sdk Java 一致）
 
     lengths = [len(t) for t in cleaned]
 
@@ -2005,6 +2102,13 @@ def extract_column_features(text_list):
         mixed_long_cn_digit_token_ratio,
     ) = _mixed_embedding_ratios(cleaned)
 
+    # 133 → column_mixed_kind_diversity_ratio 列内单一敏感行种类多样性（≥2 类时 >0）
+    column_mixed_kind_diversity_ratio = _column_mixed_kind_diversity_ratio(cleaned)
+    # 134 → column_mixed_single_type_row_ratio 每格为单一敏感形态的行占比
+    column_mixed_single_type_row_ratio = _column_mixed_single_type_row_ratio(cleaned)
+    # 135 → column_mixed_intra_cell_multi_row_ratio 单格内多类型混合行占比（高则更像 MIXED 非 COLUMN_MIXED）
+    column_mixed_intra_cell_multi_row_ratio = _column_mixed_intra_cell_multi_row_ratio(cleaned)
+
     return [
         avg_length,
         fixed_length_flag,
@@ -2167,6 +2271,10 @@ def extract_column_features(text_list):
         compact_date_yy_lt_21_ratio,
         compact_date_mm_lt_24_ratio,
         compact_date_dd_lt_24_ratio,
+
+        column_mixed_kind_diversity_ratio,
+        column_mixed_single_type_row_ratio,
+        column_mixed_intra_cell_multi_row_ratio,
     ]
 
 # ==============================
@@ -2202,7 +2310,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 133, f"特征维数应为 133（121 基础 + 5 MIXED + 3 姓名 + 1 电话数字长度 + 3 紧凑日期，与 mask-sdk Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 136, f"特征维数应为 136（121 基础 + 5 MIXED + 3 姓名 + 1 电话数字长度 + 3 紧凑日期 + 3 COLUMN_MIXED，与 mask-sdk Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
@@ -2427,7 +2535,7 @@ with open(_readme_path, "w", encoding="utf-8") as _rf:
         "  recognize_rf_model.pmml      — Java 推理（必需）\n"
         "  recognize_rf_model.joblib    — 备份\n"
         "  dicts/all_dicts.json         — 特征用字典\n"
-        "  feature_names.json           — f0..f132（133 维）\n"
+        "  feature_names.json           — f0..f135（136 维）\n"
         "  confidence_thresholds.json   — 可选阈值\n"
     )
 print(f"已写入说明: {_readme_path}")
@@ -2838,12 +2946,29 @@ all_test_columns = {
             "北京科技有限公司 400-100-5678 91110000MA00123456",
             "备注：李四 95588 E12345678 开票信息",
         ],
+    ],
+
+    "COLUMN_MIXED": [
         [
             "6555345",
             "13898523648",
-            "0931-6525836"
-        ]
-
+            "0931-6525836",
+        ],
+        [
+            "13800001234",
+            "110101199001010007",
+            "021-12345678",
+        ],
+        [
+            "95588",
+            "13912345678",
+            "400-100-5678",
+        ],
+        [
+            "alice@test.com",
+            "13698765432",
+            "E12345678",
+        ],
     ],
 }
 
@@ -3027,6 +3152,12 @@ def apply_recognize_overrides(predicted, text_list):
         return "DEFAULT"
     if predicted == "DATE_TIME" and not _looks_like_strict_datetime_column(text_list):
         return "DEFAULT"
+    if cleaned:
+        if _looks_like_column_mixed_column(text_list) and predicted in (
+                "DEFAULT", "PHONE", "LANDLINE", "ID_CARD", "PASSPORT", "CREDIT_CODE", "EMAIL", "MIXED"):
+            return "COLUMN_MIXED"
+    if predicted == "COLUMN_MIXED" and not _looks_like_column_mixed_column(text_list):
+        return "DEFAULT"
     if predicted == "NAME" and _looks_like_excluded_name_column(text_list):
         return "DEFAULT"
     if predicted == "NAME" and _name_column_han_char_ratio(text_list) < 1.0:
@@ -3082,7 +3213,14 @@ for label_name, group_idx, group_total, test_column in _iter_test_column_groups(
           % _looks_like_strict_landline_column(test_column))
     print("日期严格校验 looks_like_strict_date_column: %s"
           % _looks_like_strict_date_column(test_column))
-    if len(feature) >= 133:
+    print("多行混合严格校验 looks_like_column_mixed_column: %s"
+          % _looks_like_column_mixed_column(test_column))
+    if len(feature) >= 136:
+        print("紧凑日期 f130/f131/f132: %.4f / %.4f / %.4f"
+              % (feature[130], feature[131], feature[132]))
+        print("多行混合 f133/f134/f135: %.4f / %.4f / %.4f"
+              % (feature[133], feature[134], feature[135]))
+    elif len(feature) >= 133:
         print("紧凑日期 f130/f131/f132: %.4f / %.4f / %.4f"
               % (feature[130], feature[131], feature[132]))
 
