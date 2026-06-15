@@ -161,12 +161,16 @@ def _is_pure_100xx_short_code(text):
 
 
 def _is_pure_7_8_digit_bare_code(text):
-    """无区号格式的裸 7~8 位数字（业务编号/工号等）。"""
+    """无区号格式的裸 7~8 位数字（业务编号/工号等），且非固话形态。"""
     s = str(text).strip()
     if re.search(r'[- ]', s):
         return False
     norm = _normalize_phone_digits(s)
-    return norm.isdigit() and len(norm) in (7, 8)
+    if not (norm.isdigit() and len(norm) in (7, 8)):
+        return False
+    if is_landline_phone_value(text):
+        return False
+    return True
 
 
 def _is_year_range_like(text):
@@ -183,7 +187,7 @@ def _is_bare_10_digit_code(text):
 
 
 def _landline_column_noise_excluded(text_list):
-    """固话列噪声：纯 100xx / 裸 7~8 位 / 学年 / 裸 10 位等占比过高则不算固话列。"""
+    """固话列噪声：纯 100xx / 裸 7~8 位非固话编号 / 学年 / 裸 10 位等占比过高则不算固话列。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return True
@@ -703,6 +707,7 @@ def id_card_check(id_number):
 
 # ==============================
 # MIXED：行内嵌入型 5 维特征（121 基础 + 5 = 126，与 mask-sdk ColumnFeatureExtractor 一致）
+# mixed_embed_phone_ratio：行内嵌手机或固话命中比例（与 Java MixedMaskHandler.containsEmbeddedPhone 一致）
 # ==============================
 _EMBEDDED_PHONE = re.compile(r"1[3-9]\d{9}")
 _EMBEDDED_PASSPORT_BLOCK = re.compile(r"[A-Za-z]{1,2}\d{7,8}")
@@ -710,6 +715,23 @@ _EMBEDDED_PASSPORT_BLOCK = re.compile(r"[A-Za-z]{1,2}\d{7,8}")
 
 def _mixed_embedded_phone_hit(text):
     return bool(_EMBEDDED_PHONE.search(text))
+
+
+def _mixed_embedded_landline_hit(text):
+    """行内滑动 7~20 位子串检测固话（与 Java MixedMaskHandler + LandlineMaskHandler 一致）。"""
+    n = len(text)
+    if n < 7:
+        return False
+    max_len = min(20, n)
+    for length in range(7, max_len + 1):
+        for i in range(0, n - length + 1):
+            if is_landline_phone_value(text[i : i + length]):
+                return True
+    return False
+
+
+def _mixed_embedded_phone_or_landline_hit(text):
+    return _mixed_embedded_phone_hit(text) or _mixed_embedded_landline_hit(text)
 
 
 def _mixed_embedded_passport_hit(text):
@@ -759,7 +781,7 @@ def _mixed_embedding_ratios(cleaned):
     n = len(cleaned)
     if n == 0:
         return (0.0, 0.0, 0.0, 0.0, 0.0)
-    r_phone = sum(1 for t in cleaned if _mixed_embedded_phone_hit(t)) / n
+    r_phone = sum(1 for t in cleaned if _mixed_embedded_phone_or_landline_hit(t)) / n
     r_id = sum(1 for t in cleaned if _mixed_embedded_id_valid_hit(t)) / n
     r_pass = sum(1 for t in cleaned if _mixed_embedded_passport_hit(t)) / n
     r_credit = sum(1 for t in cleaned if _mixed_embedded_credit_valid_hit(t)) / n
@@ -910,6 +932,7 @@ from datetime import datetime
 
 def valid_date(text):
     try:
+        text = str(text).strip()
         if "-" in text:
             datetime.strptime(text, "%Y-%m-%d")
         elif "/" in text:
@@ -917,6 +940,9 @@ def valid_date(text):
         elif "." in text:
             datetime.strptime(text, "%Y.%m.%d")
         elif len(text) == 8:
+            # 紧凑 YYYYMMDD：前两位（世纪前缀）须 < 21，最多 20 开头
+            if text.isdigit() and int(text[:2]) >= 21:
+                return False
             datetime.strptime(text, "%Y%m%d")
         else:
             return False
@@ -937,6 +963,7 @@ from datetime import datetime
 
 def valid_datetime(text):
     try:
+        text = str(text).strip()
         if "-" in text or "/" in text or "." in text:
             if "T" in text:
                 datetime.strptime(text, "%Y-%m-%dT%H:%M:%S")
@@ -948,6 +975,9 @@ def valid_datetime(text):
             else:
                 return False
         elif len(text) == 14:
+            # 紧凑 yyyyMMddHHmmss：日期部分前两位须 < 21
+            if text.isdigit() and int(text[:2]) >= 21:
+                return False
             datetime.strptime(text, "%Y%m%d%H%M%S")
         else:
             return False
@@ -979,12 +1009,86 @@ permit_strong_keyword_dict = {
 # （2）列级特征提取函数
 # ==============================
 
+def _is_compact_date_8(text):
+    s = str(text).strip()
+    return len(s) == 8 and s.isdigit()
+
+
+def _compact_date_yy_lt_21(text):
+    if not _is_compact_date_8(text):
+        return False
+    return int(str(text).strip()[:2]) < 21
+
+
+def _compact_date_mm_lt_24(text):
+    if not _is_compact_date_8(text):
+        return False
+    return int(str(text).strip()[4:6]) < 24
+
+
+def _compact_date_dd_lt_24(text):
+    if not _is_compact_date_8(text):
+        return False
+    return int(str(text).strip()[6:8]) < 24
+
+
+def _is_plausible_date_value(text):
+    """真实日期形态：紧凑 8 位须 yy 前缀 <21 且年份 1900–2100；分隔格式须 valid_date 且年份合理。"""
+    s = str(text).strip()
+    if _is_compact_date_8(s):
+        if not valid_date(s):
+            return False
+        year = int(s[:4])
+        return 1900 <= year <= 2100
+    if DATE_REGEX.match(s):
+        if not valid_date(s):
+            return False
+        years = re.findall(r'\d{4}', s)
+        if not years:
+            return False
+        year = int(years[0])
+        return 1900 <= year <= 2100
+    return False
+
+
+def _looks_like_strict_date_column(text_list):
+    """严格日期列：≥75% 为真实日期形态（排除 6602 等伪紧凑日期）。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    n = len(cleaned)
+    hit = sum(1 for t in cleaned if _is_plausible_date_value(t)) / n
+    return hit >= PHONE_COLUMN_STRICT_RATIO
+
+
+def _is_plausible_datetime_value(text):
+    s = str(text).strip()
+    if not DATE_TIME_REGEX.match(s):
+        return False
+    if not valid_datetime(s):
+        return False
+    years = re.findall(r'\d{4}', s)
+    if not years:
+        return False
+    year = int(years[0])
+    return 1900 <= year <= 2100
+
+
+def _looks_like_strict_datetime_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    n = len(cleaned)
+    hit = sum(1 for t in cleaned if _is_plausible_datetime_value(t)) / n
+    return hit >= PHONE_COLUMN_STRICT_RATIO
+
+
 def extract_column_features(text_list):
 
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 129  # 121 基础 + 5 MIXED + 2 姓名 + 1 电话数字长度（与 mask-sdk Java 一致）
+        return [0] * 133  # 121 基础 + 5 MIXED + 3 姓名 + 1 电话数字长度 + 3 紧凑日期（与 mask-sdk Java 一致）
 
     lengths = [len(t) for t in cleaned]
 
@@ -1476,6 +1580,21 @@ def extract_column_features(text_list):
     date_separator_ratio = sum(
         1 for t in cleaned
         if any(sep in t for sep in ["-", "/", "."])
+    ) / len(cleaned)
+
+    # 130 → compact_date_yy_lt_21_ratio 紧凑 8 位日期前两位（世纪前缀）小于 21 的占比（最多 20 开头）
+    compact_date_yy_lt_21_ratio = sum(
+        1 for t in cleaned if _compact_date_yy_lt_21(t)
+    ) / len(cleaned)
+
+    # 131 → compact_date_mm_lt_24_ratio 紧凑 8 位日期第 5–6 位数值小于 24 的占比（月份字段）
+    compact_date_mm_lt_24_ratio = sum(
+        1 for t in cleaned if _compact_date_mm_lt_24(t)
+    ) / len(cleaned)
+
+    # 132 → compact_date_dd_lt_24_ratio 紧凑 8 位日期第 7–8 位数值小于 24 的占比（日字段）
+    compact_date_dd_lt_24_ratio = sum(
+        1 for t in cleaned if _compact_date_dd_lt_24(t)
     ) / len(cleaned)
 
     # ==============================
@@ -2044,6 +2163,10 @@ def extract_column_features(text_list):
         name_2_or_3_han_ratio,
         phone_digit_len_13_11_8_ratio,
         name_surname_head_dict_ratio,
+
+        compact_date_yy_lt_21_ratio,
+        compact_date_mm_lt_24_ratio,
+        compact_date_dd_lt_24_ratio,
     ]
 
 # ==============================
@@ -2079,7 +2202,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 130, f"特征维数应为 130（121 基础 + 5 MIXED + 3 姓名 + 1 电话数字长度，与 mask-sdk Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 133, f"特征维数应为 133（121 基础 + 5 MIXED + 3 姓名 + 1 电话数字长度 + 3 紧凑日期，与 mask-sdk Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
@@ -2252,10 +2375,10 @@ model_classes = model.classes_
 _default_idx = np.where(model_classes == "DEFAULT")[0]
 default_idx = int(_default_idx[0]) if len(_default_idx) > 0 else -1
 
-# 部署按类阈值：默认 0.55，ADDRESS 单独 0.4（与 Java confidence_thresholds.json 一致）
+# 部署按类阈值：默认 0.55，ADDRESS / LANDLINE 单独 0.4（与 Java confidence_thresholds.json 一致）
 DEPLOY_GLOBAL_CONFIDENCE_THRESHOLD = 0.55
 DEPLOY_CLASS_CONFIDENCE_THRESHOLD = 0.55
-DEPLOY_ADDRESS_CONFIDENCE_THRESHOLD = 0.4
+DEPLOY_RELAXED_CLASS_THRESHOLDS = {"ADDRESS": 0.4, "LANDLINE": 0.4}
 DEPLOY_DEFAULT_MIN_MARGIN = 0.08
 
 # 全局 margin 仍用验证集搜索；按类阈值固定部署值，不再用 P10 压每类
@@ -2280,8 +2403,9 @@ print("（7.6）验证集 margin 搜索：default_min_margin=%.2f（接受后错
 print("（7.6）部署全局阈值：confidence_threshold=%.2f" % DEPLOY_GLOBAL_CONFIDENCE_THRESHOLD)
 
 per_class_threshold = {c: DEPLOY_CLASS_CONFIDENCE_THRESHOLD for c in model_classes}
-if "ADDRESS" in per_class_threshold:
-    per_class_threshold["ADDRESS"] = DEPLOY_ADDRESS_CONFIDENCE_THRESHOLD
+for _cls, _thresh in DEPLOY_RELAXED_CLASS_THRESHOLDS.items():
+    if _cls in per_class_threshold:
+        per_class_threshold[_cls] = _thresh
 
 confidence_thresholds = {
     "global_confidence_threshold": DEPLOY_GLOBAL_CONFIDENCE_THRESHOLD,
@@ -2303,7 +2427,7 @@ with open(_readme_path, "w", encoding="utf-8") as _rf:
         "  recognize_rf_model.pmml      — Java 推理（必需）\n"
         "  recognize_rf_model.joblib    — 备份\n"
         "  dicts/all_dicts.json         — 特征用字典\n"
-        "  feature_names.json           — f0..f129（130 维）\n"
+        "  feature_names.json           — f0..f132（133 维）\n"
         "  confidence_thresholds.json   — 可选阈值\n"
     )
 print(f"已写入说明: {_readme_path}")
@@ -2362,32 +2486,42 @@ all_test_columns = {
 
 
     "PHONE": [
+        # [
+        #     "13800001234", "13912345678", "13698765432", "15812345678", "18611112222",
+        #     "17733334444", "18855556666", "19977778888", "13200001111", "15122223333",
+        # ],
+        # ["13609315050", "13893105080"],
+        # [
+        #     "00000000000",
+        #     "00000000000",
+        #     "00000000000",
+        # ],
         [
-            "13800001234", "13912345678", "13698765432", "15812345678", "18611112222",
-            "17733334444", "18855556666", "19977778888", "13200001111", "15122223333",
-        ],
-        ["13609315050", "13893105080"],
-        [
-            "00000000000",
-            "00000000000",
-            "00000000000",
-        ],
+"66020307",
+"66020307",
+"66020307"
+        ]
     ],
 
     "LANDLINE": [
+        # [
+        #     "400-100-5678", "010-62503000", "400-830-8300", "86-755-83301199", "800-9009999",
+        #     "021-12345678", "020-87654321", "0755-83301199", "0571-88889999", "028-12345678",
+        #     "95588", "95599", "95388", "12345", "12306", "6250-3000", "88886666",
+        # ],
+        # ["450773", "439211", "342582", "374110"],
+        # ["2011010201", "2011010201"],
+        # ["10086", "10099", "10091", "10099", "10099"],
+        # ["400420", "100160", "100150"],
+        # ["10093", "10051", "10087", "10082", "10099"],
+        # ["2665418", "3174515", "3735978", "2669673"],
+        # ["57741935", "73061385", "74179344", "73247184"],
+        # ["2025-2026", "2025-2026"],
         [
-            "400-100-5678", "010-62503000", "400-830-8300", "86-755-83301199", "800-9009999",
-            "021-12345678", "020-87654321", "0755-83301199", "0571-88889999", "028-12345678",
-            "95588", "95599", "95388", "12345", "12306", "6250-3000", "88886666",
-        ],
-        ["450773", "439211", "342582", "374110"],
-        ["2011010201", "2011010201"],
-        ["10086", "10099", "10091", "10099", "10099"],
-        ["400420", "100160", "100150"],
-        ["10093", "10051", "10087", "10082", "10099"],
-        ["2665418", "3174515", "3735978", "2669673"],
-        ["57741935", "73061385", "74179344", "73247184"],
-        ["2025-2026", "2025-2026"],
+        "66020307",
+        "66020307",
+        "66020307"
+        ]
     ],
 
 
@@ -2683,16 +2817,33 @@ all_test_columns = {
     ],
 
     "MIXED": [
-        "张三 13800001234 E12345678",
-        "李四 13912345678 G23456789",
-        "北京科技有限公司 15800001111 91110000MA00123456",
-        "上海恒远数据有限公司 13912345678 91310000MA01234567",
-        "联系人王五 手机18611112222 证件110101199003074512",
-        "客户赵六，护照号G23456789，统一码91440300MA02345678",
-        "深圳创新股份公司 经办陈七 17733334444 P34567890 主体91110000MA00123456",
-        "备注：周八 13200001111 E45678901 开票信息",
-        "杭州云联有限公司 15122223333 91510100MA03456789",
-        "武汉华泰软件有限公司 13698765432 G56789012",
+        [
+            "张三 13800001234 E12345678",
+            "李四 13912345678 G23456789",
+            "备注：周八 13200001111 E45678901 开票信息",
+        ],
+        [
+            "北京科技有限公司 15800001111 91110000MA00123456",
+            "上海恒远数据有限公司 13912345678 91310000MA01234567",
+            "杭州云联有限公司 15122223333 91510100MA03456789",
+            "武汉华泰软件有限公司 13698765432 G56789012",
+        ],
+        [
+            "联系人王五 手机18611112222 证件110101199003074512",
+            "客户赵六，护照号G23456789，统一码91440300MA02345678",
+            "深圳创新股份公司 经办陈七 17733334444 P34567890 主体91110000MA00123456",
+        ],
+        [
+            "联系人张三 固话021-12345678 证件110101199003074512",
+            "北京科技有限公司 400-100-5678 91110000MA00123456",
+            "备注：李四 95588 E12345678 开票信息",
+        ],
+        [
+            "6555345",
+            "13898523648",
+            "0931-6525836"
+        ]
+
     ],
 }
 
@@ -2833,7 +2984,7 @@ def _load_deploy_confidence_config(model_dir=None):
     """读取 confidence_thresholds.json；缺失时回退默认（与 Java RecognizeModelLoader 一致）。"""
     thresh = DEFAULT_DEPLOY_CONFIDENCE_THRESHOLD
     margin = DEFAULT_DEPLOY_MIN_MARGIN
-    per_class = {"ADDRESS": 0.4}
+    per_class = dict(DEPLOY_RELAXED_CLASS_THRESHOLDS)
     env_thresh = os.environ.get("MASK_SDK_RECOGNIZE_CONFIDENCE_THRESHOLD", "").strip()
     if env_thresh:
         try:
@@ -2872,6 +3023,10 @@ def apply_recognize_overrides(predicted, text_list):
         return "DEFAULT"
     if predicted == "LANDLINE" and not _looks_like_strict_landline_column(text_list):
         return "DEFAULT"
+    if predicted == "DATE" and not _looks_like_strict_date_column(text_list):
+        return "DEFAULT"
+    if predicted == "DATE_TIME" and not _looks_like_strict_datetime_column(text_list):
+        return "DEFAULT"
     if predicted == "NAME" and _looks_like_excluded_name_column(text_list):
         return "DEFAULT"
     if predicted == "NAME" and _name_column_han_char_ratio(text_list) < 1.0:
@@ -2890,9 +3045,10 @@ def apply_recognize_overrides(predicted, text_list):
 
 _deploy_confidence_threshold, _deploy_default_min_margin, _deploy_per_class_threshold = _load_deploy_confidence_config(_model_dir)
 print("=" * 60)
-print("测试推理部署参数：global_threshold=%.2f, default_min_margin=%.2f, ADDRESS=%.2f（与 Java SDK 一致）"
+print("测试推理部署参数：global_threshold=%.2f, default_min_margin=%.2f, ADDRESS=%.2f, LANDLINE=%.2f（与 Java SDK 一致）"
       % (_deploy_confidence_threshold, _deploy_default_min_margin,
-         _deploy_per_class_threshold.get("ADDRESS", _deploy_confidence_threshold)))
+         _deploy_per_class_threshold.get("ADDRESS", _deploy_confidence_threshold),
+         _deploy_per_class_threshold.get("LANDLINE", _deploy_confidence_threshold)))
 
 for label_name, group_idx, group_total, test_column in _iter_test_column_groups(all_test_columns):
 
@@ -2924,6 +3080,11 @@ for label_name, group_idx, group_total, test_column in _iter_test_column_groups(
           % _looks_like_strict_mobile_column(test_column))
     print("固话严格校验 looks_like_strict_landline_column: %s"
           % _looks_like_strict_landline_column(test_column))
+    print("日期严格校验 looks_like_strict_date_column: %s"
+          % _looks_like_strict_date_column(test_column))
+    if len(feature) >= 133:
+        print("紧凑日期 f130/f131/f132: %.4f / %.4f / %.4f"
+              % (feature[130], feature[131], feature[132]))
 
     # 打印概率排序（从高到低）—— 仍为模型原始 predict_proba，不随后处理改变
     sorted_probs = sorted(
