@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import re
 import joblib
+from datetime import date
 import sklearn.model_selection as ms
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -253,14 +254,21 @@ def _phone_digit_len_13_11_8_hit(text):
 ID_REGEX = re.compile(r"^\d{17}[\dXx]$")
 
 def valid_birth(id_number):
+    """身份证第 7–14 位须为合法公历 YYYYMMDD，且 1949 ≤ 年 ≤ 当前年（与 Java IdCardRecognizeHeuristics 一致）。"""
     try:
+        if id_number is None or len(id_number) < 14:
+            return False
         birth = id_number[6:14]
+        if not birth.isdigit():
+            return False
         year = int(birth[0:4])
         month = int(birth[4:6])
         day = int(birth[6:8])
-        #TODO 注意生日范围
-        return 1949 <= year <= 2049 and 1 <= month <= 12 and 1 <= day <= 31
-    except:
+        if year < 1949 or year > date.today().year:
+            return False
+        date(year, month, day)
+        return True
+    except (ValueError, TypeError):
         return False
 # ==============================
 # 军官证
@@ -703,6 +711,8 @@ ID_CHECK_MAP = {
 def id_card_check(id_number):
     if not re.match(r"^\d{17}[\dXx]$", id_number):
         return False
+    if not valid_birth(id_number):
+        return False
 
     id_number = id_number.upper()
 
@@ -712,6 +722,19 @@ def id_card_check(id_number):
 
     remainder = total % 11
     return ID_CHECK_MAP[remainder] == id_number[17]
+
+
+def _looks_like_strict_id_card_column(text_list):
+    """列内每行均为 18 位身份证形态且第 7–14 位生日 100% 合法（与 Java IdCardRecognizeHeuristics 一致）。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    for t in cleaned:
+        if not ID_REGEX.match(t):
+            return False
+        if not valid_birth(t):
+            return False
+    return True
 
 
 # ==============================
@@ -1222,10 +1245,10 @@ def extract_column_features(text_list):
     id_match = sum(1 for t in cleaned if ID_REGEX.match(t))
     id_regex_ratio = id_match / len(cleaned)
 
-    # 5 → birth_valid_ratio 生日验证
+    # 5 → birth_valid_ratio 第 7–14 位合法公历生日（1949≤年≤当前年）比例
     birth_valid_ratio = sum(
         1 for t in cleaned
-        if len(t) >= 14 and t[6:14].isdigit() and valid_birth(t)
+        if ID_REGEX.match(t) and valid_birth(t)
     ) / len(cleaned)
 
     # 6 → id_check_ratio 身份证校验
@@ -2590,6 +2613,34 @@ print("=" * 60)
 # ==============================
 # （10）批量测试整列
 # ==============================
+# 现场误识为电话/固话的非敏感字段（真实类型：非敏感；按原表列 1–14 逐列成组）
+SITE_FIELD_FALSE_POSITIVE_COLUMNS = [
+    ["300013", "300017", "300022", "300300312002", "300301"],  # col1 证券代码等
+    ["00000000000", "00000000000", "00000000000", "00000000001"],  # col2
+    ["66020307", "66020307", "66020307"],  # col3
+    ["300310007", "300318004", "300312006", "300311002"],  # col4
+    ["999999999", "999999999", "999999999", "999999999", "999999999"],  # col5
+    ["10072", "10075", "10050", "10052"],  # col6
+    ["1296", "1297", "1298", "1299"],  # col7
+    ["2024002001", "2024002001", "2024002001", "2024002001", "2024002001"],  # col8
+    ["30010207", "30010207", "30010207"],  # col9
+    ["665429565"],  # col10
+    ["00339442101", "00470000001", "00310675966", "00456967101"],  # col11
+    ["200000000", "140000000", "173000000", "640015000"],  # col12
+    ["100000", "100000", "50000", "100000"],  # col13
+    ["120000000", "84500000", "150000000", "100000000"],  # col14
+]
+
+# 现场误识为身份证的非敏感字段（真实类型：非敏感；按原表列 1–6 逐列成组）
+SITE_FIELD_FALSE_POSITIVE_ID_CARD_COLUMNS = [
+    ["99999999999999999", "99999999999999999", "99999999999999999", "99999999999999999"],  # col1 17位占位
+    ["11141221161111481X", "112121211114131128", "11211221811321423X", "11111221611211261X"],  # col2
+    ["9999999999999999999", "9999999999999999999", "9999999999999999999", "9999999999999999999", "9999999999999999999"],  # col3 19位占位
+    ["201512280581032111", "202305196933201111", "202308196934631811", "202305196933799711", "202305186930941011"],  # col4
+    ["571020011500025469", "510320011600001267", "571020111800011265", "510319103000019556"],  # col5
+    ["226610002111075794", "226610002913494203"],  # col6
+]
+
 all_test_columns = {
 
 
@@ -2608,8 +2659,8 @@ all_test_columns = {
 "66020307",
 "66020307",
 "66020307"
-        ]
-    ],
+        ],
+    ] + SITE_FIELD_FALSE_POSITIVE_COLUMNS,
 
     "LANDLINE": [
         # [
@@ -2622,24 +2673,26 @@ all_test_columns = {
         # ["10086", "10099", "10091", "10099", "10099"],
         # ["400420", "100160", "100150"],
         # ["10093", "10051", "10087", "10082", "10099"],
-        # ["2665418", "3174515", "3735978", "2669673"],
+        # ["2665417", "3174515", "3735978", "2669673"],
         # ["57741935", "73061385", "74179344", "73247184"],
         # ["2025-2026", "2025-2026"],
         [
         "66020307",
         "66020307",
         "66020307"
-        ]
-    ],
+        ],
+    ] + SITE_FIELD_FALSE_POSITIVE_COLUMNS,
 
 
     "ID_CARD": [
-        "110105199001011234","440106198806158765","320311199508073210",
-        "510107197502299999","330102197902307777",
-        "210102198812123456","370102199306123210",
-        "110101199003074512","320311198706042233","440103198812123456",
-        "600519","test@example.com","粤B12345"
-    ],
+        [
+            "110105199001011234", "440106198806158765", "320311199508073210",
+            "510107197502299999", "330102197902307777",
+            "210102198812123456", "370102199306123210",
+            "110101199003074512", "320311198706042233", "440103198812123456",
+            "600519", "test@example.com", "粤B12345",
+        ],
+    ] + SITE_FIELD_FALSE_POSITIVE_ID_CARD_COLUMNS,
 
 
     "BANK_CARDX": [
@@ -2908,8 +2961,24 @@ all_test_columns = {
 # "中国",
 # "越南"
 # ]
+#         [
+#         "金额"
+#         ],
+
+        # [
+        # "年龄"
+        # ],
         [
-        "金额"
+        "是否"
+        ],
+        [
+        "年度"
+        ],
+        [
+        "是这样"
+        ],
+        [
+        "水电费", "归档", "兰州", "查证", "国债", "成都"
         ]
     ],
 
@@ -3054,9 +3123,23 @@ NAME_SURNAME_HEAD_MIN_RATIO = 1.0
 EXCLUDED_NAME_MANUAL_EXACT_TOKENS = frozenset({
     "男", "女", "未知", "不详", "其他", "无", "暂无", "成功", "法人", "法官证",
     "银丰", "海南", "金融", "在营", "行政区", "银行", "行业", "金额",
+    "年龄", "年度", "年月", "年份", "年薪", "年金", "年报", "年限",
+    "是", "是否", "是非", "是的", "是这样", "是对", "是对的", "是吗", "是有", "是在", "是不是",
+    "水电费", "归档", "兰州", "查证", "国债", "成都",
 })
+# 「是」开头时第二字为下列字符则视为明显非人名（保留姓「是」+ 名如「是伟」）
+_SHI_PREFIX_NON_NAME_SECOND_CHARS = frozenset("否非对这吗有的不在因真还就也都只可被从要会能应该")
 EXCLUDED_NAME_EXACT_TOKENS = EXCLUDED_NAME_MANUAL_EXACT_TOKENS | COUNTRY_NAME_HAN_EXACT_TOKENS
 EXCLUDED_NAME_COLUMN_MIN_RATIO = 0.75
+
+
+def _is_shi_prefix_excluded_non_name(text):
+    t = str(text).strip()
+    if t == "是":
+        return True
+    if len(t) >= 2 and t[0] == "是" and t[1] in _SHI_PREFIX_NON_NAME_SECOND_CHARS:
+        return True
+    return False
 
 
 def _is_excluded_name_like_value(text):
@@ -3066,6 +3149,8 @@ def _is_excluded_name_like_value(text):
     if t in EXCLUDED_NAME_EXACT_TOKENS:
         return True
     if len(t) >= 2 and t.endswith("族") and all("\u4e00" <= c <= "\u9fff" for c in t):
+        return True
+    if _is_shi_prefix_excluded_non_name(t):
         return True
     return False
 
@@ -3155,6 +3240,8 @@ def apply_recognize_overrides(predicted, text_list):
         return "DEFAULT"
     if predicted == "DATE_TIME" and not _looks_like_strict_datetime_column(text_list):
         return "DEFAULT"
+    if predicted == "ID_CARD" and not _looks_like_strict_id_card_column(text_list):
+        return "DEFAULT"
     if cleaned:
         if _looks_like_column_mixed_column(text_list) and predicted in (
                 "DEFAULT", "PHONE", "LANDLINE", "ID_CARD", "PASSPORT", "CREDIT_CODE", "EMAIL", "MIXED"):
@@ -3214,6 +3301,8 @@ for label_name, group_idx, group_total, test_column in _iter_test_column_groups(
           % _looks_like_strict_mobile_column(test_column))
     print("固话严格校验 looks_like_strict_landline_column: %s"
           % _looks_like_strict_landline_column(test_column))
+    print("身份证严格校验 looks_like_strict_id_card_column: %s"
+          % _looks_like_strict_id_card_column(test_column))
     print("日期严格校验 looks_like_strict_date_column: %s"
           % _looks_like_strict_date_column(test_column))
     print("多行混合严格校验 looks_like_column_mixed_column: %s"
