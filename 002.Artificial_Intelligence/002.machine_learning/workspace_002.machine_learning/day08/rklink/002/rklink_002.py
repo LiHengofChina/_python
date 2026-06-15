@@ -2592,19 +2592,26 @@ all_test_columns = {
     ],
 
     "NAME": [
-        ["张三", "王小小", "刘德华", "李四", "赵六", "孙七", "周八", "吴九", "郑十", "陈一"],
-        [
-            "付艳彤", "张勤民", "丁宏伟", "赵莉", "扁文生", "付艳彤", "左林娣", "徐海兰",
-            "郭明峰", "付艳彤", "保承仪", "李奕萱", "赵桂兰", "严江立", "藏坚强", "左林娣",
-            "胥淑英", "王定强", "张娟", "查先锋", "王青青", "石孝", "王敏", "马玲莉", "程海兰",
-        ],
-        ["许梦佳", "刘文军", "台青", "苌雷", "柴立珍"],
-        ["CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY"],
-        ["成功", "成功", "成功", "成功", "成功"],
-        ["互开", "互开", "互开", "互开", "互开", "互开", "互开"],
-        ["永昌路支行", "民族支行", "白塔山支行"],
-        ["禁用", "岗位", "公司", "左模糊", "右模糊", "根据X轴汇总求和", "根据X轴汇总求平均值", "栅格"],
-        ["系统管理员", "审核人", "填报人"],
+        # ["张三", "王小小", "刘德华", "李四", "赵六", "孙七", "周八", "吴九", "郑十", "陈一"],
+        # [
+        #     "付艳彤", "张勤民", "丁宏伟", "赵莉", "扁文生", "付艳彤", "左林娣", "徐海兰",
+        #     "郭明峰", "付艳彤", "保承仪", "李奕萱", "赵桂兰", "严江立", "藏坚强", "左林娣",
+        #     "胥淑英", "王定强", "张娟", "查先锋", "王青青", "石孝", "王敏", "马玲莉", "程海兰",
+        # ],
+        # ["许梦佳", "刘文军", "台青", "苌雷", "柴立珍"],
+        # ["CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY"],
+        # ["成功", "成功", "成功", "成功", "成功"],
+        # ["互开", "互开", "互开", "互开", "互开", "互开", "互开"],
+        # ["永昌路支行", "民族支行", "白塔山支行"],
+        # ["禁用", "岗位", "公司", "左模糊", "右模糊", "根据X轴汇总求和", "根据X轴汇总求平均值", "栅格"],
+        # ["系统管理员", "审核人", "填报人"],
+        ["汉族",
+        "汉族",
+        "汉族",
+        "汉族",
+        "汉族",
+        "汉族",
+        "汉族"]
     ],
 
     "MONEY": [
@@ -2710,6 +2717,28 @@ def _name_column_surname_head_dict_ratio(text_list):
 NAME_2_OR_3_HAN_MIN_RATIO = 0.75
 # 姓名列：每一行首字或复姓前两字均须在姓氏字典中 → 列级占比须 100%
 NAME_SURNAME_HEAD_MIN_RATIO = 1.0
+# 非姓名排除：民族「X族」、性别/占位等（保留百家姓「汉」，避免误伤真姓）
+EXCLUDED_NAME_EXACT_TOKENS = frozenset({"男", "女", "未知", "不详", "其他", "无", "暂无"})
+EXCLUDED_NAME_COLUMN_MIN_RATIO = 0.75
+
+
+def _is_excluded_name_like_value(text):
+    t = str(text).strip()
+    if not t:
+        return False
+    if t in EXCLUDED_NAME_EXACT_TOKENS:
+        return True
+    if len(t) >= 2 and t.endswith("族") and all("\u4e00" <= c <= "\u9fff" for c in t):
+        return True
+    return False
+
+
+def _looks_like_excluded_name_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    hit = sum(1 for t in cleaned if _is_excluded_name_like_value(t))
+    return hit / len(cleaned) >= EXCLUDED_NAME_COLUMN_MIN_RATIO
 
 # 部署置信度阈值（与 Java masks.recognize-confidence-threshold / RecognizeThresholdProvider 默认 0.55 一致）
 # 训练后会写入 confidence_thresholds.json；测试推理优先读该文件，可用环境变量覆盖
@@ -2769,13 +2798,15 @@ def apply_recognize_overrides(predicted, text_list):
             return "PHONE"
     if predicted == "PHONE" and not _looks_like_strict_phone_column(text_list):
         return "DEFAULT"
+    if predicted == "NAME" and _looks_like_excluded_name_column(text_list):
+        return "DEFAULT"
     if predicted == "NAME" and _name_column_han_char_ratio(text_list) < 1.0:
         return "DEFAULT"
     if predicted == "NAME" and _name_column_2_or_3_han_row_ratio(text_list) < NAME_2_OR_3_HAN_MIN_RATIO:
         return "DEFAULT"
     if predicted == "NAME" and _name_column_surname_head_dict_ratio(text_list) < NAME_SURNAME_HEAD_MIN_RATIO:
         return "DEFAULT"
-    if predicted == "DEFAULT" and _looks_like_chinese_name_column(text_list):
+    if predicted == "DEFAULT" and _looks_like_chinese_name_column(text_list) and not _looks_like_excluded_name_column(text_list):
         return "NAME"
     return predicted
 
