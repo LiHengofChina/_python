@@ -2901,13 +2901,16 @@ all_test_columns = {
         # ["金融"],
         # ["在营"],
         # ["人政区"],
-[
-"中国",
-"中国",
-"中国",
-"中国",
-"越南"
-]
+# [
+# "中国",
+# "中国",
+# "中国",
+# "中国",
+# "越南"
+# ]
+        [
+        "金额"
+        ]
     ],
 
     "MONEY": [
@@ -3050,7 +3053,7 @@ NAME_SURNAME_HEAD_MIN_RATIO = 1.0
 # 非姓名排除：民族「X族」、性别/占位等 + country_dict 纯汉字国名
 EXCLUDED_NAME_MANUAL_EXACT_TOKENS = frozenset({
     "男", "女", "未知", "不详", "其他", "无", "暂无", "成功", "法人", "法官证",
-    "银丰", "海南", "金融", "在营", "行政区", "银行", "行业",
+    "银丰", "海南", "金融", "在营", "行政区", "银行", "行业", "金额",
 })
 EXCLUDED_NAME_EXACT_TOKENS = EXCLUDED_NAME_MANUAL_EXACT_TOKENS | COUNTRY_NAME_HAN_EXACT_TOKENS
 EXCLUDED_NAME_COLUMN_MIN_RATIO = 0.75
