@@ -71,7 +71,7 @@ if os.path.isfile(_fit_phone):
 PHONE_REGEX = re.compile(r"^1[3-9]\d{9}$")
 LANDLINE_PHONE_REGEX = re.compile(
     r'^(\+?86[- ]?)?('
-    r'0\d{2,3}[- ]?\d{7,8}|'           # 0+区号+本地号，如 010-62503000、021-12345678
+    r'0(?:[1-9]\d{1,2}|0[1-9]\d?|00[1-9])[- ]?(?:[1-9]\d{6,7}|\d*[1-9]\d{6,})|'  # 0+区号须含非0，本地号须含非0
     r'[2-689]\d{1,2}[- ]?\d{7,8}|'      # 无长途冠码区号，如 755-83301199
     r'400[- ]?\d{3}[- ]?\d{4}|'         # 400 客服
     r'800[- ]?\d{7,8}|'                 # 800 被叫付费
@@ -116,16 +116,26 @@ def is_mobile_phone_value(text):
         return True
     return bool(PHONE_REGEX.match(_normalize_phone_digits(s)))
 
+def _is_invalid_landline_digits(norm):
+    """占位/脏数据：全 0 或 0 开头固话本地号段全 0（如 00000000000）。"""
+    if not norm or not norm.isdigit():
+        return False
+    if all(c == '0' for c in norm):
+        return True
+    if norm.startswith('0') and len(norm) >= 10:
+        return all(c == '0' for c in norm[-8:])
+    return False
+
 def is_landline_phone_value(text):
     s = str(text).strip()
     if not s or is_mobile_phone_value(s) or _is_date_like_phone_exclusion(s):
         return False
     if LANDLINE_PHONE_REGEX.match(s):
-        return True
+        return not _is_invalid_landline_digits(_normalize_phone_digits(s))
     norm = _normalize_phone_digits(s)
     if _looks_like_iso_date_digits(norm):
         return False
-    return bool(LANDLINE_PHONE_REGEX.match(norm))
+    return bool(LANDLINE_PHONE_REGEX.match(norm)) and not _is_invalid_landline_digits(norm)
 
 def is_phone_value(text):
     return is_mobile_phone_value(text) or is_landline_phone_value(text)
@@ -2349,14 +2359,18 @@ all_test_columns = {
         # ["57741935", "73061385", "74179344", "73247184"],
         # ["10087", "10087", "10087", "10087"],
         # ["2025-2026", "2025-2026"],
+        # [
+        # "300013",
+        # "300017",
+        # "300022",
+        # "300300312002",
+        # "300301",
+        # ],
         [
-        "300013",
-        "300017",
-        "300022",
-        "300300312002",
-        "300301",
+            "00000000000",
+            "00000000000",
+            "00000000000"
         ]
-
 
     ],
 
