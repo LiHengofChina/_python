@@ -1,0 +1,251 @@
+column_id,text,label
+default_col_11,hello world,DEFAULT
+default_col_11,foo_bar!,DEFAULT
+default_col_11,alpha-beta,DEFAULT
+default_col_11,测试数据A,DEFAULT
+default_col_11,config value,DEFAULT
+default_col_11,meta.info,DEFAULT
+default_col_11,random_text?,DEFAULT
+default_col_11,none!,DEFAULT
+default_col_11,占位符,DEFAULT
+default_col_11,debug-mode,DEFAULT
+default_col_12,GET /api/test,DEFAULT
+default_col_12,POST /login,DEFAULT
+default_col_12,状态_OK,DEFAULT
+default_col_12,user agent,DEFAULT
+default_col_12,trace-id-xyz,DEFAULT
+default_col_12,内部标识,DEFAULT
+default_col_12,系统_参数,DEFAULT
+default_col_12,hello?,DEFAULT
+default_col_12,空 白,DEFAULT
+default_col_12,flag=true,DEFAULT
+default_col_13,参数A1,DEFAULT
+default_col_13,参数-B2,DEFAULT
+default_col_13,alpha beta,DEFAULT
+default_col_13,gamma.delta,DEFAULT
+default_col_13,测试_flag,DEFAULT
+default_col_13,log-entry,DEFAULT
+default_col_13,raw data,DEFAULT
+default_col_13,system#1,DEFAULT
+default_col_13,占位_data,DEFAULT
+default_col_13,misc-item,DEFAULT
+default_col_14,module A,DEFAULT
+default_col_14,module_B,DEFAULT
+default_col_14,内部-引用,DEFAULT
+default_col_14,external ref,DEFAULT
+default_col_14,build-version,DEFAULT
+default_col_14,release candidate,DEFAULT
+default_col_14,临时 标记,DEFAULT
+default_col_14,test_mode!,DEFAULT
+default_col_14,开发环境,DEFAULT
+default_col_14,ref.code,DEFAULT
+default_col_15,lorem ipsum,DEFAULT
+default_col_15,string-value,DEFAULT
+default_col_15,样本 数据,DEFAULT
+default_col_15,placeholder!,DEFAULT
+default_col_15,sample_data?,DEFAULT
+default_col_15,meta 信息,DEFAULT
+default_col_15,raw-input,DEFAULT
+default_col_15,temp flag,DEFAULT
+default_col_15,unknown?,DEFAULT
+default_col_15,none_value,DEFAULT
+default_col_16,key=value,DEFAULT
+default_col_16,sys-log,DEFAULT
+default_col_16,trace log,DEFAULT
+default_col_16,error-log!,DEFAULT
+default_col_16,info.log,DEFAULT
+default_col_16,warning-log,DEFAULT
+default_col_16,测试 文本,DEFAULT
+default_col_16,alpha#beta,DEFAULT
+default_col_16,misc data,DEFAULT
+default_col_16,flag-true,DEFAULT
+default_col_17,param 1,DEFAULT
+default_col_17,param-2,DEFAULT
+default_col_17,input data,DEFAULT
+default_col_17,output-data,DEFAULT
+default_col_17,response ok,DEFAULT
+default_col_17,response-fail,DEFAULT
+default_col_17,引用-编号,DEFAULT
+default_col_17,temp store,DEFAULT
+default_col_17,系统 参数,DEFAULT
+default_col_17,占位 字符串,DEFAULT
+default_col_18,item-alpha,DEFAULT
+default_col_18,item beta,DEFAULT
+default_col_18,item.gamma,DEFAULT
+default_col_18,object ref,DEFAULT
+default_col_18,data-ref,DEFAULT
+default_col_18,cache entry,DEFAULT
+default_col_18,cache-miss,DEFAULT
+default_col_18,控制 标识,DEFAULT
+default_col_18,misc-data,DEFAULT
+default_col_18,raw payload,DEFAULT
+default_col_19,flag enabled,DEFAULT
+default_col_19,flag-disabled,DEFAULT
+default_col_19,run state,DEFAULT
+default_col_19,task-queue,DEFAULT
+default_col_19,job worker,DEFAULT
+default_col_19,async-mode,DEFAULT
+default_col_19,线程 池,DEFAULT
+default_col_19,worker-node,DEFAULT
+default_col_19,测试 项,DEFAULT
+default_col_19,temp-value,DEFAULT
+default_col_20,meta config,DEFAULT
+default_col_20,service-api,DEFAULT
+default_col_20,component id,DEFAULT
+default_col_20,node cluster,DEFAULT
+default_col_20,cluster-main,DEFAULT
+default_col_20,cluster backup,DEFAULT
+default_col_20,env stage,DEFAULT
+default_col_20,env-dev,DEFAULT
+default_col_20,release version,DEFAULT
+default_col_20,原始 数据,DEFAULT
+default_col_21,null_value,DEFAULT
+default_col_21,undefined,DEFAULT
+default_col_21,,DEFAULT
+default_col_21,--,DEFAULT
+default_col_21,...,DEFAULT
+default_col_21,待填写,DEFAULT
+default_col_21,暂无,DEFAULT
+default_col_21,其他,DEFAULT
+default_col_21,见附件,DEFAULT
+default_col_21,略,DEFAULT
+default_col_22,id_001,DEFAULT
+default_col_22,ref-123,DEFAULT
+default_col_22,v2.0,DEFAULT
+default_col_22,beta_test,DEFAULT
+default_col_22,draft_01,DEFAULT
+default_col_22,草稿,DEFAULT
+default_col_22,版本v1,DEFAULT
+default_col_22,备注信息,DEFAULT
+default_col_22,说明文字,DEFAULT
+default_col_22,自定义字段,DEFAULT
+default_col_23,true,DEFAULT
+default_col_23,false,DEFAULT
+default_col_23,yes,DEFAULT
+default_col_23,no,DEFAULT
+default_col_23,1,DEFAULT
+default_col_23,0,DEFAULT
+default_col_23,on,DEFAULT
+default_col_23,off,DEFAULT
+default_col_23,是,DEFAULT
+default_col_23,否,DEFAULT
+default_col_24,A,DEFAULT
+default_col_24,B,DEFAULT
+default_col_24,X,DEFAULT
+default_col_24,优,DEFAULT
+default_col_24,良,DEFAULT
+default_col_24,中,DEFAULT
+default_col_24,差,DEFAULT
+default_col_24,高,DEFAULT
+default_col_24,低,DEFAULT
+default_col_24,无,DEFAULT
+default_col_25,2024Q1,DEFAULT
+default_col_25,H1,DEFAULT
+default_col_25,Q3,DEFAULT
+default_col_25,批次A,DEFAULT
+default_col_25,批次-001,DEFAULT
+default_col_25,阶段1,DEFAULT
+default_col_25,类型X,DEFAULT
+default_col_25,分类-测试,DEFAULT
+default_col_25,状态_进行中,DEFAULT
+default_col_25,优先级P1,DEFAULT
+system_code_col_1,C10001001,DEFAULT
+system_code_col_1,C10001001,DEFAULT
+system_code_col_1,C10001001,DEFAULT
+system_code_col_1,C10001001,DEFAULT
+system_code_col_1,C10001001,DEFAULT
+system_code_col_1,C10001001,DEFAULT
+system_code_col_1,C10001001,DEFAULT
+system_code_col_1,C10001001,DEFAULT
+system_code_col_1,C10001001,DEFAULT
+system_code_col_1,C10001001,DEFAULT
+system_code_col_2,C10001002,DEFAULT
+system_code_col_2,C10001002,DEFAULT
+system_code_col_2,C10001002,DEFAULT
+system_code_col_2,C10001002,DEFAULT
+system_code_col_2,C10001002,DEFAULT
+system_code_col_2,C10001002,DEFAULT
+system_code_col_2,C10001002,DEFAULT
+system_code_col_2,C10001002,DEFAULT
+system_code_col_2,C10001002,DEFAULT
+system_code_col_2,C10001002,DEFAULT
+system_code_col_3,C10001003,DEFAULT
+system_code_col_3,C10001003,DEFAULT
+system_code_col_3,C10001003,DEFAULT
+system_code_col_3,C10001003,DEFAULT
+system_code_col_3,C10001003,DEFAULT
+system_code_col_3,C10001003,DEFAULT
+system_code_col_3,C10001003,DEFAULT
+system_code_col_3,C10001003,DEFAULT
+system_code_col_3,C10001003,DEFAULT
+system_code_col_3,C10001003,DEFAULT
+system_code_col_4,C10001004,DEFAULT
+system_code_col_4,C10001004,DEFAULT
+system_code_col_4,C10001004,DEFAULT
+system_code_col_4,C10001004,DEFAULT
+system_code_col_4,C10001004,DEFAULT
+system_code_col_4,C10001004,DEFAULT
+system_code_col_4,C10001004,DEFAULT
+system_code_col_4,C10001004,DEFAULT
+system_code_col_4,C10001004,DEFAULT
+system_code_col_4,C10001004,DEFAULT
+system_code_col_5,C10001005,DEFAULT
+system_code_col_5,C10001005,DEFAULT
+system_code_col_5,C10001005,DEFAULT
+system_code_col_5,C10001005,DEFAULT
+system_code_col_5,C10001005,DEFAULT
+system_code_col_5,C10001005,DEFAULT
+system_code_col_5,C10001005,DEFAULT
+system_code_col_5,C10001005,DEFAULT
+system_code_col_5,C10001005,DEFAULT
+system_code_col_5,C10001005,DEFAULT
+system_code_col_6,C10001006,DEFAULT
+system_code_col_6,C10001006,DEFAULT
+system_code_col_6,C10001006,DEFAULT
+system_code_col_6,C10001006,DEFAULT
+system_code_col_6,C10001006,DEFAULT
+system_code_col_6,C10001006,DEFAULT
+system_code_col_6,C10001006,DEFAULT
+system_code_col_6,C10001006,DEFAULT
+system_code_col_6,C10001006,DEFAULT
+system_code_col_6,C10001006,DEFAULT
+system_code_col_7,C10001007,DEFAULT
+system_code_col_7,C10001007,DEFAULT
+system_code_col_7,C10001007,DEFAULT
+system_code_col_7,C10001007,DEFAULT
+system_code_col_7,C10001007,DEFAULT
+system_code_col_7,C10001007,DEFAULT
+system_code_col_7,C10001007,DEFAULT
+system_code_col_7,C10001007,DEFAULT
+system_code_col_7,C10001007,DEFAULT
+system_code_col_7,C10001007,DEFAULT
+system_code_col_8,C10001008,DEFAULT
+system_code_col_8,C10001008,DEFAULT
+system_code_col_8,C10001008,DEFAULT
+system_code_col_8,C10001008,DEFAULT
+system_code_col_8,C10001008,DEFAULT
+system_code_col_8,C10001008,DEFAULT
+system_code_col_8,C10001008,DEFAULT
+system_code_col_8,C10001008,DEFAULT
+system_code_col_8,C10001008,DEFAULT
+system_code_col_8,C10001008,DEFAULT
+system_code_col_9,C10001009,DEFAULT
+system_code_col_9,C10001009,DEFAULT
+system_code_col_9,C10001009,DEFAULT
+system_code_col_9,C10001009,DEFAULT
+system_code_col_9,C10001009,DEFAULT
+system_code_col_9,C10001009,DEFAULT
+system_code_col_9,C10001009,DEFAULT
+system_code_col_9,C10001009,DEFAULT
+system_code_col_9,C10001009,DEFAULT
+system_code_col_9,C10001009,DEFAULT
+system_code_col_10,C10001010,DEFAULT
+system_code_col_10,C10001010,DEFAULT
+system_code_col_10,C10001010,DEFAULT
+system_code_col_10,C10001010,DEFAULT
+system_code_col_10,C10001010,DEFAULT
+system_code_col_10,C10001010,DEFAULT
+system_code_col_10,C10001010,DEFAULT
+system_code_col_10,C10001010,DEFAULT
+system_code_col_10,C10001010,DEFAULT
+system_code_col_10,C10001010,DEFAULT

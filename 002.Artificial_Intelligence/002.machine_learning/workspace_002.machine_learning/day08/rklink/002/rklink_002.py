@@ -20,65 +20,42 @@ from sklearn.calibration import CalibratedClassifierCV
 # ==============================
 # （1）加载数据
 # 必须包含 column_id,text,label
-# 同目录下若有 fit_data_*_append.csv 则自动合并
+# 训练样本在 fit_data/ 目录：每种类型一个 CSV（如 PHONE.csv、LANDLINE.csv）
 # ==============================
 
 _rk002_dir = os.path.dirname(os.path.abspath(__file__))
-_fit_main = os.path.join(_rk002_dir, "fit_data.csv")
-_fit_mix = os.path.join(_rk002_dir, "fit_data_MIXED_append.csv")
-_fit_name = os.path.join(_rk002_dir, "fit_data_NAME_append.csv")
-_fit_date = os.path.join(_rk002_dir, "fit_data_DATE_append.csv")
-_fit_landline = os.path.join(_rk002_dir, "fit_data_LANDLINE_append.csv")
-_fit_column_mixed = os.path.join(_rk002_dir, "fit_data_COLUMN_MIXED_append.csv")
-_fit_phone = os.path.join(_rk002_dir, "fit_data_PHONE_append.csv")  # 旧文件名，合并时自动标为 LANDLINE
+_dict_root = os.path.join(_rk002_dir, "dict")
+_fit_data_dir = os.path.join(_rk002_dir, "fit_data")
 
-df = pd.read_csv(_fit_main, dtype={"text": str}, skipinitialspace=True)
-df.columns = df.columns.str.strip()  # 兼容每列前导空格
-df["column_id"] = df["column_id"].str.strip()
 
-if os.path.isfile(_fit_mix):
-    df_m = pd.read_csv(_fit_mix, dtype={"text": str}, skipinitialspace=True)
-    df_m.columns = df_m.columns.str.strip()
-    df_m["column_id"] = df_m["column_id"].astype(str).str.strip()
-    df = pd.concat([df, df_m], ignore_index=True)
-    print(f"已合并 MIXED 补充样本: {_fit_mix} （+{len(df_m)} 行）")
+def _read_fit_csv(path):
+    part = pd.read_csv(path, dtype={"text": str}, skipinitialspace=True)
+    part.columns = part.columns.str.strip()
+    part["column_id"] = part["column_id"].astype(str).str.strip()
+    return part
 
-if os.path.isfile(_fit_name):
-    df_n = pd.read_csv(_fit_name, dtype={"text": str}, skipinitialspace=True)
-    df_n.columns = df_n.columns.str.strip()
-    df_n["column_id"] = df_n["column_id"].astype(str).str.strip()
-    df = pd.concat([df, df_n], ignore_index=True)
-    print(f"已合并 NAME 补充样本: {_fit_name} （+{len(df_n)} 行，含 2~3 字中文姓名）")
 
-if os.path.isfile(_fit_date):
-    df_d = pd.read_csv(_fit_date, dtype={"text": str}, skipinitialspace=True)
-    df_d.columns = df_d.columns.str.strip()
-    df_d["column_id"] = df_d["column_id"].astype(str).str.strip()
-    df = pd.concat([df, df_d], ignore_index=True)
-    print(f"已合并 DATE 补充样本: {_fit_date} （+{len(df_d)} 行，与截图列一致）")
+def _load_fit_data():
+    if not os.path.isdir(_fit_data_dir):
+        raise FileNotFoundError("未找到训练数据目录: %s" % _fit_data_dir)
+    frames = []
+    for fname in sorted(os.listdir(_fit_data_dir)):
+        if not fname.lower().endswith(".csv"):
+            continue
+        path = os.path.join(_fit_data_dir, fname)
+        if not os.path.isfile(path):
+            continue
+        part = _read_fit_csv(path)
+        frames.append(part)
+        print("已加载训练样本: %s （+%d 行）" % (fname, len(part)))
+    if not frames:
+        raise FileNotFoundError("fit_data 目录下无 CSV 训练文件: %s" % _fit_data_dir)
+    merged = pd.concat(frames, ignore_index=True)
+    print("训练数据合计: %d 行, 目录=%s" % (len(merged), _fit_data_dir))
+    return merged
 
-if os.path.isfile(_fit_landline):
-    df_ll = pd.read_csv(_fit_landline, dtype={"text": str}, skipinitialspace=True)
-    df_ll.columns = df_ll.columns.str.strip()
-    df_ll["column_id"] = df_ll["column_id"].astype(str).str.strip()
-    df_ll["label"] = "LANDLINE"
-    df = pd.concat([df, df_ll], ignore_index=True)
-    print(f"已合并 LANDLINE 补充样本: {_fit_landline} （+{len(df_ll)} 行，固话/400/800/95/12/100 等）")
-elif os.path.isfile(_fit_phone):
-    df_ll = pd.read_csv(_fit_phone, dtype={"text": str}, skipinitialspace=True)
-    df_ll.columns = df_ll.columns.str.strip()
-    df_ll["column_id"] = df_ll["column_id"].astype(str).str.strip()
-    df_ll["label"] = "LANDLINE"
-    df = pd.concat([df, df_ll], ignore_index=True)
-    print(f"已合并 LANDLINE 补充样本(legacy {_fit_phone}): +{len(df_ll)} 行")
 
-if os.path.isfile(_fit_column_mixed):
-    df_cm = pd.read_csv(_fit_column_mixed, dtype={"text": str}, skipinitialspace=True)
-    df_cm.columns = df_cm.columns.str.strip()
-    df_cm["column_id"] = df_cm["column_id"].astype(str).str.strip()
-    df_cm["label"] = "COLUMN_MIXED"
-    df = pd.concat([df, df_cm], ignore_index=True)
-    print(f"已合并 COLUMN_MIXED 补充样本: {_fit_column_mixed} （+{len(df_cm)} 行，多行混合列）")
+df = _load_fit_data()
 
 # print("原始数据前5行：")
 # print(df.head())
@@ -375,8 +352,8 @@ def luhn_check(card_number):
 # 加载证券代码相关字典（A 股段 + 场内等辅助段，特征 fund_dict_ratio 与 Java 一致）
 # ==============================
 # 读取本地字典
-stock_df = pd.read_csv("stock_fund/stock_code_dict.csv", dtype=str)
-fund_df = pd.read_csv("stock_fund/fund_code_dict.csv", dtype=str)
+stock_df = pd.read_csv(os.path.join(_dict_root, "stock_fund", "stock_code_dict.csv"), dtype=str)
+fund_df = pd.read_csv(os.path.join(_dict_root, "stock_fund", "fund_code_dict.csv"), dtype=str)
 
 # 构建字典
 stock_dict = set(stock_df["code"].astype(str))
@@ -397,7 +374,7 @@ fund_name_dict = set(
 # 构建中国城市字典
 # ==============================
 
-city_df = pd.read_csv("cities/city_dict.csv", dtype=str)
+city_df = pd.read_csv(os.path.join(_dict_root, "cities", "city_dict.csv"), dtype=str)
 
 city_dict = set(
     city_df["city"].astype(str).str.strip()
@@ -409,7 +386,7 @@ city_dict = set(
 
 import json
 
-with open("chinesename/surname_dict.json", "r", encoding="utf-8") as f:
+with open(os.path.join(_dict_root, "chinesename", "surname_dict.json"), "r", encoding="utf-8") as f:
     surname_list = json.load(f)
 
 surname_dict = set(
@@ -492,7 +469,7 @@ FUND_KEYWORDS = [
 # ==============================
 
 # 读取本地字典
-country_df = pd.read_csv("country/country_dict.csv", dtype=str)
+country_df = pd.read_csv(os.path.join(_dict_root, "country", "country_dict.csv"), dtype=str)
 
 # 构建字典（统一去空格）
 country_dict = set(
@@ -540,9 +517,9 @@ def _load_pinyin_syllables():
         return frozenset(s)
     except ImportError:
         # 无 pypinyin 时从本地 JSON 加载（与脚本同目录）
-        for base in [os.path.dirname(os.path.abspath(__file__)), ".", os.getcwd()]:
+        for base in [_dict_root, os.path.dirname(os.path.abspath(__file__)), ".", os.getcwd()]:
             try:
-                path = os.path.join(base, "pinyin_syllables.json")
+                path = os.path.join(base, "pinyin", "pinyin_syllables.json")
                 if os.path.isfile(path):
                     with open(path, "r", encoding="utf-8") as f:
                         return frozenset(json.load(f))
@@ -616,7 +593,7 @@ IPV6_REGEX = re.compile(
 # ==============================
 # 加载行政区划树 JSON（仅用于 region_dict；已移除邮政编码 ZIP_CODE 类别与 zip_dict 特征）
 # ==============================
-with open("zip_code/zip_code.txt", "r", encoding="utf-8") as f:
+with open(os.path.join(_dict_root, "zip_code", "zip_code.txt"), "r", encoding="utf-8") as f:
     zip_data = json.load(f)
 
 # ==============================
@@ -641,11 +618,10 @@ extract_region_ids(zip_data)
 
 # ==============================
 # 加载 bank_bin_prefixes（用于 bank_bin_prefix_ratio 特征）
-# 训练用字典：脚本同目录下的 bank_bin/bank_bin_prefixes.json
+# 训练用字典：dict/bank_bin/bank_bin_prefixes.json
 # all_dicts.json 是给 Java SDK 用的，训练时只用模型侧字典
 # ==============================
-_script_dir = os.path.dirname(os.path.abspath(__file__))
-_bank_bin_training_path = os.path.join(_script_dir, "bank_bin", "bank_bin_prefixes.json")
+_bank_bin_training_path = os.path.join(_dict_root, "bank_bin", "bank_bin_prefixes.json")
 bank_bin_prefixes = set()
 if os.path.exists(_bank_bin_training_path):
     try:
@@ -2414,11 +2390,12 @@ os.makedirs(_model_dir, exist_ok=True)
 joblib.dump(model, os.path.join(_model_dir, "recognize_rf_model.joblib"))
 print(f"已保存 joblib 模型: {_model_dir}/recognize_rf_model.joblib")
 
-# PMML：Java SDK 决策树推理必需（sklearn2pmml 调 Java 时 Windows 反斜杠路径会被吃掉，先写脚本同目录再复制）
+# PMML：Java SDK 推理必需（sklearn2pmml 在 Windows 上对目标路径敏感，先写系统临时文件再复制到 model 目录）
 import shutil
+import tempfile
 
 _pmml_final = os.path.join(_model_dir, "recognize_rf_model.pmml")
-_pmml_staging = os.path.join(_rk002_dir, "recognize_rf_model.pmml")
+_pmml_staging = None
 try:
     from sklearn2pmml import sklearn2pmml
     from sklearn2pmml.pipeline import PMMLPipeline
@@ -2431,6 +2408,8 @@ try:
         _pmml_pipe.verify(_X_train_df)
     except Exception:
         pass
+    with tempfile.NamedTemporaryFile(suffix=".pmml", delete=False) as tmp:
+        _pmml_staging = tmp.name
     # 路径用正斜杠传给 Java，避免 D:\xxx 变成 D:xxx
     _pmml_java_path = os.path.abspath(_pmml_staging).replace("\\", "/")
     sklearn2pmml(_pmml_pipe, _pmml_java_path, with_repr=True)
@@ -2442,6 +2421,9 @@ except ImportError:
 except Exception as _pmml_err:
     print(f"PMML 导出失败: {_pmml_err}")
     print("提示: 若 IDE 打开了 recognize_model 目录，请先关闭相关文件后重试；或设置 MASK_SDK_RECOGNIZE_MODEL_DIR 到短路径目录。")
+finally:
+    if _pmml_staging and os.path.isfile(_pmml_staging):
+        os.remove(_pmml_staging)
 
 # ==============================
 # 保存字典（与特征提取逻辑一致）
@@ -2484,7 +2466,7 @@ with open(os.path.join(_dict_dir, "all_dicts.json"), "w", encoding="utf-8") as f
     json.dump(_dicts_to_save, f, ensure_ascii=False, indent=2)
 print(f"已保存字典: {_dict_dir}/all_dicts.json （特征提取与推理侧加载）")
 # 银行卡 BIN 前缀同步保存到训练侧字典（与 all_dicts 内容一致）
-_bank_bin_training_dir = os.path.join(_script_dir, "bank_bin")
+_bank_bin_training_dir = os.path.join(_dict_root, "bank_bin")
 os.makedirs(_bank_bin_training_dir, exist_ok=True)
 with open(os.path.join(_bank_bin_training_dir, "bank_bin_prefixes.json"), "w", encoding="utf-8") as f:
     json.dump(sorted(bank_bin_prefixes), f, ensure_ascii=False, indent=2)
@@ -2612,437 +2594,45 @@ print("=" * 60)
 
 # ==============================
 # （10）批量测试整列
+# 样本数据在 test_sample/ 目录：每种类型一个文件（如 PHONE、LANDLINE）。
+# JSON 格式：单组 flat list，或多组 list[list]。
 # ==============================
-# 现场误识为电话/固话的非敏感字段（真实类型：非敏感；按原表列 1–14 逐列成组）
-SITE_FIELD_FALSE_POSITIVE_COLUMNS = [
-    ["300013", "300017", "300022", "300300312002", "300301"],  # col1 证券代码等
-    ["00000000000", "00000000000", "00000000000", "00000000001"],  # col2
-    ["66020307", "66020307", "66020307"],  # col3
-    ["300310007", "300318004", "300312006", "300311002"],  # col4
-    ["999999999", "999999999", "999999999", "999999999", "999999999"],  # col5
-    ["10072", "10075", "10050", "10052"],  # col6
-    ["1296", "1297", "1298", "1299"],  # col7
-    ["2024002001", "2024002001", "2024002001", "2024002001", "2024002001"],  # col8
-    ["30010207", "30010207", "30010207"],  # col9
-    ["665429565"],  # col10
-    ["00339442101", "00470000001", "00310675966", "00456967101"],  # col11
-    ["200000000", "140000000", "173000000", "640015000"],  # col12
-    ["100000", "100000", "50000", "100000"],  # col13
-    ["120000000", "84500000", "150000000", "100000000"],  # col14
-]
 
-# 现场误识为身份证的非敏感字段（真实类型：非敏感；按原表列 1–6 逐列成组）
-SITE_FIELD_FALSE_POSITIVE_ID_CARD_COLUMNS = [
-    ["99999999999999999", "99999999999999999", "99999999999999999", "99999999999999999"],  # col1 17位占位
-    ["11141221161111481X", "112121211114131128", "11211221811321423X", "11111221611211261X"],  # col2
-    ["9999999999999999999", "9999999999999999999", "9999999999999999999", "9999999999999999999", "9999999999999999999"],  # col3 19位占位
-    ["201512280581032111", "202305196933201111", "202308196934631811", "202305196933799711", "202305186930941011"],  # col4
-    ["571020011500025469", "510320011600001267", "571020111800011265", "510319103000019556"],  # col5
-    ["226610002111075794", "226610002913494203"],  # col6
-]
-
-all_test_columns = {
+_test_sample_dir = os.path.join(_rk002_dir, "test_sample")
 
 
-    "PHONE": [
-        # [
-        #     "13800001234", "13912345678", "13698765432", "15812345678", "18611112222",
-        #     "17733334444", "18855556666", "19977778888", "13200001111", "15122223333",
-        # ],
-        # ["13609315050", "13893105080"],
-        # [
-        #     "00000000000",
-        #     "00000000000",
-        #     "00000000000",
-        # ],
-        [
-"66020307",
-"66020307",
-"66020307"
-        ],
-    ] + SITE_FIELD_FALSE_POSITIVE_COLUMNS,
-
-    "LANDLINE": [
-        # [
-        #     "400-100-5678", "010-62503000", "400-830-8300", "86-755-83301199", "800-9009999",
-        #     "021-12345678", "020-87654321", "0755-83301199", "0571-88889999", "028-12345678",
-        #     "95588", "95599", "95388", "12345", "12306", "6250-3000", "88886666",
-        # ],
-        # ["450773", "439211", "342582", "374110"],
-        # ["2011010201", "2011010201"],
-        # ["10086", "10099", "10091", "10099", "10099"],
-        # ["400420", "100160", "100150"],
-        # ["10093", "10051", "10087", "10082", "10099"],
-        # ["2665417", "3174515", "3735978", "2669673"],
-        # ["57741935", "73061385", "74179344", "73247184"],
-        # ["2025-2026", "2025-2026"],
-        [
-        "66020307",
-        "66020307",
-        "66020307"
-        ],
-    ] + SITE_FIELD_FALSE_POSITIVE_COLUMNS,
+def _load_test_sample_groups(type_name):
+    """读取 test_sample/{type_name} 或 test_sample/{type_name}.json。"""
+    for suffix in ("", ".json"):
+        path = os.path.join(_test_sample_dir, type_name + suffix)
+        if not os.path.isfile(path):
+            continue
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if data is None:
+            return []
+        if isinstance(data, list):
+            return data
+        raise ValueError("test_sample/%s 必须是 JSON 数组" % type_name)
+    return []
 
 
-    "ID_CARD": [
-        [
-            "110105199001011234", "440106198806158765", "320311199508073210",
-            "510107197502299999", "330102197902307777",
-            "210102198812123456", "370102199306123210",
-            "110101199003074512", "320311198706042233", "440103198812123456",
-            "600519", "test@example.com", "粤B12345",
-        ],
-    ] + SITE_FIELD_FALSE_POSITIVE_ID_CARD_COLUMNS,
+def _load_all_test_columns():
+    groups = {}
+    if not os.path.isdir(_test_sample_dir):
+        print("警告: 未找到 test_sample 目录:", _test_sample_dir)
+        return groups
+    for fname in sorted(os.listdir(_test_sample_dir)):
+        path = os.path.join(_test_sample_dir, fname)
+        if not os.path.isfile(path):
+            continue
+        type_name = fname[:-5] if fname.lower().endswith(".json") else fname
+        groups[type_name] = _load_test_sample_groups(type_name)
+    return groups
 
 
-    "BANK_CARDX": [
-        # "6222021234567893",
-        # "6222021234567802",
-        # "6222021234567810",
-        # "6222021234567828",
-        # "6222021234567836",
-        # "6222021234567844",
-        # "6222021234567852",
-        # "6222021234567860",
-        # "6222021234567878",
-        # "6222021234567886",
-
-
-        "2020200101376034",
-        "2020200103484315",
-        "2020200103490262",
-        "2020200103497325",
-        "2020200103629836",
-        "2020200103669949",
-        "2020200103826721",
-        "2020200103842025",
-        "2020200103842033",
-        "2020200104157977",
-    ],
-
-    "STOCK_CODE": [
-        "600000",
-        "600036",
-        "600519",
-        "601318",
-        "601398",
-        "603288",
-        "603259",
-        "000001",
-        "000858",
-        "002415",
-        "110011",
-        "519674",
-        "160119",
-        "003095",
-        "001234",
-        "002345",
-        "粤B12345",
-        "China",
-    ],
-
-
-    "CREDIT_CODE": [
-        "9144030071526726X","91310000631696382C","91110108MA01G90MXE",
-        "914401007594278192","91350100MA2D6J0A5X",
-        "91420500MA4KW8F67W","91440300MA5G21P972",
-        "91110000MA00123456","91310000MA01234567","91440300MA02345678",
-        "600519","2023-01-01","粤B12345"
-    ],
-
-
-    "OFFICER_CARD": [
-        "军字第2001988号","海字第123456号","空字第765432号",
-        "武字第112233号","军字第888888号",
-        "军字第123456号","海字第987654号",
-        "600519","test@example.com","粤B12345"
-    ],
-
-
-    "PERMIT": [
-        "粤食药监械经营许20180001号",       # 标准
-        "苏B-2021-000123",               # 横杠结构
-        "赣卫消证字(2019)第0012号",        # 括号 + 年份
-        "经营许可证20200111号",            # 只有关键词+年份
-        "许可证编号2022-000321",          # 年份+横杠
-        "食药监械经营许20201111号",        # 无省简称
-        "京食药监械经营许20230004号",       # 省简称+年份
-        "许可2023第0099号",               # 简化结构
-        "营业执照20200123",               # 噪声：含「营业执照」字样但非18位码（18位码列训练标签为 CREDIT_CODE）
-        "1234567890"                     # 强噪音
-    ],
-
-
-    "IP": [
-        "192.168.1.10",
-        "10.0.0.5",
-        "172.16.100.200",
-        "8.8.8.8",
-        "2001:db8::1",
-        "fe80::1ff:fe23:4567:890a",
-        "::1",
-        "300.168.1.1"   # 干扰（非法IPv4）
-    ],
-
-
-
-    "MAC": [
-        "00:1A:2B:3C:4D:5E","10:9A:BC:DE:F0:11","AA:BB:CC:DD:EE:FF",
-        "12:34:56:78:9A:BC","DE:AD:BE:EF:00:01",
-        "01:23:45:67:89:AB","FE:DC:BA:98:76:54",
-        "600519","110105199001011234","China"
-    ],
-
-    "URL": [
-        "https://www.example.com","http://www.test.com",
-        "ftp://ftp.example.org/file.txt","https://openai.com/research",
-        "https://subdomain.example.com","https://www.linkedin.com",
-        "https://www.youtube.com",
-        "600519","110105199001011234","China"
-    ],
-
-    "EMAIL": [
-        "test@example.com","user123@gmail.com","admin@openai.com",
-        "contact@company.cn","user.name+tag@gmail.com",
-        "hello@world.com","info@test.cn",
-        "alice@test.com","bob@qq.com","charlie@163.com",
-        "600519","2023-01-01","粤B12345"
-    ],
-
-    "CAR_VIN": [
-        "1HGCM82633A004352",
-        "JH4KA9650MC000000",
-        "1FAFP404X1F123456",
-        "5YJSA1E26HF000001",
-        "1M8GDM9AXKP042788",
-        "2FTRX18W1XCA12345",
-        "WAUZZZ8P29A123456",
-        "SALWR2VF4FA000001",
-        "KMHCG45C12U123456",
-        "3VWFE21C04M000001"
-    ],
-
-    "PLATE_NUMBER": [
-        "粤B12345","京A1B2C3","苏A12345D","沪C88888",
-        "浙A6F3K9","鲁B7L2Q4","川A1234D",
-        "600519","2023-01-01","110105199001011234"
-    ],
-
-
-    "CHARACTER_CODE": [
-        "ABC1234567890123",
-        "XYZ9876543210987",
-        "A1B0000000000001",
-        "1234567890123456",   # 干扰（纯数字）
-        "600519",             # 股票干扰
-        "110105199001011234", # 身份证干扰
-        "粤B12345",           # 车牌干扰
-        "not_code"            # 噪音
-    ],
-
-
-
-    "DATE": [
-        # 与平台截图列一致：仅 YYYY-MM-DD，重复 2026-01-01 / 2025-12-31
-        # "2026-01-01","2026-01-01","2026-01-01","2026-01-01","2026-01-01",
-        # "2025-12-31","2025-12-31","2025-12-31",
-        # "2026-01-01","2026-01-01",
-"2025-12-31",
-"2025-12-31",
-"2025-12-31",
-"2025-12-31",
-"2025-12-31",
-"2025-12-31",
-"2025-12-31",
-"2025-12-31",
-"2025-12-31",
-"2025-12-31",
-    ],
-
-    "DATE_TIME": [
-        "2023-01-01 12:30:45","2023-02-15 08:15:30",
-        "20230101123045","2022-12-31 23:59:59",
-        "2021-08-08 06:06:06","2020-06-18 18:18:18","2019-05-05 05:05:05",
-        "600519","粤B12345","China"
-    ],
-
-    "PASSPORT": [
-        "E12345678", "G98765432", "P12345678",
-        "D12345678", "E87654321", "G12349876", "P87651234",
-        "600519", "粤B12345", "2023-01-01"
-    ],
-
-    "ACCOUNT_OPENING": [
-        "J12345678901234",
-        "K44030012345678",
-        "L11010512345678",
-        "123456789012345",
-        "600519",
-        "粤B12345"
-    ],
-
-    "COUNTRY": [
-        "China","United States","USA","CN","中国","日本","JP",
-        "600519","2023-01-01","粤B12345"
-    ],
-
-    "FUNDS_NAME": [
-        "华夏成长混合","中海可转债债券A","南方中证500ETF",
-        "易方达消费行业股票","广发稳健增长混合",
-        "博时信用债纯债","嘉实沪深300指数",
-        "600519","2023-01-01","粤B12345"
-    ],
-
-    "PINYIN_NAME": [
-        "ZhangSan","Li Ming","WangWei","Chen Hao",
-        "LiuYang","ZhaoMin","HuangLei",
-        "600519","China","110105199001011234"
-    ],
-
-    "ENTERPRISE_NAME": [
-        "北京华瑞科技有限公司","上海腾飞投资集团有限公司",
-        "深圳中科实业股份有限公司","杭州未来能源有限公司",
-        "广州博雅教育科技有限公司","中国工商银行股份有限公司",
-        "成都金桥资产管理有限公司",
-        "600519","2023-01-01","粤B12345"
-    ],
-
-    "ADDRESS": [
-        "北京市朝阳区建国路88号",
-        "广东省深圳市南山区科技园科苑路15号",
-        "上海市浦东新区世纪大道100号A座",
-        "杭州市西湖区文三路90号",
-        "成都市高新区天府大道北段28号",
-        "广州市天河区体育西路123号",
-        "苏州市工业园区星湖街328号",
-
-        "重庆市渝北区龙溪街道红锦大道3号附2号",
-        "南京市鼓楼区中山北路200号B座15层",
-
-
-    ],
-
-    "NAME": [
-        # ["张三", "王小小", "刘德华", "李四", "赵六", "孙七", "周八", "吴九", "郑十", "陈一"],
-        # [
-        #     "付艳彤", "张勤民", "丁宏伟", "赵莉", "扁文生", "付艳彤", "左林娣", "徐海兰",
-        #     "郭明峰", "付艳彤", "保承仪", "李奕萱", "赵桂兰", "严江立", "藏坚强", "左林娣",
-        #     "胥淑英", "王定强", "张娟", "查先锋", "王青青", "石孝", "王敏", "马玲莉", "程海兰",
-        # ],
-        # ["许梦佳", "刘文军", "台青", "苌雷", "柴立珍"],
-        # ["CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY", "CNY"],
-        # ["成功", "成功", "成功", "成功", "成功"],
-        # ["互开", "互开", "互开", "互开", "互开", "互开", "互开"],
-        # ["永昌路支行", "民族支行", "白塔山支行"],
-        # ["禁用", "岗位", "公司", "左模糊", "右模糊", "根据X轴汇总求和", "根据X轴汇总求平均值", "栅格"],
-        # ["系统管理员", "审核人", "填报人"],
-        # ["汉族",
-        # "汉族",
-        # "汉族",
-        # "汉族",
-        # "汉族",
-        # "汉族",
-        # "汉族"],
-        # ["法人"],
-        # ["法官证",
-        # "法官证",
-        # "法官证",
-        # "法官证",
-        # "法官证"],
-        # ["银丰"],
-        # ["海南"],
-        # ["金融"],
-        # ["在营"],
-        # ["人政区"],
-# [
-# "中国",
-# "中国",
-# "中国",
-# "中国",
-# "越南"
-# ]
-#         [
-#         "金额"
-#         ],
-
-        # [
-        # "年龄"
-        # ],
-        [
-        "是否"
-        ],
-        [
-        "年度"
-        ],
-        [
-        "是这样"
-        ],
-        [
-        "水电费", "归档", "兰州", "查证", "国债", "成都"
-        ]
-    ],
-
-    "MONEY": [
-        "100","¥3000","1,200.50","-500","3万元","4500元","￥8800",
-        "0.01","999999.99","88.88","12345.67","5000.00","12.34","1.5万",
-        "600519","China","test@example.com"
-    ],
-
-    "DEFAULT": [
-        "hello world","系统参数A","config_value",
-        "alpha-beta","raw data","测试文本","meta.info",
-        "n/a","N/A","-","--","null","NULL","待填","暂无",
-        "param1","option_a","flag","debug","temp_value","placeholder",
-        "600519","2023-01-01","粤B12345"
-    ],
-
-    "MIXED": [
-        [
-            "张三 13800001234 E12345678",
-            "李四 13912345678 G23456789",
-            "备注：周八 13200001111 E45678901 开票信息",
-        ],
-        [
-            "北京科技有限公司 15800001111 91110000MA00123456",
-            "上海恒远数据有限公司 13912345678 91310000MA01234567",
-            "杭州云联有限公司 15122223333 91510100MA03456789",
-            "武汉华泰软件有限公司 13698765432 G56789012",
-        ],
-        [
-            "联系人王五 手机18611112222 证件110101199003074512",
-            "客户赵六，护照号G23456789，统一码91440300MA02345678",
-            "深圳创新股份公司 经办陈七 17733334444 P34567890 主体91110000MA00123456",
-        ],
-        [
-            "联系人张三 固话021-12345678 证件110101199003074512",
-            "北京科技有限公司 400-100-5678 91110000MA00123456",
-            "备注：李四 95588 E12345678 开票信息",
-        ],
-    ],
-
-    "COLUMN_MIXED": [
-        [
-            "6555345",
-            "13898523648",
-            "0931-6525836",
-        ],
-        [
-            "13800001234",
-            "110101199001010007",
-            "021-12345678",
-        ],
-        [
-            "95588",
-            "13912345678",
-            "400-100-5678",
-        ],
-        [
-            "alice@test.com",
-            "13698765432",
-            "E12345678",
-        ],
-    ],
-}
+all_test_columns = _load_all_test_columns()
+print("已加载 test_sample 测试列: %d 种类型, 目录=%s" % (len(all_test_columns), _test_sample_dir))
 
 
 def _iter_test_column_groups(all_groups_dict):
