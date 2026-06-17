@@ -65,18 +65,23 @@ df = _load_fit_data()
 # 手机号、身份证 正则规则
 # ==============================
 PHONE_REGEX = re.compile(r"^1[3-9]\d{9}$")
+# 固话形态（与 Java PhoneRecognizeHeuristics.LANDLINE_PHONE_REGEX 一致）：
+# 主格式（0+区号+本地，共 11 位）：0XX+8 位本地（如 01012345678 / 010-12345678）；
+# 0XXX+7 位本地（如 07551234567 / 0755-1234567）；部分城市 0XXX+8 位本地（如 0755-83301199）。
+# 另含：本市 7~8 位本地号、400/800、95·12·100 短号、+86/86 国际写法。
 LANDLINE_PHONE_REGEX = re.compile(
-    r'^(\+?86[- ]?)?('
-    r'0(?:[1-9]\d{1,2}|0[1-9]\d?|00[1-9])[- ]?(?:[1-9]\d{6,7}|\d*[1-9]\d{6,})|'  # 0+区号须含非0，本地号须含非0
-    r'[2-689]\d{1,2}[- ]?\d{7,8}|'      # 无长途冠码区号，如 755-83301199
-    r'400[- ]?\d{3}[- ]?\d{4}|'         # 400 客服
-    r'800[- ]?\d{7,8}|'                 # 800 被叫付费
-    r'86[- ]?\d{2,3}[- ]?\d{7,8}|'      # 国际格式 +86/86-区号-号码
-    r'9[56]\d{3,6}|'                    # 95/96 全国统一客服短号（5~8 位）
-    r'12\d{3}|'                         # 12xxx 政务/公共服务（5 位）
-    r'100\d{2,4}|'                      # 100xx 运营商客服
-    r'[2-8]\d{2,3}[- ]?\d{4}|'          # 本地固话带横杠，如 6250-3000
-    r'[2-8]\d{6,7}'                     # 本地固话 7~8 位无区号，如 88886666
+    r'^('
+    r'(\+?86[- ]?)?0\d{2}[- ]?\d{8}|'
+    r'(\+?86[- ]?)?0\d{3}[- ]?\d{7}|'
+    r'(\+?86[- ]?)?0\d{3}[- ]?\d{8}|'
+    r'\+?86[- ]?\d{2,3}[- ]?\d{7,8}|'
+    r'400[- ]?\d{3}[- ]?\d{4}|'
+    r'800[- ]?\d{7,8}|'
+    r'9[56]\d{3,6}|'
+    r'12\d{3}|'
+    r'100\d{2,4}|'
+    r'[2-8]\d{2,3}[- ]?\d{4}|'
+    r'[2-8]\d{6,7}'
     r')$'
 )
 ISO_DATE_REGEX = re.compile(r'^\d{4}-\d{2}-\d{2}$')
@@ -113,13 +118,15 @@ def is_mobile_phone_value(text):
     return bool(PHONE_REGEX.match(_normalize_phone_digits(s)))
 
 def _is_invalid_landline_digits(norm):
-    """占位/脏数据：全 0 或 0 开头固话本地号段全 0（如 00000000000）。"""
+    """占位/脏数据：全 0、本地段全 0、或无区号的同数字占位（如 999999999）。"""
     if not norm or not norm.isdigit():
         return False
     if all(c == '0' for c in norm):
         return True
     if norm.startswith('0') and len(norm) >= 10:
         return all(c == '0' for c in norm[-8:])
+    if not norm.startswith('0') and len(norm) == 9 and len(set(norm)) == 1:
+        return True
     return False
 
 def is_landline_phone_value(text):
@@ -2711,16 +2718,17 @@ NAME_2_OR_3_HAN_MIN_RATIO = 0.75
 NAME_SURNAME_HEAD_MIN_RATIO = 1.0
 # 非姓名排除：民族「X族」、性别/占位等 + country_dict 纯汉字国名
 EXCLUDED_NAME_MANUAL_EXACT_TOKENS = frozenset({
-    "男", "女", "未知", "不详", "其他", "无", "暂无", "成功", "法人", "法官证",
+    "男", "女", "未知", "不详", "其他", "无", "暂无", "成功", "法人", "法人股", "法官证",
     "银丰", "海南", "金融", "在营", "行政区", "银行", "行业", "金额",
     "年龄", "年度", "年月", "年份", "年薪", "年金", "年报", "年限",
     "是", "是否", "是非", "是的", "是这样", "是对", "是对的", "是吗", "是有", "是在", "是不是",
-    "水电费", "归档", "兰州", "查证", "国债", "成都",
+    "水电费", "归档", "兰州", "查证", "国债", "国债券", "成都",
 })
 # 「是」开头时第二字为下列字符则视为明显非人名（保留姓「是」+ 名如「是伟」）
 _SHI_PREFIX_NON_NAME_SECOND_CHARS = frozenset("否非对这吗有的不在因真还就也都只可被从要会能应该")
 EXCLUDED_NAME_EXACT_TOKENS = EXCLUDED_NAME_MANUAL_EXACT_TOKENS | COUNTRY_NAME_HAN_EXACT_TOKENS
-EXCLUDED_NAME_COLUMN_MIN_RATIO = 0.75
+# 列内任一黑名单取值单独占比 ≥ 此值时整列不按 NAME（与 Java NameRecognizeHeuristics 一致）
+EXCLUDED_NAME_COLUMN_MIN_RATIO = 0.5
 
 
 def _is_shi_prefix_excluded_non_name(text):
@@ -2746,11 +2754,18 @@ def _is_excluded_name_like_value(text):
 
 
 def _looks_like_excluded_name_column(text_list):
+    """列内是否存在单个黑名单取值，其出现次数占非空行数 ≥ EXCLUDED_NAME_COLUMN_MIN_RATIO。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
-    hit = sum(1 for t in cleaned if _is_excluded_name_like_value(t))
-    return hit / len(cleaned) >= EXCLUDED_NAME_COLUMN_MIN_RATIO
+    n = len(cleaned)
+    freq = {}
+    for t in cleaned:
+        freq[t] = freq.get(t, 0) + 1
+    for value, count in freq.items():
+        if _is_excluded_name_like_value(value) and count / n >= EXCLUDED_NAME_COLUMN_MIN_RATIO:
+            return True
+    return False
 
 # 部署置信度阈值（与 Java masks.recognize-confidence-threshold / RecognizeThresholdProvider 默认 0.55 一致）
 # 训练后会写入 confidence_thresholds.json；测试推理优先读该文件，可用环境变量覆盖
