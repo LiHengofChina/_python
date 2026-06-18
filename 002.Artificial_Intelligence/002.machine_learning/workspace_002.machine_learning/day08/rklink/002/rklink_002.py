@@ -2872,40 +2872,43 @@ def _load_deploy_confidence_config(model_dir=None):
 
 def apply_recognize_overrides(predicted, text_list):
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    result = predicted
+    # 拦截：预测为某类但列形态不合格 → DEFAULT（PHONE/LANDLINE 与 NAME 同风格，先拦后抬）
+    if result == "PHONE" and not _looks_like_strict_mobile_column(text_list):
+        result = "DEFAULT"
+    if result == "LANDLINE" and not _looks_like_strict_landline_column(text_list):
+        result = "DEFAULT"
+    if result == "DATE" and not _looks_like_strict_date_column(text_list):
+        result = "DEFAULT"
+    if result == "DATE_TIME" and not _looks_like_strict_datetime_column(text_list):
+        result = "DEFAULT"
+    if result == "ID_CARD" and not _looks_like_strict_id_card_column(text_list):
+        result = "DEFAULT"
     if cleaned:
-        if _looks_like_strict_mobile_column(text_list) and predicted in (
-                "IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN", "LANDLINE"):
-            return "PHONE"
-        if _looks_like_strict_landline_column(text_list) and predicted in (
-                "IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN", "PHONE"):
-            return "LANDLINE"
-    if predicted == "PHONE" and not _looks_like_strict_mobile_column(text_list):
-        return "DEFAULT"
-    if predicted == "LANDLINE" and not _looks_like_strict_landline_column(text_list):
-        return "DEFAULT"
-    if predicted == "DATE" and not _looks_like_strict_date_column(text_list):
-        return "DEFAULT"
-    if predicted == "DATE_TIME" and not _looks_like_strict_datetime_column(text_list):
-        return "DEFAULT"
-    if predicted == "ID_CARD" and not _looks_like_strict_id_card_column(text_list):
-        return "DEFAULT"
-    if cleaned:
-        if _looks_like_column_mixed_column(text_list) and predicted in (
+        if _looks_like_column_mixed_column(text_list) and result in (
                 "DEFAULT", "PHONE", "LANDLINE", "ID_CARD", "PASSPORT", "CREDIT_CODE", "EMAIL", "MIXED"):
-            return "COLUMN_MIXED"
-    if predicted == "COLUMN_MIXED" and not _looks_like_column_mixed_column(text_list):
-        return "DEFAULT"
-    if predicted == "NAME" and _looks_like_excluded_name_column(text_list):
-        return "DEFAULT"
-    if predicted == "NAME" and _name_column_han_char_ratio(text_list) < NAME_HAN_CHAR_MIN_RATIO:
-        return "DEFAULT"
-    if predicted == "NAME" and _name_column_2_or_3_han_row_ratio(text_list) < NAME_2_OR_3_HAN_MIN_RATIO:
-        return "DEFAULT"
-    if predicted == "NAME" and _name_column_surname_head_dict_ratio(text_list) < NAME_SURNAME_HEAD_MIN_RATIO:
-        return "DEFAULT"
-    if predicted == "DEFAULT" and _looks_like_chinese_name_column(text_list) and not _looks_like_excluded_name_column(text_list):
-        return "NAME"
-    return predicted
+            result = "COLUMN_MIXED"
+    if result == "COLUMN_MIXED" and not _looks_like_column_mixed_column(text_list):
+        result = "DEFAULT"
+    if result == "NAME" and _looks_like_excluded_name_column(text_list):
+        result = "DEFAULT"
+    if result == "NAME" and _name_column_han_char_ratio(text_list) < NAME_HAN_CHAR_MIN_RATIO:
+        result = "DEFAULT"
+    if result == "NAME" and _name_column_2_or_3_han_row_ratio(text_list) < NAME_2_OR_3_HAN_MIN_RATIO:
+        result = "DEFAULT"
+    if result == "NAME" and _name_column_surname_head_dict_ratio(text_list) < NAME_SURNAME_HEAD_MIN_RATIO:
+        result = "DEFAULT"
+    # 抬升：严格手机/固话列 + 原预测误判 → PHONE/LANDLINE（放在拦截之后，与 DEFAULT→NAME 同区）
+    if cleaned:
+        if _looks_like_strict_mobile_column(text_list) and result in (
+                "IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN", "LANDLINE"):
+            result = "PHONE"
+        elif _looks_like_strict_landline_column(text_list) and result in (
+                "IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN", "PHONE"):
+            result = "LANDLINE"
+    if result == "DEFAULT" and _looks_like_chinese_name_column(text_list) and not _looks_like_excluded_name_column(text_list):
+        result = "NAME"
+    return result
 
 # ==============================
 # 循环预测（与 Java SDK：PMML → 置信度门控 → apply_recognize_overrides）
