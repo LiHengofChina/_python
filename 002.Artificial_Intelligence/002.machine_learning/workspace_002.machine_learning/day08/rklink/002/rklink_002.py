@@ -624,6 +624,45 @@ def extract_region_ids(nodes):
 extract_region_ids(zip_data)
 
 # ==============================
+# 姓名排除：省 / 市 / 区县纯汉字地名（与 Java admin_place_name_exclude_dict 一致）
+# ==============================
+_ADMIN_PLACE_SUFFIXES = ("特别行政区", "自治州", "自治县", "自治区", "地区", "省", "市", "区", "县")
+_ADMIN_PLACE_SKIP = frozenset({"市辖区", "省直辖县级行政区划", "自治区直辖县级行政区划"})
+
+
+def _admin_place_name_variants(text):
+    t = str(text).strip()
+    if not t or not all("\u4e00" <= ch <= "\u9fff" for ch in t):
+        return set()
+    out = {t}
+    for suf in _ADMIN_PLACE_SUFFIXES:
+        if t.endswith(suf) and len(t) > len(suf):
+            core = t[:-len(suf)]
+            if len(core) >= 2 and all("\u4e00" <= ch <= "\u9fff" for ch in core):
+                out.add(core)
+    return out
+
+
+def _admin_place_name_han_exact_tokens(city_names, zip_tree):
+    names = set()
+    for raw in city_names or ():
+        names.update(_admin_place_name_variants(raw))
+    for prov in zip_tree or ():
+        if prov.get("Province"):
+            names.update(_admin_place_name_variants(prov["Province"]))
+        for city_node in prov.get("children") or ():
+            if city_node.get("City"):
+                names.update(_admin_place_name_variants(city_node["City"]))
+            for dist in city_node.get("children") or ():
+                if dist.get("Country"):
+                    names.update(_admin_place_name_variants(dist["Country"]))
+    names -= set(_ADMIN_PLACE_SKIP)
+    return frozenset(names)
+
+
+ADMIN_PLACE_NAME_HAN_EXACT_TOKENS = _admin_place_name_han_exact_tokens(city_dict, zip_data)
+
+# ==============================
 # 加载 bank_bin_prefixes（用于 bank_bin_prefix_ratio 特征）
 # 训练用字典：dict/bank_bin/bank_bin_prefixes.json
 # all_dicts.json 是给 Java SDK 用的，训练时只用模型侧字典
@@ -2714,8 +2753,11 @@ def _name_column_surname_head_dict_ratio(text_list):
 
 
 NAME_2_OR_3_HAN_MIN_RATIO = 0.75
-# 姓名列：每一行首字或复姓前两字均须在姓氏字典中 → 列级占比须 100%
-NAME_SURNAME_HEAD_MIN_RATIO = 1.0
+# 姓名列：列内「恰为 2 或 3 个汉字」的行占比下限（低于则 NAME→DEFAULT；与 Java recognize-name-2-or-3-han-min-ratio 一致）
+# 姓名列：列内汉字字符占比下限（低于则 NAME→DEFAULT；与 Java recognize-name-han-char-min-ratio 一致）
+NAME_HAN_CHAR_MIN_RATIO = 0.95
+# 姓名列：首字或复姓前两字在姓氏字典中的行占比下限（低于则 NAME→DEFAULT；与 Java recognize-name-surname-head-min-ratio 一致）
+NAME_SURNAME_HEAD_MIN_RATIO = 0.95
 # 非姓名排除：民族「X族」、性别/占位等 + country_dict 纯汉字国名
 EXCLUDED_NAME_MANUAL_EXACT_TOKENS = frozenset({
     "男", "女", "未知", "不详", "其他", "无", "暂无", "成功", "法人", "法人股", "法官证",
@@ -2726,7 +2768,7 @@ EXCLUDED_NAME_MANUAL_EXACT_TOKENS = frozenset({
 })
 # 「是」开头时第二字为下列字符则视为明显非人名（保留姓「是」+ 名如「是伟」）
 _SHI_PREFIX_NON_NAME_SECOND_CHARS = frozenset("否非对这吗有的不在因真还就也都只可被从要会能应该")
-EXCLUDED_NAME_EXACT_TOKENS = EXCLUDED_NAME_MANUAL_EXACT_TOKENS | COUNTRY_NAME_HAN_EXACT_TOKENS
+EXCLUDED_NAME_EXACT_TOKENS = EXCLUDED_NAME_MANUAL_EXACT_TOKENS | COUNTRY_NAME_HAN_EXACT_TOKENS | ADMIN_PLACE_NAME_HAN_EXACT_TOKENS
 # 列内任一黑名单取值单独占比 ≥ 此值时整列不按 NAME（与 Java NameRecognizeHeuristics 一致）
 EXCLUDED_NAME_COLUMN_MIN_RATIO = 0.5
 
@@ -2855,7 +2897,7 @@ def apply_recognize_overrides(predicted, text_list):
         return "DEFAULT"
     if predicted == "NAME" and _looks_like_excluded_name_column(text_list):
         return "DEFAULT"
-    if predicted == "NAME" and _name_column_han_char_ratio(text_list) < 1.0:
+    if predicted == "NAME" and _name_column_han_char_ratio(text_list) < NAME_HAN_CHAR_MIN_RATIO:
         return "DEFAULT"
     if predicted == "NAME" and _name_column_2_or_3_han_row_ratio(text_list) < NAME_2_OR_3_HAN_MIN_RATIO:
         return "DEFAULT"
@@ -2900,8 +2942,8 @@ for label_name, group_idx, group_total, test_column in _iter_test_column_groups(
     if prediction != after_gate:
         print("规则后处理:", prediction)
     print("预测类别(最终):", prediction)
-    print("姓名特征 f129 name_surname_head_dict_ratio: %.4f（须=1.0 才保留 NAME）"
-          % feature[129])
+    print("姓名特征 f129 name_surname_head_dict_ratio: %.4f（须≥%.2f 才保留 NAME）"
+          % (feature[129], NAME_SURNAME_HEAD_MIN_RATIO))
     print("手机严格校验 looks_like_strict_mobile_column: %s"
           % _looks_like_strict_mobile_column(test_column))
     print("固话严格校验 looks_like_strict_landline_column: %s"
