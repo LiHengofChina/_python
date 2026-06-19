@@ -12,6 +12,7 @@ import re
 import joblib
 from datetime import date
 import sklearn.model_selection as ms
+from sklearn.base import clone
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, f1_score
@@ -109,13 +110,19 @@ def _normalize_phone_digits(text):
         norm = norm[2:]
     return norm
 
-def is_mobile_phone_value(text):
+def _extract_last_11_digits(text):
+    """自字符串末尾向前取连续 11 位数字（忽略空格、横杠、+86 等）；不足 11 位返回 None。"""
     s = str(text).strip()
     if not s:
-        return False
-    if PHONE_REGEX.match(s):
-        return True
-    return bool(PHONE_REGEX.match(_normalize_phone_digits(s)))
+        return None
+    digits = ''.join(c for c in s if c.isdigit())
+    if len(digits) < 11:
+        return None
+    return digits[-11:]
+
+def is_mobile_phone_value(text):
+    tail11 = _extract_last_11_digits(text)
+    return bool(tail11 and PHONE_REGEX.match(tail11))
 
 def _is_invalid_landline_digits(norm):
     """占位/脏数据：全 0、本地段全 0、或无区号的同数字占位（如 999999999）。"""
@@ -145,7 +152,477 @@ def is_phone_value(text):
 
 PURE_100XX_SHORT_REGEX = re.compile(r'^100\d{2,4}$')
 YEAR_RANGE_REGEX = re.compile(r'^\d{4}-\d{4}$')
-PHONE_COLUMN_STRICT_RATIO = 0.75
+PHONE_COLUMN_STRICT_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_STRICT_COLUMN_MIN_RATIO", "0.75"))
+PHONE_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_PREFIX_MIN_RATIO", "0.75"))
+LANDLINE_COLUMN_STRICT_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_STRICT_COLUMN_MIN_RATIO", "0.75"))
+LANDLINE_AREA_CODE_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_AREA_CODE_MIN_RATIO", "0.75"))
+LANDLINE_SERVICE_SHORT_COLUMN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_SERVICE_SHORT_COLUMN_MIN_RATIO", "0.75"))
+LANDLINE_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_FORMAT_MIN_RATIO", "0.75"))
+LANDLINE_ALLOW_SERVICE_SHORT = os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_ALLOW_SERVICE_SHORT", "true").strip().lower() in (
+    "1", "true", "yes", "on")
+LANDLINE_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_CONFIDENCE_THRESHOLD", "0.4"))
+LANDLINE_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_DEFAULT_MIN_MARGIN", "0.1"))
+ID_CARD_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_CONFIDENCE_THRESHOLD", "0.55"))
+ID_CARD_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_DEFAULT_MIN_MARGIN", "0.1"))
+ID_CARD_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_FORMAT_MIN_RATIO", "0.95"))
+ID_CARD_REGION_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_REGION_PREFIX_MIN_RATIO", "0.75"))
+CREDIT_CODE_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_CONFIDENCE_THRESHOLD", "0.55"))
+CREDIT_CODE_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_DEFAULT_MIN_MARGIN", "0.1"))
+CREDIT_CODE_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_FORMAT_MIN_RATIO", "0.95"))
+CREDIT_CODE_REGION_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_REGION_PREFIX_MIN_RATIO", "0.75"))
+COLUMN_MIXED_OVERRIDE_ENABLED = os.environ.get("MASK_SDK_RECOGNIZE_COLUMN_MIXED_ENABLED", "true").strip().lower() in (
+    "1", "true", "yes", "on")
+OFFICER_CARD_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_CONFIDENCE_THRESHOLD", "0.55"))
+OFFICER_CARD_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_DEFAULT_MIN_MARGIN", "0.1"))
+OFFICER_CARD_FIRST_CHAR_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_FIRST_CHAR_MIN_RATIO", "0.85"))
+OFFICER_CARD_ZI_DI_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_ZI_DI_MIN_RATIO", "0.85"))
+OFFICER_CARD_END_HAO_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_END_HAO_MIN_RATIO", "0.85"))
+PASSPORT_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_CONFIDENCE_THRESHOLD", "0.55"))
+PASSPORT_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_DEFAULT_MIN_MARGIN", "0.1"))
+PASSPORT_MAX_DISTINCT_FOR_INTERCEPT = int(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_MAX_DISTINCT_FOR_INTERCEPT", "2"))
+PASSPORT_SYSTEM_CODE_INTERCEPT_ENABLED = os.environ.get(
+    "MASK_SDK_RECOGNIZE_PASSPORT_SYSTEM_CODE_INTERCEPT_ENABLED", "true").strip().lower() in (
+    "1", "true", "yes", "on")
+PASSPORT_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_FORMAT_MIN_RATIO", "0.75"))
+PASSPORT_PREFIX_LETTER_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_PREFIX_LETTER_MIN_RATIO", "0.75"))
+PASSPORT_LENGTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_LENGTH_MIN_RATIO", "0.75"))
+SYSTEM_CODE_C_PATTERN = re.compile(r'^C\d{8,}$')
+SERVICE_SHORT_95_REGEX = re.compile(r'^9[56]\d{3,6}$')
+SERVICE_SHORT_12_REGEX = re.compile(r'^12\d{3}$')
+LANDLINE_FORMAT_CHARS_REGEX = re.compile(r'^[0-9+\s\-()]+$')
+LOCAL_LANDLINE_NO_AREA_REGEX = re.compile(r'^[2-8]\d{2,3}[- ]?\d{4}$|^[2-8]\d{6,7}$')
+_DEFAULT_SDK_MODEL_DIR_FOR_PREFIX = (
+    r"D:\___workspace\workspace_2025_18_w_java_\datasharingplatform\mask-sdk\src\main\resources\recognize_model"
+)
+_MOBILE_PREFIXES_CACHE = None
+_AREA_CODES_CACHE = None
+_ID_CARD_REGION_PREFIXES_CACHE = None
+_OFFICER_CARD_FIRST_CHARS_CACHE = None
+
+
+def _resolve_recognize_model_dir_for_prefix():
+    model_dir = globals().get("_model_dir")
+    if model_dir:
+        return model_dir
+    return os.environ.get("MASK_SDK_RECOGNIZE_MODEL_DIR", _DEFAULT_SDK_MODEL_DIR_FOR_PREFIX).strip()
+
+
+def _load_mobile_prefixes():
+    global _MOBILE_PREFIXES_CACHE
+    if _MOBILE_PREFIXES_CACHE is not None:
+        return _MOBILE_PREFIXES_CACHE
+    path = os.path.join(_resolve_recognize_model_dir_for_prefix(), "dicts", "mobile_prefixes.json")
+    prefixes = set()
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            for item in data:
+                p = str(item).strip()
+                if len(p) == 3 and p.isdigit():
+                    prefixes.add(p)
+    except (OSError, ValueError, TypeError):
+        pass
+    _MOBILE_PREFIXES_CACHE = prefixes
+    return prefixes
+
+
+def _load_id_card_region_prefixes():
+    global _ID_CARD_REGION_PREFIXES_CACHE
+    if _ID_CARD_REGION_PREFIXES_CACHE is not None:
+        return _ID_CARD_REGION_PREFIXES_CACHE
+    path = os.path.join(_resolve_recognize_model_dir_for_prefix(), "dicts", "id_card_region_prefixes.json")
+    prefixes = set()
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            for item in data:
+                p = str(item).strip()
+                if len(p) == 6 and p.isdigit():
+                    prefixes.add(p)
+    except (OSError, ValueError, TypeError):
+        pass
+    _ID_CARD_REGION_PREFIXES_CACHE = prefixes
+    return prefixes
+
+
+def _extract_id_card_region_prefix(text):
+    s = str(text).strip()
+    if len(s) < 6 or not s[:6].isdigit():
+        return None
+    return s[:6]
+
+
+def _has_allowed_id_card_region_prefix(text):
+    if not ID_REGEX.match(str(text).strip()):
+        return False
+    prefix = _extract_id_card_region_prefix(text)
+    return bool(prefix and prefix in _load_id_card_region_prefixes())
+
+
+def _looks_like_strict_id_card_format_column(text_list):
+    """严格身份证形态列：18 位形态行占比 ≥ ID_CARD_FORMAT_MIN_RATIO（末位可为 X）。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    hit = sum(1 for t in cleaned if ID_REGEX.match(t)) / len(cleaned)
+    return hit >= ID_CARD_FORMAT_MIN_RATIO
+
+
+def _looks_like_strict_id_card_birth_column(text_list):
+    """18 位形态行中第 7–14 位生日 100% 合法（不要求校验位）。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    format_rows = [t for t in cleaned if ID_REGEX.match(t)]
+    if not format_rows:
+        return False
+    return all(valid_birth(t) for t in format_rows)
+
+
+def _looks_like_strict_id_card_region_prefix_column(text_list):
+    """严格身份证区划前缀列：前 6 位命中 id_card_region_prefixes.json 占比 ≥ ID_CARD_REGION_PREFIX_MIN_RATIO。"""
+    prefixes = _load_id_card_region_prefixes()
+    if not prefixes:
+        return False
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    hit = sum(1 for t in cleaned if _has_allowed_id_card_region_prefix(t)) / len(cleaned)
+    return hit >= ID_CARD_REGION_PREFIX_MIN_RATIO
+
+
+def _qualifies_for_id_card_recognize_override(text_list):
+    return (_looks_like_strict_id_card_format_column(text_list)
+            and _looks_like_strict_id_card_birth_column(text_list)
+            and _looks_like_strict_id_card_region_prefix_column(text_list))
+
+
+def _is_credit_code_format_value(text):
+    s = str(text).strip().upper()
+    if len(s) != 18:
+        return False
+    if not all(c in CREDIT_CODE_CHARS for c in s):
+        return False
+    return any(c.isalpha() for c in s)
+
+
+def _extract_credit_code_region_prefix(text):
+    s = str(text).strip().upper()
+    if len(s) < 8 or not s[2:8].isdigit():
+        return None
+    return s[2:8]
+
+
+def _has_allowed_credit_code_region_prefix(text):
+    if not _is_credit_code_format_value(text):
+        return False
+    prefix = _extract_credit_code_region_prefix(text)
+    return bool(prefix and prefix in _load_id_card_region_prefixes())
+
+
+def _looks_like_strict_credit_code_format_column(text_list):
+    """严格信用代码形态列：18 位合法字符集且含字母行占比 ≥ CREDIT_CODE_FORMAT_MIN_RATIO。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    hit = sum(1 for t in cleaned if _is_credit_code_format_value(t)) / len(cleaned)
+    return hit >= CREDIT_CODE_FORMAT_MIN_RATIO
+
+
+def _looks_like_strict_credit_code_region_prefix_column(text_list):
+    """严格信用代码区划前缀列：第 3–8 位命中 region 字典占比 ≥ CREDIT_CODE_REGION_PREFIX_MIN_RATIO。"""
+    prefixes = _load_id_card_region_prefixes()
+    if not prefixes:
+        return False
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    hit = sum(1 for t in cleaned if _has_allowed_credit_code_region_prefix(t)) / len(cleaned)
+    return hit >= CREDIT_CODE_REGION_PREFIX_MIN_RATIO
+
+
+def _qualifies_for_credit_code_recognize_override(text_list):
+    return (_looks_like_strict_credit_code_format_column(text_list)
+            and _looks_like_strict_credit_code_region_prefix_column(text_list))
+
+
+def _load_officer_card_first_chars():
+    global _OFFICER_CARD_FIRST_CHARS_CACHE
+    if _OFFICER_CARD_FIRST_CHARS_CACHE is not None:
+        return _OFFICER_CARD_FIRST_CHARS_CACHE
+    path = os.path.join(_resolve_recognize_model_dir_for_prefix(), "dicts", "officer_card_first_chars.json")
+    chars = set()
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            for item in data:
+                ch = str(item).strip()
+                if len(ch) == 1:
+                    chars.add(ch)
+    except (OSError, ValueError, TypeError):
+        pass
+    _OFFICER_CARD_FIRST_CHARS_CACHE = chars
+    return chars
+
+
+def _has_allowed_officer_first_char(text):
+    s = str(text).strip()
+    if not s:
+        return False
+    return s[0] in _load_officer_card_first_chars()
+
+
+def _has_zi_di_marker(text):
+    s = str(text).strip()
+    return len(s) >= 3 and s[1:3] == "字第"
+
+
+def _ends_with_hao(text):
+    return str(text).strip().endswith("号")
+
+
+def _looks_like_strict_officer_card_first_char_column(text_list):
+    chars = _load_officer_card_first_chars()
+    if not chars:
+        return False
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    hit = sum(1 for t in cleaned if _has_allowed_officer_first_char(t)) / len(cleaned)
+    return hit >= OFFICER_CARD_FIRST_CHAR_MIN_RATIO
+
+
+def _looks_like_strict_officer_card_zi_di_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    hit = sum(1 for t in cleaned if _has_zi_di_marker(t)) / len(cleaned)
+    return hit >= OFFICER_CARD_ZI_DI_MIN_RATIO
+
+
+def _looks_like_strict_officer_card_end_hao_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    hit = sum(1 for t in cleaned if _ends_with_hao(t)) / len(cleaned)
+    return hit >= OFFICER_CARD_END_HAO_MIN_RATIO
+
+
+def _is_passport_system_code_value(text):
+    s = str(text).strip()
+    return bool(s and SYSTEM_CODE_C_PATTERN.match(s))
+
+
+def _should_intercept_low_distinct_passport_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    return len(set(cleaned)) <= PASSPORT_MAX_DISTINCT_FOR_INTERCEPT
+
+
+def _should_intercept_system_code_passport_column(text_list):
+    if not PASSPORT_SYSTEM_CODE_INTERCEPT_ENABLED:
+        return False
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    return all(_is_passport_system_code_value(t) for t in cleaned)
+
+
+def _looks_like_strict_passport_format_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    hit = sum(1 for t in cleaned if PASSPORT_REGEX.match(t.upper())) / len(cleaned)
+    return hit >= PASSPORT_FORMAT_MIN_RATIO
+
+
+def _looks_like_strict_passport_prefix_letter_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    hit = sum(1 for t in cleaned if t and t[0].isalpha()) / len(cleaned)
+    return hit >= PASSPORT_PREFIX_LETTER_MIN_RATIO
+
+
+def _looks_like_strict_passport_length_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    hit = sum(1 for t in cleaned if 8 <= len(t) <= 10) / len(cleaned)
+    return hit >= PASSPORT_LENGTH_MIN_RATIO
+
+
+def _looks_like_strict_passport_column(text_list):
+    return (_looks_like_strict_passport_format_column(text_list)
+            and _looks_like_strict_passport_prefix_letter_column(text_list)
+            and _looks_like_strict_passport_length_column(text_list)
+            and not _should_intercept_low_distinct_passport_column(text_list)
+            and not _should_intercept_system_code_passport_column(text_list))
+
+
+def _qualifies_for_passport_recognize_override(text_list):
+    return _looks_like_strict_passport_column(text_list)
+
+
+def _extract_mobile_prefix_from_last_11(text):
+    tail11 = _extract_last_11_digits(text)
+    if not tail11 or len(tail11) != 11:
+        return None
+    return tail11[:3]
+
+
+def _has_allowed_mobile_prefix(text):
+    if not is_mobile_phone_value(text):
+        return False
+    prefix = _extract_mobile_prefix_from_last_11(text)
+    return bool(prefix and prefix in _load_mobile_prefixes())
+
+
+def _looks_like_strict_mobile_prefix_column(text_list):
+    """严格号段前缀列：非空行末 11 位前 3 位号段命中 mobile_prefixes.json 占比 ≥ PHONE_PREFIX_MIN_RATIO。"""
+    prefixes = _load_mobile_prefixes()
+    if not prefixes:
+        return False
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    n = len(cleaned)
+    hit = sum(1 for t in cleaned if _has_allowed_mobile_prefix(t)) / n
+    return hit >= PHONE_PREFIX_MIN_RATIO
+
+
+def _load_area_codes():
+    global _AREA_CODES_CACHE
+    if _AREA_CODES_CACHE is not None:
+        return _AREA_CODES_CACHE
+    path = os.path.join(_resolve_recognize_model_dir_for_prefix(), "dicts", "area_codes.json")
+    codes = set()
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            for item in data:
+                c = str(item).strip()
+                if re.match(r'^0\d{2,3}$', c):
+                    codes.add(c)
+    except (OSError, ValueError, TypeError):
+        pass
+    _AREA_CODES_CACHE = codes
+    return codes
+
+
+def _is_service_short_code_value(text):
+    if _is_pure_100xx_short_code(text):
+        return True
+    norm = _normalize_phone_digits(str(text).strip())
+    if not norm:
+        return False
+    return bool(SERVICE_SHORT_95_REGEX.match(norm) or SERVICE_SHORT_12_REGEX.match(norm))
+
+
+def _extract_landline_area_code(text):
+    if not is_landline_phone_value(text) or _is_service_short_code_value(text):
+        return None
+    norm = _normalize_phone_digits(text)
+    if not norm.startswith('0') or len(norm) < 10:
+        return None
+    d1 = norm[1]
+    if d1 in ('1', '2'):
+        return norm[:3] if len(norm) >= 3 else None
+    return norm[:4] if len(norm) >= 4 else None
+
+
+def _is_400_or_800_landline_value(text):
+    norm = _normalize_phone_digits(str(text).strip())
+    if norm.startswith('400') and len(norm) == 10:
+        return True
+    return norm.startswith('800') and len(norm) in (10, 11)
+
+
+def _is_local_landline_without_area_code(text):
+    if is_mobile_phone_value(text) or _is_service_short_code_value(text):
+        return False
+    s = str(text).strip()
+    if LOCAL_LANDLINE_NO_AREA_REGEX.match(s):
+        return is_landline_phone_value(s)
+    norm = _normalize_phone_digits(s)
+    return (not norm.startswith('0') and norm.isdigit() and len(norm) in (7, 8)
+            and '2' <= norm[0] <= '8' and is_landline_phone_value(s))
+
+
+def _has_allowed_landline_area_or_morph(text):
+    if not is_landline_phone_value(text):
+        return False
+    if _is_service_short_code_value(text):
+        return LANDLINE_ALLOW_SERVICE_SHORT
+    area = _extract_landline_area_code(text)
+    if area and area in _load_area_codes():
+        return True
+    return _is_400_or_800_landline_value(text) or _is_local_landline_without_area_code(text)
+
+
+def _is_formatted_landline_phone_row(text):
+    if not is_landline_phone_value(text):
+        return False
+    if _is_service_short_code_value(text):
+        return False
+    s = str(text).strip()
+    if not LANDLINE_FORMAT_CHARS_REGEX.match(s):
+        return False
+    return ('-' in s) or (' ' in s)
+
+
+def _is_pure_digit_landline_phone_row(text):
+    if not is_landline_phone_value(text):
+        return False
+    norm = _normalize_phone_digits(str(text).strip())
+    return norm.isdigit() and 5 <= len(norm) <= 13
+
+
+def _looks_like_strict_landline_area_or_morph_column(text_list):
+    codes = _load_area_codes()
+    if not codes and not LANDLINE_ALLOW_SERVICE_SHORT:
+        return False
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    n = len(cleaned)
+    hit = sum(1 for t in cleaned if _has_allowed_landline_area_or_morph(t)) / n
+    return hit >= LANDLINE_AREA_CODE_MIN_RATIO
+
+
+def _should_intercept_landline_service_short_column(text_list):
+    return not LANDLINE_ALLOW_SERVICE_SHORT and _looks_like_service_short_code_column(text_list)
+
+
+def _looks_like_service_short_code_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    n = len(cleaned)
+    hit = sum(1 for t in cleaned if _is_service_short_code_value(t)) / n
+    return hit >= LANDLINE_SERVICE_SHORT_COLUMN_MIN_RATIO
+
+
+def _looks_like_strict_landline_format_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    n = len(cleaned)
+    fmt_hit = sum(1 for t in cleaned if _is_formatted_landline_phone_row(t)) / n
+    if fmt_hit >= LANDLINE_FORMAT_MIN_RATIO:
+        return True
+    pure_hit = sum(1 for t in cleaned if _is_pure_digit_landline_phone_row(t)) / n
+    return pure_hit >= LANDLINE_FORMAT_MIN_RATIO
+
+
+def _qualifies_for_landline_recognize_override(text_list):
+    return (_looks_like_strict_landline_column(text_list)
+            and _looks_like_strict_landline_area_or_morph_column(text_list)
+            and not _should_intercept_landline_service_short_column(text_list)
+            and _looks_like_strict_landline_format_column(text_list))
 
 
 def _is_pure_100xx_short_code(text):
@@ -186,18 +663,20 @@ def _landline_column_noise_excluded(text_list):
     if not cleaned:
         return True
     n = len(cleaned)
-    pure_100 = sum(1 for t in cleaned if _is_pure_100xx_short_code(t)) / n
+    if not LANDLINE_ALLOW_SERVICE_SHORT:
+        pure_100 = sum(1 for t in cleaned if _is_pure_100xx_short_code(t)) / n
+        if pure_100 >= LANDLINE_COLUMN_STRICT_RATIO:
+            return True
     pure_78 = sum(1 for t in cleaned if _is_pure_7_8_digit_bare_code(t)) / n
     year_rng = sum(1 for t in cleaned if _is_year_range_like(t)) / n
     bare_10 = sum(1 for t in cleaned if _is_bare_10_digit_code(t)) / n
-    return (pure_100 >= PHONE_COLUMN_STRICT_RATIO
-            or pure_78 >= PHONE_COLUMN_STRICT_RATIO
-            or year_rng >= PHONE_COLUMN_STRICT_RATIO
-            or bare_10 >= PHONE_COLUMN_STRICT_RATIO)
+    return (pure_78 >= LANDLINE_COLUMN_STRICT_RATIO
+            or year_rng >= LANDLINE_COLUMN_STRICT_RATIO
+            or bare_10 >= LANDLINE_COLUMN_STRICT_RATIO)
 
 
 def _looks_like_strict_mobile_column(text_list):
-    """严格手机列：≥75% 为 11 位手机号形态。"""
+    """严格手机列：非空行中末 11 位数字符合手机号占比 ≥ PHONE_COLUMN_STRICT_RATIO。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
@@ -213,7 +692,7 @@ def _looks_like_strict_landline_column(text_list):
         return False
     n = len(cleaned)
     landline_hit = sum(1 for t in cleaned if is_landline_phone_value(t)) / n
-    if landline_hit < PHONE_COLUMN_STRICT_RATIO:
+    if landline_hit < LANDLINE_COLUMN_STRICT_RATIO:
         return False
     if _looks_like_strict_mobile_column(text_list):
         return False
@@ -747,16 +1226,8 @@ def id_card_check(id_number):
 
 
 def _looks_like_strict_id_card_column(text_list):
-    """列内每行均为 18 位身份证形态且第 7–14 位生日 100% 合法（与 Java IdCardRecognizeHeuristics 一致）。"""
-    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
-    if not cleaned:
-        return False
-    for t in cleaned:
-        if not ID_REGEX.match(t):
-            return False
-        if not valid_birth(t):
-            return False
-    return True
+    """严格身份证列：形态 + 生日 + 区划前缀均达标（与 Java IdCardRecognizeHeuristics 一致）。"""
+    return _qualifies_for_id_card_recognize_override(text_list)
 
 
 # ==============================
@@ -2448,7 +2919,8 @@ try:
 
     _X_train_df = pd.DataFrame(X_train, columns=feature_names)
     _y_train_s = pd.Series(y_train, name="label")
-    _pmml_pipe = PMMLPipeline([("classifier", model)])
+    # 克隆模型再 fit：避免 PMML 用 DataFrame 重训后污染主 model 的 feature_names_in_，导致后续 numpy 预测告警
+    _pmml_pipe = PMMLPipeline([("classifier", clone(model))])
     _pmml_pipe.fit(_X_train_df, _y_train_s)
     try:
         _pmml_pipe.verify(_X_train_df)
@@ -2458,7 +2930,16 @@ try:
         _pmml_staging = tmp.name
     # 路径用正斜杠传给 Java，避免 D:\xxx 变成 D:xxx
     _pmml_java_path = os.path.abspath(_pmml_staging).replace("\\", "/")
-    sklearn2pmml(_pmml_pipe, _pmml_java_path, with_repr=True)
+    # Windows PATH 上 Oracle javapath\java.exe 可能崩溃；显式指定 JDK（可用环境变量覆盖）
+    _pmml_java_home = (
+        os.environ.get("MASK_SDK_SKLEARN2PMML_JAVA_HOME", "").strip()
+        or os.environ.get("JAVA_HOME", "").strip()
+        or r"D:\Program Files\Java_21\jdk-21.0.10"
+    )
+    if not os.path.isfile(os.path.join(_pmml_java_home, "bin", "java.exe")):
+        raise FileNotFoundError("PMML 导出 Java 未找到: " + os.path.join(_pmml_java_home, "bin", "java.exe"))
+    print(f"PMML 导出使用 Java: {os.path.join(_pmml_java_home, 'bin', 'java.exe')}")
+    sklearn2pmml(_pmml_pipe, _pmml_java_path, with_repr=True, java_home=_pmml_java_home)
     shutil.copy2(_pmml_staging, _pmml_final)
     print(f"已保存 PMML 模型: {_pmml_final}")
     print("可选后处理: python D:/___workspace/workspace_2025_18_w_java_/datasharingplatform/mask-sdk/scripts/merge_funds_into_stock_pmml.py")
@@ -2466,7 +2947,7 @@ except ImportError:
     print("未安装 sklearn2pmml，跳过 PMML 导出（Java 推理需要）。pip install sklearn2pmml")
 except Exception as _pmml_err:
     print(f"PMML 导出失败: {_pmml_err}")
-    print("提示: 若 IDE 打开了 recognize_model 目录，请先关闭相关文件后重试；或设置 MASK_SDK_RECOGNIZE_MODEL_DIR 到短路径目录。")
+    print("提示: 若 IDE 打开了 recognize_model 目录，请先关闭相关文件后重试；或设置 MASK_SDK_RECOGNIZE_MODEL_DIR 到短路径目录；Java 路径可用 MASK_SDK_SKLEARN2PMML_JAVA_HOME / JAVA_HOME 覆盖。")
 finally:
     if _pmml_staging and os.path.isfile(_pmml_staging):
         os.remove(_pmml_staging)
@@ -2833,9 +3314,25 @@ def apply_confidence_gate(predicted, probability, classes, confidence_threshold=
     if "DEFAULT" in class_list:
         default_p = float(proba[class_list.index("DEFAULT")])
     thresh = confidence_threshold
+    margin = default_min_margin
     if per_class_threshold and predicted in per_class_threshold:
         thresh = float(per_class_threshold[predicted])
-    if pred_p < thresh or (pred_p - default_p) < default_min_margin:
+    if predicted == "LANDLINE":
+        thresh = LANDLINE_GATE_CONFIDENCE_THRESHOLD
+        margin = LANDLINE_GATE_DEFAULT_MIN_MARGIN
+    if predicted == "ID_CARD":
+        thresh = ID_CARD_GATE_CONFIDENCE_THRESHOLD
+        margin = ID_CARD_GATE_DEFAULT_MIN_MARGIN
+    if predicted == "CREDIT_CODE":
+        thresh = CREDIT_CODE_GATE_CONFIDENCE_THRESHOLD
+        margin = CREDIT_CODE_GATE_DEFAULT_MIN_MARGIN
+    if predicted == "OFFICER_CARD":
+        thresh = OFFICER_CARD_GATE_CONFIDENCE_THRESHOLD
+        margin = OFFICER_CARD_GATE_DEFAULT_MIN_MARGIN
+    if predicted == "PASSPORT":
+        thresh = PASSPORT_GATE_CONFIDENCE_THRESHOLD
+        margin = PASSPORT_GATE_DEFAULT_MIN_MARGIN
+    if pred_p < thresh or (pred_p - default_p) < margin:
         return "DEFAULT"
     return predicted
 
@@ -2876,19 +3373,51 @@ def apply_recognize_overrides(predicted, text_list):
     # 拦截：预测为某类但列形态不合格 → DEFAULT（PHONE/LANDLINE 与 NAME 同风格，先拦后抬）
     if result == "PHONE" and not _looks_like_strict_mobile_column(text_list):
         result = "DEFAULT"
+    if result == "PHONE" and not _looks_like_strict_mobile_prefix_column(text_list):
+        result = "DEFAULT"
     if result == "LANDLINE" and not _looks_like_strict_landline_column(text_list):
+        result = "DEFAULT"
+    if result == "LANDLINE" and not _looks_like_strict_landline_area_or_morph_column(text_list):
+        result = "DEFAULT"
+    if result == "LANDLINE" and _should_intercept_landline_service_short_column(text_list):
+        result = "DEFAULT"
+    if result == "LANDLINE" and not _looks_like_strict_landline_format_column(text_list):
         result = "DEFAULT"
     if result == "DATE" and not _looks_like_strict_date_column(text_list):
         result = "DEFAULT"
     if result == "DATE_TIME" and not _looks_like_strict_datetime_column(text_list):
         result = "DEFAULT"
-    if result == "ID_CARD" and not _looks_like_strict_id_card_column(text_list):
+    if result == "ID_CARD" and not _looks_like_strict_id_card_format_column(text_list):
         result = "DEFAULT"
-    if cleaned:
+    if result == "ID_CARD" and not _looks_like_strict_id_card_birth_column(text_list):
+        result = "DEFAULT"
+    if result == "ID_CARD" and not _looks_like_strict_id_card_region_prefix_column(text_list):
+        result = "DEFAULT"
+    if result == "CREDIT_CODE" and not _looks_like_strict_credit_code_format_column(text_list):
+        result = "DEFAULT"
+    if result == "CREDIT_CODE" and not _looks_like_strict_credit_code_region_prefix_column(text_list):
+        result = "DEFAULT"
+    if result == "OFFICER_CARD" and not _looks_like_strict_officer_card_first_char_column(text_list):
+        result = "DEFAULT"
+    if result == "OFFICER_CARD" and not _looks_like_strict_officer_card_zi_di_column(text_list):
+        result = "DEFAULT"
+    if result == "OFFICER_CARD" and not _looks_like_strict_officer_card_end_hao_column(text_list):
+        result = "DEFAULT"
+    if result == "PASSPORT" and _should_intercept_low_distinct_passport_column(text_list):
+        result = "DEFAULT"
+    if result == "PASSPORT" and _should_intercept_system_code_passport_column(text_list):
+        result = "DEFAULT"
+    if result == "PASSPORT" and not _looks_like_strict_passport_format_column(text_list):
+        result = "DEFAULT"
+    if result == "PASSPORT" and not _looks_like_strict_passport_prefix_letter_column(text_list):
+        result = "DEFAULT"
+    if result == "PASSPORT" and not _looks_like_strict_passport_length_column(text_list):
+        result = "DEFAULT"
+    if cleaned and COLUMN_MIXED_OVERRIDE_ENABLED:
         if _looks_like_column_mixed_column(text_list) and result in (
                 "DEFAULT", "PHONE", "LANDLINE", "ID_CARD", "PASSPORT", "CREDIT_CODE", "EMAIL", "MIXED"):
             result = "COLUMN_MIXED"
-    if result == "COLUMN_MIXED" and not _looks_like_column_mixed_column(text_list):
+    if result == "COLUMN_MIXED" and COLUMN_MIXED_OVERRIDE_ENABLED and not _looks_like_column_mixed_column(text_list):
         result = "DEFAULT"
     if result == "NAME" and _looks_like_excluded_name_column(text_list):
         result = "DEFAULT"
@@ -2900,12 +3429,24 @@ def apply_recognize_overrides(predicted, text_list):
         result = "DEFAULT"
     # 抬升：严格手机/固话列 + 原预测误判 → PHONE/LANDLINE（放在拦截之后，与 DEFAULT→NAME 同区）
     if cleaned:
-        if _looks_like_strict_mobile_column(text_list) and result in (
-                "IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN", "LANDLINE"):
+        if (_looks_like_strict_mobile_column(text_list)
+                and _looks_like_strict_mobile_prefix_column(text_list)
+                and result in (
+                "IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN", "LANDLINE")):
             result = "PHONE"
-        elif _looks_like_strict_landline_column(text_list) and result in (
+        elif _qualifies_for_landline_recognize_override(text_list) and result in (
                 "IP", "DEFAULT", "DATE", "DATE_TIME", "MAC", "CAR_VIN", "PHONE"):
             result = "LANDLINE"
+        elif _qualifies_for_id_card_recognize_override(text_list) and result in (
+                "DEFAULT", "PHONE", "LANDLINE", "DATE", "DATE_TIME", "MAC", "CAR_VIN", "BANK_CARD"):
+            result = "ID_CARD"
+        elif _qualifies_for_credit_code_recognize_override(text_list) and result in (
+                "DEFAULT", "BANK_CARD", "CHARACTER_CODE", "ACCOUNT_OPENING",
+                "DATE", "DATE_TIME", "PHONE", "LANDLINE"):
+            result = "CREDIT_CODE"
+        elif _qualifies_for_passport_recognize_override(text_list) and result in (
+                "DEFAULT", "CHARACTER_CODE", "PINYIN_NAME", "DATE", "DATE_TIME"):
+            result = "PASSPORT"
     if result == "DEFAULT" and _looks_like_chinese_name_column(text_list) and not _looks_like_excluded_name_column(text_list):
         result = "NAME"
     return result
