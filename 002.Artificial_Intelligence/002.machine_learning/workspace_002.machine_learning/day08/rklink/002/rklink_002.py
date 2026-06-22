@@ -214,12 +214,21 @@ def _rule_dict_path(subdir, filename):
     return os.path.join(_dict_root, subdir, filename)
 
 
-def _read_json_string_list_from_paths(paths, item_filter=None):
+_RULE_DICT_LOAD_WARNED = set()
+
+
+def _read_json_string_list_from_paths(paths, item_filter=None, dict_label=None):
+    """读取规则字典 JSON 列表；失败时打印一次 WARN（不抛异常，避免训练中断）。"""
+    last_issue = None
     for path in paths:
+        if not os.path.isfile(path):
+            last_issue = f"文件不存在: {path}"
+            continue
         try:
-            with open(path, encoding="utf-8") as f:
+            with open(path, encoding="utf-8-sig") as f:
                 data = json.load(f)
             if not isinstance(data, list):
+                last_issue = f"根节点不是数组: {path}"
                 continue
             out = set()
             for item in data:
@@ -231,8 +240,16 @@ def _read_json_string_list_from_paths(paths, item_filter=None):
                 out.add(s)
             if out:
                 return out
-        except (OSError, ValueError, TypeError):
-            continue
+            last_issue = f"数组为空或项均不符合过滤条件: {path}"
+        except json.JSONDecodeError as exc:
+            last_issue = f"JSON 解析失败 {path}: {exc}"
+        except (OSError, TypeError) as exc:
+            last_issue = f"读取失败 {path}: {exc}"
+    label = dict_label or (os.path.basename(paths[0]) if paths else "规则字典")
+    warn_key = (label, tuple(paths))
+    if warn_key not in _RULE_DICT_LOAD_WARNED:
+        _RULE_DICT_LOAD_WARNED.add(warn_key)
+        print(f"[WARN] 规则字典未加载 ({label}): {last_issue or '未知原因'}")
     return set()
 
 
@@ -243,6 +260,7 @@ def _load_mobile_prefixes():
     _MOBILE_PREFIXES_CACHE = _read_json_string_list_from_paths(
         [_rule_dict_path("mobile_prefix", "mobile_prefixes.json")],
         lambda s: len(s) == 3 and s.isdigit(),
+        dict_label="mobile_prefixes",
     )
     return _MOBILE_PREFIXES_CACHE
 
@@ -254,6 +272,7 @@ def _load_id_card_region_prefixes():
     prefixes = _read_json_string_list_from_paths(
         [_rule_dict_path("id_card_region", "id_card_region_prefixes.json")],
         lambda s: len(s) == 6 and s.isdigit(),
+        dict_label="id_card_region_prefixes",
     )
     if not prefixes:
         region_dict_ref = globals().get("region_dict")
@@ -369,6 +388,7 @@ def _load_officer_card_first_chars():
     _OFFICER_CARD_FIRST_CHARS_CACHE = _read_json_string_list_from_paths(
         [_rule_dict_path("officer_card", "officer_card_first_chars.json")],
         lambda s: len(s) == 1,
+        dict_label="officer_card_first_chars",
     )
     return _OFFICER_CARD_FIRST_CHARS_CACHE
 
@@ -507,6 +527,7 @@ def _load_area_codes():
     _AREA_CODES_CACHE = _read_json_string_list_from_paths(
         [_rule_dict_path("area_code", "area_codes.json")],
         lambda s: bool(re.match(r'^0\d{2,3}$', s)),
+        dict_label="area_codes",
     )
     return _AREA_CODES_CACHE
 
@@ -3620,6 +3641,8 @@ for label_name, group_idx, group_total, test_column in _iter_test_column_groups(
           % (feature[129], NAME_SURNAME_HEAD_MIN_RATIO))
     print("手机严格校验 looks_like_strict_mobile_column: %s"
           % _looks_like_strict_mobile_column(test_column))
+    print("手机号段前缀校验 looks_like_strict_mobile_prefix_column: %s"
+          % _looks_like_strict_mobile_prefix_column(test_column))
     print("固话严格校验 looks_like_strict_landline_column: %s"
           % _looks_like_strict_landline_column(test_column))
     print("身份证严格校验 looks_like_strict_id_card_column: %s"
