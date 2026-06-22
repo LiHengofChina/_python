@@ -3303,12 +3303,12 @@ def _name_column_surname_head_dict_ratio(text_list):
     return hit / len(cleaned)
 
 
-NAME_2_OR_3_HAN_MIN_RATIO = 0.75
+NAME_2_OR_3_HAN_MIN_RATIO = 1.0
 # 姓名列：列内「恰为 2 或 3 个汉字」的行占比下限（低于则 NAME→DEFAULT；与 Java recognize-name-2-or-3-han-min-ratio 一致）
 # 姓名列：列内汉字字符占比下限（低于则 NAME→DEFAULT；与 Java recognize-name-han-char-min-ratio 一致）
-NAME_HAN_CHAR_MIN_RATIO = 0.95
+NAME_HAN_CHAR_MIN_RATIO = 1.0
 # 姓名列：首字或复姓前两字在姓氏字典中的行占比下限（低于则 NAME→DEFAULT；与 Java recognize-name-surname-head-min-ratio 一致）
-NAME_SURNAME_HEAD_MIN_RATIO = 0.95
+NAME_SURNAME_HEAD_MIN_RATIO = 1.0
 # 非姓名排除：民族「X族」、性别/占位等 + country_dict 纯汉字国名
 EXCLUDED_NAME_MANUAL_EXACT_TOKENS = frozenset({
     "男", "女", "未知", "不详", "其他", "无", "暂无", "成功", "法人", "法人股", "法官证",
