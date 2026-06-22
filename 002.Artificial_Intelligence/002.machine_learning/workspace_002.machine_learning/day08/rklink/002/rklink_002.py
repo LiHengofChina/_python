@@ -186,6 +186,17 @@ PASSPORT_SYSTEM_CODE_INTERCEPT_ENABLED = os.environ.get(
 PASSPORT_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_FORMAT_MIN_RATIO", "0.75"))
 PASSPORT_PREFIX_LETTER_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_PREFIX_LETTER_MIN_RATIO", "0.75"))
 PASSPORT_LENGTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_LENGTH_MIN_RATIO", "0.75"))
+NAME_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_CONFIDENCE_THRESHOLD", "0.55"))
+NAME_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_DEFAULT_MIN_MARGIN", "0.1"))
+PHONE_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_CONFIDENCE_THRESHOLD", "0.55"))
+PHONE_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_DEFAULT_MIN_MARGIN", "0.1"))
+ENTERPRISE_NAME_GATE_CONFIDENCE_THRESHOLD = float(
+    os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_CONFIDENCE_THRESHOLD", "0.55"))
+ENTERPRISE_NAME_GATE_DEFAULT_MIN_MARGIN = float(
+    os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_DEFAULT_MIN_MARGIN", "0.1"))
+ENTERPRISE_KEYWORD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_KEYWORD_MIN_RATIO", "0.75"))
+ENTERPRISE_SUFFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_SUFFIX_MIN_RATIO", "0.75"))
+ENTERPRISE_LENGTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_LENGTH_MIN_RATIO", "0.75"))
 SYSTEM_CODE_C_PATTERN = re.compile(r'^C\d{8,}$')
 SERVICE_SHORT_95_REGEX = re.compile(r'^9[56]\d{3,6}$')
 SERVICE_SHORT_12_REGEX = re.compile(r'^12\d{3}$')
@@ -932,6 +943,65 @@ enterprise_suffix_dict = set([
     "中心",
     "工作室"
 ])
+
+# ==============================
+# 企业名称严格列校验（与 Java EnterpriseNameRecognizeHeuristics 一致）
+# ==============================
+
+
+def _has_enterprise_keyword(text):
+    if text is None or not str(text).strip():
+        return False
+    t = str(text).strip()
+    return any(k in t for k in enterprise_keyword_dict)
+
+
+def _has_enterprise_suffix(text):
+    if text is None or not str(text).strip():
+        return False
+    t = str(text).strip()
+    return any(t.endswith(suffix) for suffix in enterprise_suffix_dict)
+
+
+def _is_enterprise_length_reasonable(text):
+    if text is None:
+        return False
+    n = len(str(text).strip())
+    return 6 <= n <= 40
+
+
+def _looks_like_strict_enterprise_keyword_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned or not enterprise_keyword_dict:
+        return False
+    hit = sum(1 for t in cleaned if _has_enterprise_keyword(t))
+    return hit / len(cleaned) >= ENTERPRISE_KEYWORD_MIN_RATIO
+
+
+def _looks_like_strict_enterprise_suffix_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned or not enterprise_suffix_dict:
+        return False
+    hit = sum(1 for t in cleaned if _has_enterprise_suffix(t))
+    return hit / len(cleaned) >= ENTERPRISE_SUFFIX_MIN_RATIO
+
+
+def _looks_like_strict_enterprise_length_column(text_list):
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    hit = sum(1 for t in cleaned if _is_enterprise_length_reasonable(t))
+    return hit / len(cleaned) >= ENTERPRISE_LENGTH_MIN_RATIO
+
+
+def _looks_like_strict_enterprise_column(text_list):
+    return (_looks_like_strict_enterprise_keyword_column(text_list)
+            and _looks_like_strict_enterprise_suffix_column(text_list)
+            and _looks_like_strict_enterprise_length_column(text_list))
+
+
+def _qualifies_for_enterprise_recognize_override(text_list):
+    return _looks_like_strict_enterprise_column(text_list)
 
 # ==============================
 # PASSPORT 护照正则
@@ -3317,6 +3387,12 @@ def apply_confidence_gate(predicted, probability, classes, confidence_threshold=
     margin = default_min_margin
     if per_class_threshold and predicted in per_class_threshold:
         thresh = float(per_class_threshold[predicted])
+    if predicted == "NAME":
+        thresh = NAME_GATE_CONFIDENCE_THRESHOLD
+        margin = NAME_GATE_DEFAULT_MIN_MARGIN
+    if predicted == "PHONE":
+        thresh = PHONE_GATE_CONFIDENCE_THRESHOLD
+        margin = PHONE_GATE_DEFAULT_MIN_MARGIN
     if predicted == "LANDLINE":
         thresh = LANDLINE_GATE_CONFIDENCE_THRESHOLD
         margin = LANDLINE_GATE_DEFAULT_MIN_MARGIN
@@ -3332,6 +3408,9 @@ def apply_confidence_gate(predicted, probability, classes, confidence_threshold=
     if predicted == "PASSPORT":
         thresh = PASSPORT_GATE_CONFIDENCE_THRESHOLD
         margin = PASSPORT_GATE_DEFAULT_MIN_MARGIN
+    if predicted == "ENTERPRISE_NAME":
+        thresh = ENTERPRISE_NAME_GATE_CONFIDENCE_THRESHOLD
+        margin = ENTERPRISE_NAME_GATE_DEFAULT_MIN_MARGIN
     if pred_p < thresh or (pred_p - default_p) < margin:
         return "DEFAULT"
     return predicted
@@ -3413,6 +3492,12 @@ def apply_recognize_overrides(predicted, text_list):
         result = "DEFAULT"
     if result == "PASSPORT" and not _looks_like_strict_passport_length_column(text_list):
         result = "DEFAULT"
+    if result == "ENTERPRISE_NAME" and not _looks_like_strict_enterprise_keyword_column(text_list):
+        result = "DEFAULT"
+    if result == "ENTERPRISE_NAME" and not _looks_like_strict_enterprise_suffix_column(text_list):
+        result = "DEFAULT"
+    if result == "ENTERPRISE_NAME" and not _looks_like_strict_enterprise_length_column(text_list):
+        result = "DEFAULT"
     if cleaned and COLUMN_MIXED_OVERRIDE_ENABLED:
         if _looks_like_column_mixed_column(text_list) and result in (
                 "DEFAULT", "PHONE", "LANDLINE", "ID_CARD", "PASSPORT", "CREDIT_CODE", "EMAIL", "MIXED"):
@@ -3447,6 +3532,9 @@ def apply_recognize_overrides(predicted, text_list):
         elif _qualifies_for_passport_recognize_override(text_list) and result in (
                 "DEFAULT", "CHARACTER_CODE", "PINYIN_NAME", "DATE", "DATE_TIME"):
             result = "PASSPORT"
+        elif _qualifies_for_enterprise_recognize_override(text_list) and result in (
+                "DEFAULT", "FUNDS_NAME", "NAME", "ADDRESS", "PINYIN_NAME"):
+            result = "ENTERPRISE_NAME"
     if result == "DEFAULT" and _looks_like_chinese_name_column(text_list) and not _looks_like_excluded_name_column(text_list):
         result = "NAME"
     return result
