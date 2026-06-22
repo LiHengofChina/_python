@@ -202,58 +202,63 @@ SERVICE_SHORT_95_REGEX = re.compile(r'^9[56]\d{3,6}$')
 SERVICE_SHORT_12_REGEX = re.compile(r'^12\d{3}$')
 LANDLINE_FORMAT_CHARS_REGEX = re.compile(r'^[0-9+\s\-()]+$')
 LOCAL_LANDLINE_NO_AREA_REGEX = re.compile(r'^[2-8]\d{2,3}[- ]?\d{4}$|^[2-8]\d{6,7}$')
-_DEFAULT_SDK_MODEL_DIR_FOR_PREFIX = (
-    r"D:\___workspace\workspace_2025_18_w_java_\datasharingplatform\mask-sdk\src\main\resources\recognize_model"
-)
+# 规则字典仅在 Python dict/ 维护；训练结束时随 recognize_model 一并覆盖同步到 Java SDK。
 _MOBILE_PREFIXES_CACHE = None
 _AREA_CODES_CACHE = None
 _ID_CARD_REGION_PREFIXES_CACHE = None
 _OFFICER_CARD_FIRST_CHARS_CACHE = None
 
 
-def _resolve_recognize_model_dir_for_prefix():
-    model_dir = globals().get("_model_dir")
-    if model_dir:
-        return model_dir
-    return os.environ.get("MASK_SDK_RECOGNIZE_MODEL_DIR", _DEFAULT_SDK_MODEL_DIR_FOR_PREFIX).strip()
+def _rule_dict_path(subdir, filename):
+    """规则后处理字典路径（仅 Python 训练侧 dict/，运行时不去读 Java 目录）。"""
+    return os.path.join(_dict_root, subdir, filename)
+
+
+def _read_json_string_list_from_paths(paths, item_filter=None):
+    for path in paths:
+        try:
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+            if not isinstance(data, list):
+                continue
+            out = set()
+            for item in data:
+                s = str(item).strip()
+                if not s:
+                    continue
+                if item_filter is not None and not item_filter(s):
+                    continue
+                out.add(s)
+            if out:
+                return out
+        except (OSError, ValueError, TypeError):
+            continue
+    return set()
 
 
 def _load_mobile_prefixes():
     global _MOBILE_PREFIXES_CACHE
     if _MOBILE_PREFIXES_CACHE is not None:
         return _MOBILE_PREFIXES_CACHE
-    path = os.path.join(_resolve_recognize_model_dir_for_prefix(), "dicts", "mobile_prefixes.json")
-    prefixes = set()
-    try:
-        with open(path, encoding="utf-8") as f:
-            data = json.load(f)
-        if isinstance(data, list):
-            for item in data:
-                p = str(item).strip()
-                if len(p) == 3 and p.isdigit():
-                    prefixes.add(p)
-    except (OSError, ValueError, TypeError):
-        pass
-    _MOBILE_PREFIXES_CACHE = prefixes
-    return prefixes
+    _MOBILE_PREFIXES_CACHE = _read_json_string_list_from_paths(
+        [_rule_dict_path("mobile_prefix", "mobile_prefixes.json")],
+        lambda s: len(s) == 3 and s.isdigit(),
+    )
+    return _MOBILE_PREFIXES_CACHE
 
 
 def _load_id_card_region_prefixes():
     global _ID_CARD_REGION_PREFIXES_CACHE
     if _ID_CARD_REGION_PREFIXES_CACHE is not None:
         return _ID_CARD_REGION_PREFIXES_CACHE
-    path = os.path.join(_resolve_recognize_model_dir_for_prefix(), "dicts", "id_card_region_prefixes.json")
-    prefixes = set()
-    try:
-        with open(path, encoding="utf-8") as f:
-            data = json.load(f)
-        if isinstance(data, list):
-            for item in data:
-                p = str(item).strip()
-                if len(p) == 6 and p.isdigit():
-                    prefixes.add(p)
-    except (OSError, ValueError, TypeError):
-        pass
+    prefixes = _read_json_string_list_from_paths(
+        [_rule_dict_path("id_card_region", "id_card_region_prefixes.json")],
+        lambda s: len(s) == 6 and s.isdigit(),
+    )
+    if not prefixes:
+        region_dict_ref = globals().get("region_dict")
+        if region_dict_ref:
+            prefixes = set(region_dict_ref)
     _ID_CARD_REGION_PREFIXES_CACHE = prefixes
     return prefixes
 
@@ -361,20 +366,11 @@ def _load_officer_card_first_chars():
     global _OFFICER_CARD_FIRST_CHARS_CACHE
     if _OFFICER_CARD_FIRST_CHARS_CACHE is not None:
         return _OFFICER_CARD_FIRST_CHARS_CACHE
-    path = os.path.join(_resolve_recognize_model_dir_for_prefix(), "dicts", "officer_card_first_chars.json")
-    chars = set()
-    try:
-        with open(path, encoding="utf-8") as f:
-            data = json.load(f)
-        if isinstance(data, list):
-            for item in data:
-                ch = str(item).strip()
-                if len(ch) == 1:
-                    chars.add(ch)
-    except (OSError, ValueError, TypeError):
-        pass
-    _OFFICER_CARD_FIRST_CHARS_CACHE = chars
-    return chars
+    _OFFICER_CARD_FIRST_CHARS_CACHE = _read_json_string_list_from_paths(
+        [_rule_dict_path("officer_card", "officer_card_first_chars.json")],
+        lambda s: len(s) == 1,
+    )
+    return _OFFICER_CARD_FIRST_CHARS_CACHE
 
 
 def _has_allowed_officer_first_char(text):
@@ -508,20 +504,11 @@ def _load_area_codes():
     global _AREA_CODES_CACHE
     if _AREA_CODES_CACHE is not None:
         return _AREA_CODES_CACHE
-    path = os.path.join(_resolve_recognize_model_dir_for_prefix(), "dicts", "area_codes.json")
-    codes = set()
-    try:
-        with open(path, encoding="utf-8") as f:
-            data = json.load(f)
-        if isinstance(data, list):
-            for item in data:
-                c = str(item).strip()
-                if re.match(r'^0\d{2,3}$', c):
-                    codes.add(c)
-    except (OSError, ValueError, TypeError):
-        pass
-    _AREA_CODES_CACHE = codes
-    return codes
+    _AREA_CODES_CACHE = _read_json_string_list_from_paths(
+        [_rule_dict_path("area_code", "area_codes.json")],
+        lambda s: bool(re.match(r'^0\d{2,3}$', s)),
+    )
+    return _AREA_CODES_CACHE
 
 
 def _is_service_short_code_value(text):
@@ -2965,20 +2952,24 @@ print("=" * 60)
 
 # ==============================
 # （7.5）保存模型
+# Python 与 Java 分开执行：产物先写入 Python output/，再整包覆盖同步到 Java mask-sdk。
 # ==============================
 import os
-# 主输出：mask-sdk 内置 PMML 推理资源（Java JPMML 加载）
-# 可通过环境变量 MASK_SDK_RECOGNIZE_MODEL_DIR 覆盖
-_DEFAULT_SDK_MODEL_DIR = r"D:\___workspace\workspace_2025_18_w_java_\datasharingplatform\mask-sdk\src\main\resources\recognize_model"
-_model_dir = os.environ.get("MASK_SDK_RECOGNIZE_MODEL_DIR", _DEFAULT_SDK_MODEL_DIR).strip()
+import shutil
+
+_PYTHON_MODEL_DIR = os.path.join(_rk002_dir, "output", "recognize_model")
+_JAVA_SDK_EXPORT_DIR = os.environ.get(
+    "MASK_SDK_RECOGNIZE_MODEL_DIR",
+    r"D:\___workspace\workspace_2025_18_w_java_\datasharingplatform\mask-sdk\src\main\resources\recognize_model",
+).strip()
+_model_dir = _PYTHON_MODEL_DIR
 os.makedirs(_model_dir, exist_ok=True)
 
-# joblib：备份（Java 不读；便于 Python 侧对比）
+# joblib：Python 侧备份（Java 不读）
 joblib.dump(model, os.path.join(_model_dir, "recognize_rf_model.joblib"))
 print(f"已保存 joblib 模型: {_model_dir}/recognize_rf_model.joblib")
 
 # PMML：Java SDK 推理必需（sklearn2pmml 在 Windows 上对目标路径敏感，先写系统临时文件再复制到 model 目录）
-import shutil
 import tempfile
 
 _pmml_final = os.path.join(_model_dir, "recognize_rf_model.pmml")
@@ -3069,6 +3060,50 @@ with open(os.path.join(_bank_bin_training_dir, "bank_bin_prefixes.json"), "w", e
     json.dump(sorted(bank_bin_prefixes), f, ensure_ascii=False, indent=2)
 print(f"已保存银行卡BIN前缀: {_bank_bin_training_dir}/bank_bin_prefixes.json （供训练使用）")
 
+# 规则后处理字典：源在 dict/，写入 Python output 的 dicts/（训练结束后再同步到 Java）
+def _export_recognize_rule_dicts(target_dict_dir):
+    rule_exports = {
+        "mobile_prefixes.json": sorted(_load_mobile_prefixes()),
+        "area_codes.json": sorted(_load_area_codes()),
+        "id_card_region_prefixes.json": sorted(region_dict),
+        "officer_card_first_chars.json": sorted(_load_officer_card_first_chars()),
+    }
+    for filename, items in rule_exports.items():
+        if not items:
+            print(f"跳过空规则字典: {filename}")
+            continue
+        with open(os.path.join(target_dict_dir, filename), "w", encoding="utf-8") as f:
+            json.dump(items, f, ensure_ascii=False, indent=2)
+        print(f"已写入规则字典: {target_dict_dir}/{filename} （共 {len(items)} 项）")
+    id_card_training = os.path.join(_dict_root, "id_card_region", "id_card_region_prefixes.json")
+    os.makedirs(os.path.dirname(id_card_training), exist_ok=True)
+    with open(id_card_training, "w", encoding="utf-8") as f:
+        json.dump(sorted(region_dict), f, ensure_ascii=False, indent=2)
+    print(f"已保存身份证区划前缀: {id_card_training} （由 zip_code.txt 派生，共 {len(region_dict)} 项）")
+
+
+def _sync_recognize_model_to_java_sdk(source_dir, java_export_dir):
+    """将 Python 训练产物整包覆盖同步到 Java mask-sdk（每次训练更新 Java 侧）。"""
+    src_abs = os.path.abspath(source_dir)
+    dst_abs = os.path.abspath(java_export_dir)
+    if os.path.normcase(src_abs) == os.path.normcase(dst_abs):
+        print(f"Java SDK 导出目录与 Python 输出相同，跳过同步: {java_export_dir}")
+        return
+    os.makedirs(java_export_dir, exist_ok=True)
+    for name in os.listdir(source_dir):
+        src = os.path.join(source_dir, name)
+        dst = os.path.join(java_export_dir, name)
+        if os.path.isdir(src):
+            if os.path.isdir(dst):
+                shutil.rmtree(dst)
+            shutil.copytree(src, dst)
+        else:
+            shutil.copy2(src, dst)
+    print(f"已覆盖同步 recognize_model → Java SDK: {java_export_dir}")
+
+
+_export_recognize_rule_dicts(_dict_dir)
+
 # feature_names.json：与 extract_column_features 维顺序一致
 _feature_names_path = os.path.join(_model_dir, "feature_names.json")
 with open(_feature_names_path, "w", encoding="utf-8") as f:
@@ -3133,14 +3168,21 @@ with open(_readme_path, "w", encoding="utf-8") as _rf:
         "recognize_model — mask-sdk 列类型识别模型包（RandomForest + PMML）\n"
         "============================================================\n"
         "本目录由 E 盘 rklink_002.py 训练输出，供 Java mask-sdk JPMML 本地推理。\n"
+        "Python 侧主输出在 002/output/recognize_model/；训练结束会整包覆盖同步到本目录。\n"
         "主要文件：\n"
         "  recognize_rf_model.pmml      — Java 推理（必需）\n"
         "  recognize_rf_model.joblib    — 备份\n"
         "  dicts/all_dicts.json         — 特征用字典\n"
+        "  dicts/mobile_prefixes.json  — 手机号段（规则后处理，由 dict/ 同步）\n"
+        "  dicts/area_codes.json       — 固话区号（规则后处理，由 dict/ 同步）\n"
+        "  dicts/id_card_region_prefixes.json — 身份证区划（由 zip_code.txt 派生）\n"
+        "  dicts/officer_card_first_chars.json — 军官证首字（由 dict/ 同步）\n"
         "  feature_names.json           — f0..f135（136 维）\n"
         "  confidence_thresholds.json   — 可选阈值\n"
     )
 print(f"已写入说明: {_readme_path}")
+
+_sync_recognize_model_to_java_sdk(_model_dir, _JAVA_SDK_EXPORT_DIR)
 
 # （可选）概率校准：用 CalibratedClassifierCV 在验证集上得到更接近真实置信度的概率，再跑一遍阈值搜索，仅供参考
 try:
@@ -3545,7 +3587,7 @@ def apply_recognize_overrides(predicted, text_list):
 
 _deploy_confidence_threshold, _deploy_default_min_margin, _deploy_per_class_threshold = _load_deploy_confidence_config(_model_dir)
 print("=" * 60)
-print("测试推理部署参数：global_threshold=%.2f, default_min_margin=%.2f, ADDRESS=%.2f, LANDLINE=%.2f（与 Java SDK 一致）"
+print("测试推理部署参数（Python output/）：global_threshold=%.2f, default_min_margin=%.2f, ADDRESS=%.2f, LANDLINE=%.2f"
       % (_deploy_confidence_threshold, _deploy_default_min_margin,
          _deploy_per_class_threshold.get("ADDRESS", _deploy_confidence_threshold),
          _deploy_per_class_threshold.get("LANDLINE", _deploy_confidence_threshold)))
