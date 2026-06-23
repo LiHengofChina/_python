@@ -6,6 +6,7 @@
 
 import json
 import os
+import shutil
 import numpy as np
 import pandas as pd
 import re
@@ -2982,6 +2983,207 @@ print("特征重要性：")
 print(model.feature_importances_)
 _feature_indices = [int(n[1:]) for n in feature_names]
 print("=" * 60)
+
+# ==============================
+# （7.4）决策树可视化（dtreeviz）
+# 环境变量：
+#   TREE_VIZ_ENABLE=1|0           默认 1
+#   TREE_VIZ_TREE_INDEX=0         随机森林中第几棵基学习树（0..n_estimators-1）
+#   TREE_VIZ_MAX_DEPTH=            默认不限制，画整棵树；设正整数则只画 0..N-1 层（如 4）
+# 输出：output/recognize_model/tree_viz/
+# 依赖：pip install dtreeviz
+# ==============================
+
+_TREE_VIZ_ENABLE = os.environ.get("TREE_VIZ_ENABLE", "1").strip().lower() not in ("0", "false", "no", "off")
+_TREE_VIZ_TREE_INDEX = max(0, int(os.environ.get("TREE_VIZ_TREE_INDEX", "0")))
+
+
+def _tree_viz_parse_max_depth():
+    """None=整棵树；正整数=只展示 depth 0..N-1。"""
+    raw = os.environ.get("TREE_VIZ_MAX_DEPTH", "").strip().lower()
+    if not raw or raw in ("0", "all", "full", "none", "unlimited"):
+        return None
+    return max(1, int(raw))
+
+
+def _tree_viz_estimator_max_depth(estimator):
+    tree = getattr(estimator, "tree_", None)
+    if tree is None:
+        return None
+    def _depth(node_id):
+        left = tree.children_left[node_id]
+        right = tree.children_right[node_id]
+        if left == right:
+            return 0
+        return 1 + max(_depth(left), _depth(right))
+    return _depth(0)
+
+
+_TREE_VIZ_MAX_DEPTH = _tree_viz_parse_max_depth()
+
+
+def _tree_viz_output_dir():
+    d = os.path.join(_rk002_dir, "output", "recognize_model", "tree_viz")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def _ensure_graphviz_dot_on_path():
+    """PyCharm 等 IDE 可能未继承安装 Graphviz 后的 PATH，尝试常见安装目录。"""
+    if shutil.which("dot"):
+        return shutil.which("dot")
+    extra_bins = []
+    env_bin = os.environ.get("GRAPHVIZ_BIN", "").strip()
+    if env_bin:
+        extra_bins.append(env_bin)
+    pf = os.environ.get("ProgramFiles", r"C:\Program Files")
+    pf86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
+    local = os.environ.get("LOCALAPPDATA", "")
+    extra_bins.extend([
+        os.path.join(pf, "Graphviz", "bin"),
+        os.path.join(pf86, "Graphviz", "bin"),
+        os.path.join(local, "Programs", "Graphviz", "bin") if local else "",
+    ])
+    for bin_dir in extra_bins:
+        if not bin_dir:
+            continue
+        dot_exe = os.path.join(bin_dir, "dot.exe")
+        if os.path.isfile(dot_exe):
+            os.environ["PATH"] = bin_dir + os.pathsep + os.environ.get("PATH", "")
+            print(f"[tree_viz] 已自动加入 Graphviz PATH: {bin_dir}")
+            return dot_exe
+    return None
+
+
+def _tree_viz_pick_estimator(rf_model, tree_index):
+    estimators = getattr(rf_model, "estimators_", None)
+    if not estimators:
+        raise RuntimeError("模型无 estimators_，不是已 fit 的 RandomForestClassifier")
+    idx = min(tree_index, len(estimators) - 1)
+    if idx != tree_index:
+        print(f"[tree_viz] TREE_VIZ_TREE_INDEX={tree_index} 超出范围，改用 {idx}")
+    return estimators[idx], idx
+
+
+def _tree_viz_class_names(rf_model):
+    classes = getattr(rf_model, "classes_", None)
+    if classes is None:
+        return None
+    return [str(c) for c in classes]
+
+
+def _tree_viz_numeric_y_train(rf_model, y_vector):
+    """dtreeviz 2.x 要求 y_train 为 0..n-1 数值；字符串标签会触发 min(y)*1.03 报错。"""
+    classes = getattr(rf_model, "classes_", None)
+    if classes is None:
+        raise RuntimeError("模型无 classes_，无法为 dtreeviz 编码标签")
+    class_to_idx = {str(c): i for i, c in enumerate(classes)}
+    y_arr = np.asarray(y_vector)
+    if y_arr.dtype.kind in ("U", "S", "O"):
+        unknown = sorted({str(v) for v in y_arr if str(v) not in class_to_idx})
+        if unknown:
+            raise ValueError(f"y_train 含未知类别（前 5 个）: {unknown[:5]}")
+        y_num = np.array([class_to_idx[str(v)] for v in y_arr], dtype=int)
+    else:
+        y_num = y_arr.astype(int, copy=False)
+    return y_num
+
+
+def export_tree_viz_dtreeviz(rf_model, X_matrix, y_vector, feat_names, out_dir, tree_index, max_depth):
+    """dtreeviz：单棵基学习树，节点样本分布与分裂条件更清晰。"""
+    dot_exe = _ensure_graphviz_dot_on_path()
+    if not dot_exe:
+        raise FileNotFoundError(
+            "未找到 Graphviz 的 dot。请安装 Graphviz 并加入 PATH，或设置环境变量 GRAPHVIZ_BIN=...\\Graphviz\\bin"
+        )
+    try:
+        import dtreeviz
+    except ImportError as exc:
+        raise ImportError("缺少 dtreeviz: python -m pip install dtreeviz") from exc
+
+    est, idx = _tree_viz_pick_estimator(rf_model, tree_index)
+    class_names = _tree_viz_class_names(rf_model)
+    y_num = _tree_viz_numeric_y_train(rf_model, y_vector)
+    model_kwargs = dict(
+        X_train=X_matrix,
+        y_train=y_num,
+        feature_names=feat_names,
+        target_name="label",
+        class_names=class_names,
+    )
+    actual_depth = _tree_viz_estimator_max_depth(est)
+    if max_depth is None:
+        depth_label = "full"
+        depth_range = None
+    else:
+        depth_label = str(max_depth)
+        depth_range = (0, max(0, max_depth - 1))
+    svg_path = os.path.join(out_dir, f"tree_{idx}_dtreeviz_{depth_label}.svg")
+    if max_depth is None and actual_depth is not None:
+        print(f"[tree_viz] 整棵树深度约 {actual_depth} 层，生成可能较慢、SVG 较大")
+
+    if hasattr(dtreeviz, "model"):
+        viz_model = dtreeviz.model(est, **model_kwargs)
+        if not hasattr(viz_model, "view"):
+            raise RuntimeError("dtreeviz.model() 返回对象无 view()，请升级: python -m pip install -U dtreeviz")
+        view_kwargs = {}
+        if depth_range is not None:
+            view_kwargs["depth_range_to_display"] = depth_range
+        try:
+            rendered = viz_model.view(**view_kwargs)
+        except TypeError:
+            rendered = viz_model.view()
+        if hasattr(rendered, "save"):
+            rendered.save(svg_path)
+        elif hasattr(viz_model, "save"):
+            viz_model.save(svg_path)
+        else:
+            raise RuntimeError("dtreeviz view 结果无 save()，请升级: python -m pip install -U dtreeviz")
+    else:
+        legacy = dtreeviz(
+            est,
+            X_matrix,
+            y_num,
+            target_name="label",
+            feature_names=feat_names,
+            class_names=class_names,
+            orientation="TD",
+        )
+        if hasattr(legacy, "save"):
+            legacy.save(svg_path)
+        else:
+            raise RuntimeError("当前 dtreeviz 版本 API 不兼容，请升级: python -m pip install -U dtreeviz")
+
+    if os.path.isfile(svg_path):
+        print(f"[tree_viz] dtreeviz 已保存: {svg_path}")
+    return svg_path
+
+
+def run_tree_visualizations(rf_model, X_matrix, y_vector, feat_names):
+    if not _TREE_VIZ_ENABLE:
+        print("[tree_viz] TREE_VIZ_ENABLE=0，跳过决策树可视化")
+        return
+    out_dir = _tree_viz_output_dir()
+    depth_desc = "full（整棵树）" if _TREE_VIZ_MAX_DEPTH is None else str(_TREE_VIZ_MAX_DEPTH)
+    print(f"[tree_viz] 输出目录: {out_dir}，tree_index={_TREE_VIZ_TREE_INDEX}，max_depth={depth_desc}")
+    try:
+        export_tree_viz_dtreeviz(
+            rf_model, X_matrix, y_vector, feat_names, out_dir,
+            _TREE_VIZ_TREE_INDEX, _TREE_VIZ_MAX_DEPTH,
+        )
+    except Exception as exc:
+        err = str(exc)
+        if "can't multiply sequence by non-int of type 'float'" in err:
+            print("[tree_viz] dtreeviz 失败: y_train 须为数值标签（0..n-1），请升级 rklink_002.py 或检查 _tree_viz_numeric_y_train")
+        elif "dot" in err.lower() and ("not found" in err.lower() or "executable" in err.lower()):
+            print("[tree_viz] dtreeviz 失败: 未找到 Graphviz 的 dot")
+            print("[tree_viz]  CMD 里 dot -V 能通但 PyCharm 不行时：完全退出并重启 PyCharm，或从 CMD 运行脚本")
+            print("[tree_viz]  也可设置 GRAPHVIZ_BIN=C:\\Program Files\\Graphviz\\bin 后重跑")
+        else:
+            print(f"[tree_viz] dtreeviz 失败: {exc}")
+
+
+run_tree_visualizations(model, X_train, y_train, feature_names)
 
 # ==============================
 # （7.5）保存模型
