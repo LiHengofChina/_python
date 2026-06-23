@@ -1,0 +1,5 @@
+column_id,text,label,reason
+email_col_1,abc@@wrong.com,EMAIL,not_email_format
+email_col_1,not_an_email,EMAIL,not_email_format
+email_col_1,hello@world,EMAIL,not_email_format
+email_col_2,invalid@address,EMAIL,not_email_format

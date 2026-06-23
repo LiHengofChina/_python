@@ -1,0 +1,21 @@
+column_id,text,label,reason
+phone_col_1,+8613512345678,PHONE,not_strict_11_mobile
+phone_col_1,136 6666 8888,PHONE,not_strict_11_mobile
+phone_col_2,+8613912345670,PHONE,not_strict_11_mobile
+phone_col_2,136 1234 5678,PHONE,not_strict_11_mobile
+phone_col_3,+8613012345678,PHONE,not_strict_11_mobile
+phone_col_3,139 8888 0000,PHONE,not_strict_11_mobile
+phone_col_4,+8613811112222,PHONE,not_strict_11_mobile
+phone_col_4,136 7777 8888,PHONE,not_strict_11_mobile
+phone_col_5,+8613511112222,PHONE,not_strict_11_mobile
+phone_col_5,136 5555 6666,PHONE,not_strict_11_mobile
+phone_col_6,+8613712345678,PHONE,not_strict_11_mobile
+phone_col_6,136 1111 2222,PHONE,not_strict_11_mobile
+phone_col_7,+8613812345679,PHONE,not_strict_11_mobile
+phone_col_7,136 2222 3333,PHONE,not_strict_11_mobile
+phone_col_8,+8613911112222,PHONE,not_strict_11_mobile
+phone_col_8,136 3333 4444,PHONE,not_strict_11_mobile
+phone_col_9,+8613011112222,PHONE,not_strict_11_mobile
+phone_col_9,136 4444 5555,PHONE,not_strict_11_mobile
+phone_col_10,+8613711112222,PHONE,not_strict_11_mobile
+phone_col_10,136 5555 7777,PHONE,not_strict_11_mobile
