@@ -152,6 +152,13 @@ def is_phone_value(text):
 
 PURE_100XX_SHORT_REGEX = re.compile(r'^100\d{2,4}$')
 YEAR_RANGE_REGEX = re.compile(r'^\d{4}-\d{4}$')
+
+# ==============================
+# 识别门控 / 后处理可配参数（与 Java MasksRuntimeConfig + mask-sdk 后处理一致）
+# Java Nacos 键 masks.recognize-* ↔ Python 环境变量 MASK_SDK_RECOGNIZE_*（大写、连字符改下划线）
+# 流程：PMML 初选 → apply_confidence_gate（8 类门控）→ apply_recognize_overrides（拦截/抬升）
+# 文档：012.（最终、最新）每个规则的识别逻辑
+# ==============================
 PHONE_COLUMN_STRICT_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_STRICT_COLUMN_MIN_RATIO", "0.75"))
 PHONE_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_PREFIX_MIN_RATIO", "0.75"))
 LANDLINE_COLUMN_STRICT_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_STRICT_COLUMN_MIN_RATIO", "0.75"))
@@ -197,6 +204,11 @@ ENTERPRISE_NAME_GATE_DEFAULT_MIN_MARGIN = float(
 ENTERPRISE_KEYWORD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_KEYWORD_MIN_RATIO", "0.75"))
 ENTERPRISE_SUFFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_SUFFIX_MIN_RATIO", "0.75"))
 ENTERPRISE_LENGTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_LENGTH_MIN_RATIO", "0.75"))
+# NAME 后处理（masks.recognize-name-han-char-min-ratio 等；默认与 Java NameRecognizeHeuristics 一致）
+NAME_HAN_CHAR_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_HAN_CHAR_MIN_RATIO", "1.0"))
+NAME_2_OR_3_HAN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_2_OR_3_HAN_MIN_RATIO", "1.0"))
+NAME_SURNAME_HEAD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_SURNAME_HEAD_MIN_RATIO", "1.0"))
+EXCLUDED_NAME_COLUMN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_EXCLUDE_COLUMN_MIN_RATIO", "0.5"))
 SYSTEM_CODE_C_PATTERN = re.compile(r'^C\d{8,}$')
 SERVICE_SHORT_95_REGEX = re.compile(r'^9[56]\d{3,6}$')
 SERVICE_SHORT_12_REGEX = re.compile(r'^12\d{3}$')
@@ -3110,6 +3122,13 @@ def _sync_recognize_model_to_java_sdk(source_dir, java_export_dir):
     if os.path.normcase(src_abs) == os.path.normcase(dst_abs):
         print(f"Java SDK 导出目录与 Python 输出相同，跳过同步: {java_export_dir}")
         return
+    preserve_files = {}
+    for name in ("FEATURE_INDEX.md",):
+        dst = os.path.join(java_export_dir, name)
+        src = os.path.join(source_dir, name)
+        if not os.path.isfile(src) and os.path.isfile(dst):
+            with open(dst, "rb") as f:
+                preserve_files[name] = f.read()
     os.makedirs(java_export_dir, exist_ok=True)
     for name in os.listdir(source_dir):
         src = os.path.join(source_dir, name)
@@ -3120,6 +3139,10 @@ def _sync_recognize_model_to_java_sdk(source_dir, java_export_dir):
             shutil.copytree(src, dst)
         else:
             shutil.copy2(src, dst)
+    for name, content in preserve_files.items():
+        with open(os.path.join(java_export_dir, name), "wb") as f:
+            f.write(content)
+        print(f"已保留 Java 侧已有文件（Python 未生成）: {name}")
     print(f"已覆盖同步 recognize_model → Java SDK: {java_export_dir}")
 
 
@@ -3199,7 +3222,14 @@ with open(_readme_path, "w", encoding="utf-8") as _rf:
         "  dicts/id_card_region_prefixes.json — 身份证区划（由 zip_code.txt 派生）\n"
         "  dicts/officer_card_first_chars.json — 军官证首字（由 dict/ 同步）\n"
         "  feature_names.json           — f0..f135（136 维）\n"
-        "  confidence_thresholds.json   — 可选阈值\n"
+        "  confidence_thresholds.json   — 非 8 类门控类的 JSON 阈值\n"
+        "\n"
+        "识别流程（与 Java mask-sdk 一致）：\n"
+        "  1) PMML 初选\n"
+        "  2) 8 类门控（NAME/PHONE/LANDLINE/ID_CARD/CREDIT_CODE/OFFICER_CARD/PASSPORT/ENTERPRISE_NAME）\n"
+        "     Java: masks.recognize-*-confidence-threshold / *-default-min-margin\n"
+        "     Python 测试: 环境变量 MASK_SDK_RECOGNIZE_*（见 rklink_002.py 顶部配置区）\n"
+        "  3) apply_recognize_overrides 拦截/抬升（与 RecognizeOverrideSupport 对齐）\n"
     )
 print(f"已写入说明: {_readme_path}")
 
@@ -3366,12 +3396,6 @@ def _name_column_surname_head_dict_ratio(text_list):
     return hit / len(cleaned)
 
 
-NAME_2_OR_3_HAN_MIN_RATIO = 1.0
-# 姓名列：列内「恰为 2 或 3 个汉字」的行占比下限（低于则 NAME→DEFAULT；与 Java recognize-name-2-or-3-han-min-ratio 一致）
-# 姓名列：列内汉字字符占比下限（低于则 NAME→DEFAULT；与 Java recognize-name-han-char-min-ratio 一致）
-NAME_HAN_CHAR_MIN_RATIO = 1.0
-# 姓名列：首字或复姓前两字在姓氏字典中的行占比下限（低于则 NAME→DEFAULT；与 Java recognize-name-surname-head-min-ratio 一致）
-NAME_SURNAME_HEAD_MIN_RATIO = 1.0
 # 非姓名排除：民族「X族」、性别/占位等 + country_dict 纯汉字国名
 EXCLUDED_NAME_MANUAL_EXACT_TOKENS = frozenset({
     "男", "女", "未知", "不详", "其他", "无", "暂无", "成功", "法人", "法人股", "法官证",
@@ -3383,8 +3407,6 @@ EXCLUDED_NAME_MANUAL_EXACT_TOKENS = frozenset({
 # 「是」开头时第二字为下列字符则视为明显非人名（保留姓「是」+ 名如「是伟」）
 _SHI_PREFIX_NON_NAME_SECOND_CHARS = frozenset("否非对这吗有的不在因真还就也都只可被从要会能应该")
 EXCLUDED_NAME_EXACT_TOKENS = EXCLUDED_NAME_MANUAL_EXACT_TOKENS | COUNTRY_NAME_HAN_EXACT_TOKENS | ADMIN_PLACE_NAME_HAN_EXACT_TOKENS
-# 列内任一黑名单取值单独占比 ≥ 此值时整列不按 NAME（与 Java NameRecognizeHeuristics 一致）
-EXCLUDED_NAME_COLUMN_MIN_RATIO = 0.5
 
 
 def _is_shi_prefix_excluded_non_name(text):
@@ -3423,18 +3445,86 @@ def _looks_like_excluded_name_column(text_list):
             return True
     return False
 
-# 部署置信度阈值（与 Java masks.recognize-confidence-threshold / RecognizeThresholdProvider 默认 0.55 一致）
+# 部署置信度阈值（非 8 类门控类使用；与 Java confidence_thresholds.json 一致）
 # 训练后会写入 confidence_thresholds.json；测试推理优先读该文件，可用环境变量覆盖
 DEFAULT_DEPLOY_CONFIDENCE_THRESHOLD = 0.55
 DEFAULT_DEPLOY_MIN_MARGIN = 0.08
+
+# 与 Java RecognizeGateDefaults.BY_CLASS 一致（SDK 内置默认，Nacos/环境变量可覆盖）
+GATED_CLASS_GATE_DEFAULTS = {
+    "NAME": (0.55, 0.1),
+    "PHONE": (0.55, 0.1),
+    "LANDLINE": (0.4, 0.1),
+    "ID_CARD": (0.55, 0.1),
+    "CREDIT_CODE": (0.55, 0.1),
+    "OFFICER_CARD": (0.55, 0.1),
+    "PASSPORT": (0.55, 0.1),
+    "ENTERPRISE_NAME": (0.55, 0.1),
+}
+
+
+def _sanitize_gate_threshold_margin(threshold, margin, default_threshold, default_margin):
+    """与 Java RKLinkMaskSdkImpl.sanitizeGate 一致。"""
+    try:
+        threshold = float(threshold)
+    except (TypeError, ValueError):
+        threshold = default_threshold
+    try:
+        margin = float(margin)
+    except (TypeError, ValueError):
+        margin = default_margin
+    if threshold <= 0 or threshold > 1:
+        threshold = default_threshold
+    if margin < 0 or margin > 1:
+        margin = default_margin
+    return threshold, margin
+
+
+def _gate_confidence_and_margin_from_env(code_name):
+    """8 类门控：读取环境变量（与 Java MasksRuntimeConfig.toRecognizeGateConfigProvider 对齐）。"""
+    env_confidence = {
+        "NAME": NAME_GATE_CONFIDENCE_THRESHOLD,
+        "PHONE": PHONE_GATE_CONFIDENCE_THRESHOLD,
+        "LANDLINE": LANDLINE_GATE_CONFIDENCE_THRESHOLD,
+        "ID_CARD": ID_CARD_GATE_CONFIDENCE_THRESHOLD,
+        "CREDIT_CODE": CREDIT_CODE_GATE_CONFIDENCE_THRESHOLD,
+        "OFFICER_CARD": OFFICER_CARD_GATE_CONFIDENCE_THRESHOLD,
+        "PASSPORT": PASSPORT_GATE_CONFIDENCE_THRESHOLD,
+        "ENTERPRISE_NAME": ENTERPRISE_NAME_GATE_CONFIDENCE_THRESHOLD,
+    }
+    env_margin = {
+        "NAME": NAME_GATE_DEFAULT_MIN_MARGIN,
+        "PHONE": PHONE_GATE_DEFAULT_MIN_MARGIN,
+        "LANDLINE": LANDLINE_GATE_DEFAULT_MIN_MARGIN,
+        "ID_CARD": ID_CARD_GATE_DEFAULT_MIN_MARGIN,
+        "CREDIT_CODE": CREDIT_CODE_GATE_DEFAULT_MIN_MARGIN,
+        "OFFICER_CARD": OFFICER_CARD_GATE_DEFAULT_MIN_MARGIN,
+        "PASSPORT": PASSPORT_GATE_DEFAULT_MIN_MARGIN,
+        "ENTERPRISE_NAME": ENTERPRISE_NAME_GATE_DEFAULT_MIN_MARGIN,
+    }
+    default_threshold, default_margin = GATED_CLASS_GATE_DEFAULTS[code_name]
+    return _sanitize_gate_threshold_margin(
+        env_confidence[code_name], env_margin[code_name], default_threshold, default_margin)
+
+
+def _resolve_gate_threshold_and_margin(predicted, confidence_threshold, default_min_margin, per_class_threshold):
+    """与 Java RKLinkMaskSdkImpl.resolveGateThresholdAndMargin 一致。"""
+    if predicted in GATED_CLASS_GATE_DEFAULTS:
+        return _gate_confidence_and_margin_from_env(predicted)
+    thresh = confidence_threshold
+    margin = default_min_margin
+    if per_class_threshold and predicted in per_class_threshold:
+        thresh = float(per_class_threshold[predicted])
+    return thresh, margin
 
 
 def apply_confidence_gate(predicted, probability, classes, confidence_threshold=0.55, default_min_margin=0.08,
                           per_class_threshold=None):
     """
-    置信度回退：与 Java RKLinkMaskSdkImpl 一致。
-    按预测类读取 per_class_threshold，缺失时用 confidence_threshold（全局默认 0.55）。
-    当预测类概率 < 类阈值，或 (预测类概率 - DEFAULT 概率) < default_min_margin 时 → DEFAULT。
+    置信度门控：与 Java RKLinkMaskSdkImpl + RecognizeGateConfigProvider 一致。
+    8 类（NAME/PHONE/LANDLINE/ID_CARD/CREDIT_CODE/OFFICER_CARD/PASSPORT/ENTERPRISE_NAME）走专属门控；
+    其余类读 confidence_thresholds.json 的 per_class / global。
+    当 P(预测类) < 阈值 或 P(预测类)-P(DEFAULT) < margin 时 → DEFAULT。
     """
     if predicted is None or predicted == "DEFAULT":
         return predicted
@@ -3446,34 +3536,8 @@ def apply_confidence_gate(predicted, probability, classes, confidence_threshold=
     default_p = 0.0
     if "DEFAULT" in class_list:
         default_p = float(proba[class_list.index("DEFAULT")])
-    thresh = confidence_threshold
-    margin = default_min_margin
-    if per_class_threshold and predicted in per_class_threshold:
-        thresh = float(per_class_threshold[predicted])
-    if predicted == "NAME":
-        thresh = NAME_GATE_CONFIDENCE_THRESHOLD
-        margin = NAME_GATE_DEFAULT_MIN_MARGIN
-    if predicted == "PHONE":
-        thresh = PHONE_GATE_CONFIDENCE_THRESHOLD
-        margin = PHONE_GATE_DEFAULT_MIN_MARGIN
-    if predicted == "LANDLINE":
-        thresh = LANDLINE_GATE_CONFIDENCE_THRESHOLD
-        margin = LANDLINE_GATE_DEFAULT_MIN_MARGIN
-    if predicted == "ID_CARD":
-        thresh = ID_CARD_GATE_CONFIDENCE_THRESHOLD
-        margin = ID_CARD_GATE_DEFAULT_MIN_MARGIN
-    if predicted == "CREDIT_CODE":
-        thresh = CREDIT_CODE_GATE_CONFIDENCE_THRESHOLD
-        margin = CREDIT_CODE_GATE_DEFAULT_MIN_MARGIN
-    if predicted == "OFFICER_CARD":
-        thresh = OFFICER_CARD_GATE_CONFIDENCE_THRESHOLD
-        margin = OFFICER_CARD_GATE_DEFAULT_MIN_MARGIN
-    if predicted == "PASSPORT":
-        thresh = PASSPORT_GATE_CONFIDENCE_THRESHOLD
-        margin = PASSPORT_GATE_DEFAULT_MIN_MARGIN
-    if predicted == "ENTERPRISE_NAME":
-        thresh = ENTERPRISE_NAME_GATE_CONFIDENCE_THRESHOLD
-        margin = ENTERPRISE_NAME_GATE_DEFAULT_MIN_MARGIN
+    thresh, margin = _resolve_gate_threshold_and_margin(
+        predicted, confidence_threshold, default_min_margin, per_class_threshold)
     if pred_p < thresh or (pred_p - default_p) < margin:
         return "DEFAULT"
     return predicted
@@ -3608,10 +3672,19 @@ def apply_recognize_overrides(predicted, text_list):
 
 _deploy_confidence_threshold, _deploy_default_min_margin, _deploy_per_class_threshold = _load_deploy_confidence_config(_model_dir)
 print("=" * 60)
-print("测试推理部署参数（Python output/）：global_threshold=%.2f, default_min_margin=%.2f, ADDRESS=%.2f, LANDLINE=%.2f"
+print("测试推理部署参数（Python output/）：global_threshold=%.2f, default_min_margin=%.2f, ADDRESS=%.2f, LANDLINE(per_class)=%.2f"
       % (_deploy_confidence_threshold, _deploy_default_min_margin,
          _deploy_per_class_threshold.get("ADDRESS", _deploy_confidence_threshold),
          _deploy_per_class_threshold.get("LANDLINE", _deploy_confidence_threshold)))
+print("8 类门控（环境变量，与 Java Nacos masks.recognize-* 对齐）："
+      " NAME(%.2f/%.2f) PHONE(%.2f/%.2f) LANDLINE(%.2f/%.2f) ID_CARD(%.2f/%.2f)"
+      % (NAME_GATE_CONFIDENCE_THRESHOLD, NAME_GATE_DEFAULT_MIN_MARGIN,
+         PHONE_GATE_CONFIDENCE_THRESHOLD, PHONE_GATE_DEFAULT_MIN_MARGIN,
+         LANDLINE_GATE_CONFIDENCE_THRESHOLD, LANDLINE_GATE_DEFAULT_MIN_MARGIN,
+         ID_CARD_GATE_CONFIDENCE_THRESHOLD, ID_CARD_GATE_DEFAULT_MIN_MARGIN))
+print("NAME 后处理占比：han=%.2f 2~3han=%.2f surname=%.2f exclude_col=%.2f"
+      % (NAME_HAN_CHAR_MIN_RATIO, NAME_2_OR_3_HAN_MIN_RATIO,
+         NAME_SURNAME_HEAD_MIN_RATIO, EXCLUDED_NAME_COLUMN_MIN_RATIO))
 
 for label_name, group_idx, group_total, test_column in _iter_test_column_groups(all_test_columns):
 

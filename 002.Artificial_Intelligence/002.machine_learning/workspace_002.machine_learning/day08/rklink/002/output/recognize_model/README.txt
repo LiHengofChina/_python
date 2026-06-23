@@ -11,4 +11,11 @@ Python 侧主输出在 002/output/recognize_model/；训练结束会整包覆盖
   dicts/id_card_region_prefixes.json — 身份证区划（由 zip_code.txt 派生）
   dicts/officer_card_first_chars.json — 军官证首字（由 dict/ 同步）
   feature_names.json           — f0..f135（136 维）
-  confidence_thresholds.json   — 可选阈值
+  confidence_thresholds.json   — 非 8 类门控类的 JSON 阈值
+
+识别流程（与 Java mask-sdk 一致）：
+  1) PMML 初选
+  2) 8 类门控（NAME/PHONE/LANDLINE/ID_CARD/CREDIT_CODE/OFFICER_CARD/PASSPORT/ENTERPRISE_NAME）
+     Java: masks.recognize-*-confidence-threshold / *-default-min-margin
+     Python 测试: 环境变量 MASK_SDK_RECOGNIZE_*（见 rklink_002.py 顶部配置区）
+  3) apply_recognize_overrides 拦截/抬升（与 RecognizeOverrideSupport 对齐）
