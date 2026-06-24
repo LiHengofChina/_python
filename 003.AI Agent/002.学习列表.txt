@@ -1,0 +1,43 @@
+
+//================== 阶段 1：补大模型应用概念
+//================== 阶段 1：补大模型应用概念
+
+（1）ML →  TensorFlow。
+ 
+ 
+
+（2）学习Transformer（数学推导）
+	1）Transformer 和以前的 RNN/LSTM 有什么不同？
+		2）自注意力机制图解？
+
+	2）Self-Attention（自注意力） 是什么、解决什么问题？
+	3）Encoder / Decoder 分别干什么？
+	4）GPT、BERT 和 Transformer 是什么关系？
+	5）为什么大模型上下文窗口、Token、Embedding 都和 Transformer 有关？
+
+（3）LLM 应用基础：Chat API、Embedding、Token、Prompt
+（4）RAG：文档切块 → 向量检索 → 生成（做个本地问答 Demo）
+
+//================== 阶段 2：理解 Agent
+//================== 阶段 2：理解 Agent
+
+（1）Agent：和「单次问答」的区别；规划、工具、记忆、循环
+（2）《AI Agent Design Patterns》：边读边想业务场景
+
+//================== 阶段 3：搞清组件关系
+//================== 阶段 3：搞清组件关系
+（1）Tool / Function Calling
+（2）MCP：工具怎么标准化暴露给模型
+（3）Skill：可复用 Agent 能力怎么封装
+
+//================== 阶段 4：Java 实战 //重点
+//================== 阶段 4：Java 实战 //重点
+
+（1）Spring AI（优先）：Chat + Tool + 简单 RAG，接到 Spring Boot
+（2）LangChain4j（第二）：复杂 Agent、Memory、多步推理
+
+//================== 阶段 4：Java 实战 //重点
+//================== 阶段 4：Java 实战 //重点
+
+
+

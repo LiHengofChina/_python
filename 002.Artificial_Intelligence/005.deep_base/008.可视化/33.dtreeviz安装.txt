@@ -1,0 +1,25 @@
+
+
+
+//================================================ 安装 Graphviz 的 dot。
+//================================================ 安装 Graphviz 的 dot。
+
+Graphviz 是一套开源的图形布局引擎，用来把“节点 + 连线”画成图（流程图、决策树、关系图等）。
+
+（1）方式一：
+	 https://graphviz.org/download/
+
+		graphviz-15.0.0 (64-bit) EXE installer [sha256]
+
+		//安装时勾选 “Add Graphviz to the system PATH”（或类似选项），
+		//dot 会自动可用
+
+（2）方式二：用包管理器（更省事）：
+	 winget install graphviz
+
+（3）查看版本
+
+	dot -V
+
+
+ 
