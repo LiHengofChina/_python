@@ -2,11 +2,16 @@
 //================== 阶段 1：补大模型应用概念
 //================== 阶段 1：补大模型应用概念
 
-（1）ML →  TensorFlow。
- 
- 
+（1）学习：Transformer
+	1） RNN/LSTM 的局限 → 为什么需要 Attention
+	2） Self-Attention → Q、K、V 直觉
+	3） Encoder / Decoder → BERT vs GPT
+	4） 和 LLM 的关系 → Token、Embedding、上下文窗口
 
-（2）学习Transformer（数学推导）
+
+
+	//================ 问题？
+	//================ 问题？
 	1）Transformer 和以前的 RNN/LSTM 有什么不同？
 		2）自注意力机制图解？
 
@@ -14,6 +19,8 @@
 	3）Encoder / Decoder 分别干什么？
 	4）GPT、BERT 和 Transformer 是什么关系？
 	5）为什么大模型上下文窗口、Token、Embedding 都和 Transformer 有关？
+
+
 
 （3）LLM 应用基础：Chat API、Embedding、Token、Prompt
 （4）RAG：文档切块 → 向量检索 → 生成（做个本地问答 Demo）
