@@ -1,0 +1,13 @@
+//=============================== 和 Token、Embedding 的关系
+//=============================== 和 Token、Embedding 的关系
+
+
+你写的 Prompt（文本）
+    → 切 Token
+    → Embedding
+    → Transformer
+    → 模型回复
+
+Prompt 是入口；怎么写 Prompt，直接影响输出质量。
+
+
