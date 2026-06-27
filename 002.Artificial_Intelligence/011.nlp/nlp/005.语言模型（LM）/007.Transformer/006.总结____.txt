@@ -1,0 +1,23 @@
+
+//====================================== 
+//====================================== 和你已学知识的对照
+
+RNN/LSTM     →  按顺序传 hidden state
+Transformer  →  用 Attention 直接关联任意两个位置
+
+CNN          →  局部滑动窗口提特征
+Attention    →  全局“谁该关注谁”
+
+ResNet       →  x + F(x) 残差
+Transformer  →  Add & Norm 也是残差思路
+
+//======================================
+//======================================
+
+（1）Transformer 用 Attention 取代 RNN 处理序列
+（2）Self-Attention： 每个词关注整句所有词
+（3）Q/K/V： 查询、匹配、取值，算加权混合
+（4）Encoder 理解，Decoder 生成； GPT 是 Decoder-only
+（5）LLM = 大 Transformer + 海量预训练 + 预测下一个 Token
+
+

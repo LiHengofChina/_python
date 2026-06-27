@@ -1,0 +1,8 @@
+Transformer 是架构（底座）
+BERT、GPT 是用这个架构搭出来的具体模型。
+
+BERT = Transformer 的 Encoder 堆起来 → 双向理解
+GPT = Transformer 的 Decoder 堆起来 → 生成文本
+关系：Transformer 是父，BERT/GPT 是子。
+
+
