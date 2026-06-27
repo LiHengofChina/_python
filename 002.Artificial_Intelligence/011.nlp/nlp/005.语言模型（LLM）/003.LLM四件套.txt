@@ -1,0 +1,10 @@
+
+
+Token		//文本切成的小单元
+Embedding	//Token 变向量
+Chat API	//调模型的接口（发 Prompt，收回复）
+Prompt		//你发给模型的指令/问题
+
+
+
+
