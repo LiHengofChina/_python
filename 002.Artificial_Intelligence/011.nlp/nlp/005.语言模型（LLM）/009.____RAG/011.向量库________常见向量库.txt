@@ -3,7 +3,13 @@
 //======================================================== 常见向量库（知道名字即可）
 
 Chroma			//轻量，本地 Demo 最方便 //先用 Chroma 或 内存版 做 Demo 即可。
+				//Chroma 是专门的向量库，一般要持久化到磁盘
+
 Milvus			//生产常用，规模大
+
 PGVector		//PostgreSQL 插件，你们 Java 栈可能已有 PG
+
 Elasticsearch	//也能做向量检索（混合搜索）
+
 Faiss			//Facebook 库，偏底层，常嵌入应用
+
