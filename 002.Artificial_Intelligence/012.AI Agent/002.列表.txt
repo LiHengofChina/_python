@@ -2,19 +2,6 @@
 //================== 阶段 1：补大模型应用概念
 //================== 阶段 1：补大模型应用概念
 
-下一步可以做 RAG Demo，
-或我单独讲 Chat API 怎么调（Spring AI 也会用到）。
-要说 继续 即可。
-
-RAG（Embedding 检索怎么用）
-
-（4）RAG：文档切块 → 向量检索 → 生成（做个本地问答 Demo）
-
-Python RAG Demo — 先跑通流程（切块、向量库、检索、生成）
-
-Java RAG Demo — 用 Spring AI 或 LangChain4j 做同样的事
-
-
 //================== 阶段 2：理解 Agent
 //================== 阶段 2：理解 Agent
 
@@ -32,6 +19,11 @@ E:\_python\003.AI Agent\010.AI_工具\002.Prompt
 
 旧笔记 （2）：
 E:\_python\003.AI Agent\012.大模型部署
+
+
+旧笔记 （3）：
+E:\Java\004.study_java\004.java________________Framework\016.langchain4j
+
 
 
 //====================
@@ -56,8 +48,6 @@ Tool：连服务器、查日志、跑命令
 
 
 （2）《AI Agent Design Patterns》：边读边想业务场景
-
-
 
 
 
