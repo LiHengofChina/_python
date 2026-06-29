@@ -8,12 +8,16 @@ Acting    // 阿可停
 
 
 
-下一课
-ReAct 模式详解（Thought → Action → Observation）
-或 Agent 整体架构图（用户 → Planner → Tools → LLM → 结果）
+ 
+
+下一课可选：
+
+Tool / Function Calling 怎么设计（SSH、RAG 怎么注册成 Tool）
+或 读《AI Agent Design Patterns》前该关注哪些模式
 
 
-读《AI Agent Design Patterns》
+
+
 
 //==================
 //==================
@@ -32,6 +36,7 @@ E:\_python\003.AI Agent\012.大模型部署
 旧笔记 （3）：
 E:\Java\004.study_java\004.java________________Framework\016.langchain4j
 
+读《AI Agent Design Patterns》
 
 //====================
 //====================
@@ -56,6 +61,8 @@ Tool：连服务器、查日志、跑命令
 
 （2）《AI Agent Design Patterns》：边读边想业务场景
 
+
+skills
 
 
 //================== 阶段 3：搞清组件关系
