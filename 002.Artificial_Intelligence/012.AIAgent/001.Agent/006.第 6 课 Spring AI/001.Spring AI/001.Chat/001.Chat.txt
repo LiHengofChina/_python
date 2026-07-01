@@ -1,0 +1,21 @@
+
+
+Chat 主要是指在spring ai生态中与模型对话的操作
+
+Spring AI Chat 就是在 Spring 里和大模型对话（发 Prompt、收回复），
+包括单轮、多轮、带 system 角色等，对应 ChatClient / ChatModel。
+
+//=============================================================  Spring AI Chat 是什么？
+//=============================================================  Spring AI Chat 是什么？
+
+
+
+Prompt			//.user() / .system()
+
+Chat API		//ChatClient
+
+LLM（Ollama）	//spring-ai-starter-model-ollama
+
+单次问答			//.prompt().user().call().content()
+
+

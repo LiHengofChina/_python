@@ -1,0 +1,7 @@
+com\demo\springai\chat\domain\model\ChatReply.class
+com\demo\springai\chat\interfaces\runner\StartupChatRunner.class
+com\demo\springai\chat\interfaces\web\ChatController.class
+com\demo\springai\chat\application\ChatApplicationService.class
+com\demo\springai\chat\domain\gateway\LlmChatGateway.class
+com\demo\springai\chat\infrastructure\gateway\OllamaChatGateway.class
+com\demo\springai\SpringAiChatApplication.class

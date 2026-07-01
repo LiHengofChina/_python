@@ -1,0 +1,18 @@
+
+//======================================== 场景举例
+//======================================== 场景举例
+
+用户配置连接对象
+        ↓
+注册 Tool：ssh_exec(connectionId, command)
+        ↓
+用户：帮我查 XXX 磁盘为什么满
+        ↓
+Agent ReAct：
+  Thought → Action: ssh_exec → Observation
+  Thought → Action: rag_search → Observation
+  Thought → Final Answer
+        ↓
+输出方案；执行清理需人点「批准」
+
+

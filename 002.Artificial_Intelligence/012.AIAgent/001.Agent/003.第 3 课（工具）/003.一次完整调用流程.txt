@@ -1,0 +1,14 @@
+
+
+① 用户：查 XXX 机器磁盘
+② LLM 看到可用 Tool 列表（ssh_exec, rag_search, ...）
+③ LLM 输出：call ssh_exec(host="XXX", command="df -h")
+④ 框架执行 Java/Python 里的真实方法
+⑤ 返回：Filesystem  Size  Used ... 95%
+⑥ 作为 Observation 追加到对话
+⑦ LLM 再思考 → 可能再调 du，或给出 Final Answer
+
+
+
+
+

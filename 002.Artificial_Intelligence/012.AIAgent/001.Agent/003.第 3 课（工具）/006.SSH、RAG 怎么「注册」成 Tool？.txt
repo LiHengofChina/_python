@@ -1,0 +1,44 @@
+
+//=================================== （1）SSH、RAG 怎么「注册」成 Tool？
+//=================================== （1）SSH、RAG 怎么「注册」成 Tool？
+
+不管你用 Spring AI 还是 LangChain4j，模式一样：
+
+（1）. 写一个 Java 方法（真正干活的代码）
+（2）. 用注解或 API 声明为 Tool（name + description + 参数）
+
+（3）. 启动时注册到 Agent
+（4）. Agent 调 LLM 时把 Tool 列表传给模型
+
+（5）. 模型返回 tool_call → 框架反射调用你的方法 → 返回结果
+
+//=================================== 伪代码（Spring AI 风格，帮助理解）
+//=================================== 伪代码（Spring AI 风格，帮助理解）
+
+// ① 普通 Java 方法 = 真实能力
+@Service
+public class OpsTools {
+
+    @Tool(description = "在目标主机执行只读 shell 命令")
+    public String sshExec(
+            @ToolParam(description = "连接配置 ID") String connectionId,
+            @ToolParam(description = "shell 命令") String command) {
+        // 校验命令是否只读 → SSH 执行 → 返回输出
+        return sshClient.run(connectionId, command);
+    }
+
+    @Tool(description = "从运维手册检索相关段落")
+    public String ragSearch(
+            @ToolParam(description = "检索问题") String query) {
+        return ragService.search(query, topK=3);
+    }
+}
+
+// ② 注册到 ChatClient / Agent
+// ③ LLM 在对话中自动选择调用哪个 @Tool 方法
+
+「注册」= 让框架知道有哪些方法、元数据是什么，并能在 model 返回 tool_call 时执行它们。
+
+//===================================
+//===================================
+

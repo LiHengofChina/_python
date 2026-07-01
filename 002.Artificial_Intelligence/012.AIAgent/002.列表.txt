@@ -2,83 +2,45 @@
 
 Reasoning // 锐热林
 Acting    // 阿可停
-
-//================== 阶段 2：理解 Agent
-//================== 阶段 2：理解 Agent
-
-
-
  
-
-下一课可选：
-
-Tool / Function Calling 怎么设计（SSH、RAG 怎么注册成 Tool）
-或 读《AI Agent Design Patterns》前该关注哪些模式
+ 
+//==================（2）复习 一下 前面 的，清理 旧笔记 
+//==================（2）复习 一下 前面 的，清理 旧笔记 
 
 
-
-
-
-//==================
-//==================
-
-//但有 CoT、思维树、检索增强、工具增强 等，
-//属于 Agent 阶段
-
-
-旧笔记 （1）：
-E:\_python\003.AI Agent\010.AI_工具\002.Prompt
 
 旧笔记 （2）：
 E:\_python\003.AI Agent\012.大模型部署
 
-
 旧笔记 （3）：
 E:\Java\004.study_java\004.java________________Framework\016.langchain4j
 
-读《AI Agent Design Patterns》
-
-//====================
-//====================
-/**
-
-主要是 Agent + Tool/Function Calling。
-
-Prompt：你怎么下指令
-Agent：自动规划、多步执行
-Tool：连服务器、查日志、跑命令
-
-不是纯 Prompt，
-也不是纯 RAG；有知识库查文档时才加 RAG。
-
-*/
-
-//====================
-//====================
-
-存向量，做相似度搜索（如 Milvus、PGVector）
 
 
-（2）《AI Agent Design Patterns》：边读边想业务场景
+//==================（2）下一步 阶段 4：Java 实战，顺序建议：
+//==================（2）下一步 阶段 4：Java 实战，顺序建议：
 
 
-skills
+（1）先 Spring AI
+
+	Chat → Tool → 简单 RAG
+
+（2）Chat + Tool + 简单 RAG，接到 Spring Boot
+
+（3）再 LangChain4j（可选加深）
+
+（4）复杂 Agent、Memory、多步推理
 
 
-//================== 阶段 3：搞清组件关系
-//================== 阶段 3：搞清组件关系
-（1）Tool / Function Calling
-（2）MCP：工具怎么标准化暴露给模型
-（3）Skill：可复用 Agent 能力怎么封装
 
-//================== 阶段 4：Java 实战 //重点
-//================== 阶段 4：Java 实战 //重点
+//==================（）
+//==================（）
 
-（1）Spring AI（优先）：Chat + Tool + 简单 RAG，接到 Spring Boot
-（2）LangChain4j（第二）：复杂 Agent、Memory、多步推理
+LangChain
 
-//================== 阶段 4：Java 实战 //重点
-//================== 阶段 4：Java 实战 //重点
+Crew AI
+
+Google Agent Develeloper Kit
 
 
 
