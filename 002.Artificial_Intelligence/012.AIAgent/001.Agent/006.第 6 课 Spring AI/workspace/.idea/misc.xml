@@ -6,6 +6,7 @@
       <list>
         <option value="$PROJECT_DIR$/day_01_spring_ai_chat/pom.xml" />
         <option value="$PROJECT_DIR$/day_02_spring_ai_tool/pom.xml" />
+        <option value="$PROJECT_DIR$/day_03_spring_ai_rag/pom.xml" />
       </list>
     </option>
   </component>

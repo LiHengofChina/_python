@@ -1,0 +1,26 @@
+server:
+  port: 8101
+
+spring:
+  application:
+    name: day03-spring-ai-rag
+  ai:
+    ollama:
+      base-url: http://127.0.0.1:11434
+      chat:
+        options:
+          model: qwen2.5:7b
+          temperature: 0.2
+      embedding:
+        options:
+          # 需先执行：ollama pull nomic-embed-text
+          model: nomic-embed-text
+
+demo:
+  rag:
+    manual-path: classpath:data/ops_manual.txt
+    top-k: 3
+    similarity-threshold: 0.5
+  agent:
+    startup-enabled: true
+    startup-question: 磁盘使用率超过 85% 应该怎么处理？
