@@ -1,0 +1,21 @@
+
+//========================================= 项目位置与结构
+//========================================= 项目位置与结构
+
+workspace/day_02_spring_ai_tool/
+├── OpsTools.java              ← @Tool 方法（模拟运维）
+├── OllamaAgentChatGateway.java ← defaultTools 注册
+├── AgentChatApplicationService
+└── AgentChatController
+
+//=========================================
+//=========================================
+
+端口 8100（避免和 day_01 的 8099 冲突）。
+
+//=========================================
+//=========================================
+ 
+ 
+http://localhost:8100/api/agent/troubleshoot?q=请排查linux-231磁盘使用情况
+http://localhost:8100/api/agent/troubleshoot?q=告诉我linux-231还剩下多少磁盘空间

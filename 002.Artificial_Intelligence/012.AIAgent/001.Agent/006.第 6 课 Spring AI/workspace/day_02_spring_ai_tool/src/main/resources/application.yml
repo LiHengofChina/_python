@@ -1,0 +1,28 @@
+server:
+  port: 8100
+
+spring:
+  application:
+    name: day02-spring-ai-tool
+  config:
+    import: optional:classpath:application-local.yml
+  ai:
+    ollama:
+      base-url: http://127.0.0.1:11434
+      chat:
+        options:
+          model: qwen2.5:7b
+          temperature: 0.2
+
+demo:
+  agent:
+    startup-enabled: true
+    startup-question: 用一句话介绍什么是 Spring AI
+  ops:
+    ssh:
+      enabled: true
+      host: 192.168.100.231
+      port: 22
+      username: root
+      host-label: linux-231
+      # 密码写在 application-local.yml，勿提交 Git

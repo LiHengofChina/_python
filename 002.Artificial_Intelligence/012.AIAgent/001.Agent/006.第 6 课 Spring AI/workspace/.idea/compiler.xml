@@ -7,12 +7,14 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="day01-spring-ai-chat" />
+        <module name="day02-spring-ai-tool" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="day01-spring-ai-chat" options="-parameters" />
+      <module name="day02-spring-ai-tool" options="-parameters" />
     </option>
   </component>
 </project>

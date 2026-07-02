@@ -1,0 +1,11 @@
+
+
+（1）Tool = Java 方法 + @Tool 描述，模型决定调不调
+
+（2）defaultTools 把工具注册进 ChatClient
+
+（3）本 Demo 使用的机器信息
+		192.168.100.231
+		root Rklink_1024
+
+
