@@ -55,7 +55,16 @@ LangChain
 
 Crew AI
 
-Google Agent Develeloper Kit
+Google Agent Develeloper Kit //Google ADK 
+
+LangChain
+//LangChain Expression Language（LCEL）
+
+
+LangGraph 
+
+
+多模态处理：?
 
 
 //======================================================= 开发语言选择
