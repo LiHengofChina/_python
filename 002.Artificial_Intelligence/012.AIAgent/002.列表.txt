@@ -25,6 +25,10 @@ E:\Java\004.study_java\004.java________________Framework\016.langchain4j
 
 
 	（4）Agent 编排：多个步骤、多轮推理怎么组织
+
+		学习下SSE
+
+
 	（5）MCP：把 Tool 标准化、可扩展（类似 Cursor 的 MCP）
 
 	//有，大量现成 Tool，拿来即用。

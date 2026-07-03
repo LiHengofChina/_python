@@ -9,6 +9,7 @@
         <module name="day01-spring-ai-chat" />
         <module name="day02-spring-ai-tool" />
         <module name="day04-spring-ai-rag-tool" />
+        <module name="day05-spring-ai-orchestration" />
         <module name="day03-spring-ai-rag" />
       </profile>
     </annotationProcessing>
@@ -19,6 +20,7 @@
       <module name="day02-spring-ai-tool" options="-parameters" />
       <module name="day03-spring-ai-rag" options="-parameters" />
       <module name="day04-spring-ai-rag-tool" options="-parameters" />
+      <module name="day05-spring-ai-orchestration" options="-parameters" />
     </option>
   </component>
 </project>
