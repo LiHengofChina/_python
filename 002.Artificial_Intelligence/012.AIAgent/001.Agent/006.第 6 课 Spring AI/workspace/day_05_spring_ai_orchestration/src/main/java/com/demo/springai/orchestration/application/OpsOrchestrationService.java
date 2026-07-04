@@ -2,17 +2,18 @@ package com.demo.springai.orchestration.application;
 
 import com.demo.springai.orchestration.domain.model.OrchestrationContext;
 import com.demo.springai.orchestration.domain.model.OrchestrationResult;
+import com.demo.springai.orchestration.domain.model.OrchestrationStep;
 import com.demo.springai.orchestration.infrastructure.llm.IntentAnalyzer;
 import com.demo.springai.orchestration.infrastructure.llm.OpsSynthesizer;
 import com.demo.springai.orchestration.infrastructure.rag.ManualRagRetriever;
 import com.demo.springai.orchestration.infrastructure.tool.ToolExecutionPlanner;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Agent 编排器：用代码显式组织多步骤 / 多轮 LLM 调用。
- *
- * <p>与 day_04 对比：day_04 把 RAG+Tool 交给 Spring AI 黑盒调度；
- * 本课把每一步写清楚，便于生产里加审批、日志、重试。
  */
 @Service
 public class OpsOrchestrationService {
@@ -33,43 +34,53 @@ public class OpsOrchestrationService {
         this.opsSynthesizer = opsSynthesizer;
     }
 
-    /***
-
-     就是普通的 Java 顺序调用：一步跑完再跑下一步，没有并行、没有框架魔法。
-
-     每步产出基本都是 字符串（意图是枚举，记步骤时转成 intent.name()）
-     中间结果放进 OrchestrationContext，供后面步骤用
-     5 步全跑完后，打包成 OrchestrationResult 一次性返回
-
-     */
-    public OrchestrationResult run(String question) {
+    public void runStreaming(String question, OrchestrationStreamCallbacks callbacks) {
         OrchestrationContext ctx = new OrchestrationContext(question);
 
-        // Step 1：意图识别（LLM 第 1 轮）
         var intent = intentAnalyzer.analyze(question);
         ctx.setIntent(intent);
-        ctx.addStep(1, "意图识别", intent.name());
+        emit(callbacks, ctx, 1, "意图识别", intent.name());
 
-        // Step 2：RAG 检索（代码显式调用向量库，不用 Advisor）
         String manualExcerpt = manualRagRetriever.retrieve(question);
         ctx.setManualExcerpt(manualExcerpt);
-        ctx.addStep(2, "RAG检索", truncate(manualExcerpt, 300));
+        emit(callbacks, ctx, 2, "RAG检索", truncate(manualExcerpt, 800));
 
-        // Step 3：按意图执行 Tool（编排器决定调哪些命令，不是模型随意调）
         String toolOutputs = toolExecutionPlanner.execute(intent);
         ctx.setToolOutputs(toolOutputs);
-        ctx.addStep(3, "现场采集", truncate(toolOutputs, 400));
+        emit(callbacks, ctx, 3, "现场采集", truncate(toolOutputs, 800));
 
-        // Step 4：多轮推理 — 初稿 + 复核（LLM 第 2、3 轮）
         String draft = opsSynthesizer.draft(ctx);
         ctx.setDraftAnswer(draft);
-        ctx.addStep(4, "推理-初稿", truncate(draft, 300));
+        emit(callbacks, ctx, 4, "推理-初稿", truncate(draft, 800));
 
         String finalAnswer = opsSynthesizer.refine(ctx);
         ctx.setFinalAnswer(finalAnswer);
-        ctx.addStep(5, "推理-复核", finalAnswer);
+        emit(callbacks, ctx, 5, "推理-复核", finalAnswer);
 
-        return new OrchestrationResult(question, ctx.getSteps(), finalAnswer);
+        callbacks.onComplete(finalAnswer);
+    }
+
+    public OrchestrationResult run(String question) {
+        List<OrchestrationStep> steps = new ArrayList<>();
+        String[] answerHolder = new String[1];
+        runStreaming(question, new OrchestrationStreamCallbacks() {
+            @Override
+            public void onStep(int order, String name, String output) {
+                steps.add(new OrchestrationStep(order, name, output));
+            }
+
+            @Override
+            public void onComplete(String answer) {
+                answerHolder[0] = answer;
+            }
+        });
+        return new OrchestrationResult(question, steps, answerHolder[0]);
+    }
+
+    private void emit(OrchestrationStreamCallbacks callbacks, OrchestrationContext ctx,
+                      int order, String name, String output) {
+        ctx.addStep(order, name, output);
+        callbacks.onStep(order, name, output);
     }
 
     private static String truncate(String text, int max) {

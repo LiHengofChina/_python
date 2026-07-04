@@ -9,6 +9,8 @@
         <option value="$PROJECT_DIR$/day_03_spring_ai_rag/pom.xml" />
         <option value="$PROJECT_DIR$/day_04_spring_ai_rag_tool/pom.xml" />
         <option value="$PROJECT_DIR$/day_05_spring_ai_orchestration/pom.xml" />
+        <option value="$PROJECT_DIR$/day_06_mcp_server/pom.xml" />
+        <option value="$PROJECT_DIR$/day_06_mcp_client/pom.xml" />
       </list>
     </option>
   </component>

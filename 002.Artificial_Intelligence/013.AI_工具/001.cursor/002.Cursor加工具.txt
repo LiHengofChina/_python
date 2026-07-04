@@ -1,0 +1,20 @@
+
+
+//============================================================================ 在 Cursor 里加（最快体验）
+//============================================================================ 在 Cursor 里加（最快体验）
+
+Cursor → Settings → MCP → 添加 Server，例如：
+
+
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "D:\\your\\allowed\\path"]
+    }
+  }
+}
+
+保存后 Cursor 会自动发现 read_file、write_file 等 Tool，Chat 里就能用。
+
+

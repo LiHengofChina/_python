@@ -1,0 +1,50 @@
+server:
+  port: 8105
+
+spring:
+  application:
+    name: day06-mcp-client
+  ai:
+    ollama:
+      base-url: http://127.0.0.1:11434
+      chat:
+        options:
+          model: qwen2.5:7b
+          temperature: 0.2
+    mcp:
+      client:
+        enabled: true
+        name: ops-mcp-client
+        type: SYNC
+        request-timeout: 120s              # stdio 首次 npx 下载包可能超过 20s
+        toolcallback:
+          enabled: true
+        ######################################
+        # （第一种）连已经跑起来的 MCP 服务（先启动 day_06_mcp_server:8104）
+        sse:
+          connections:
+            ops-server:
+              url: http://127.0.0.1:8104       # 你的 MCP Server
+            # weather-server:
+            #   url: http://localhost:8080     # 开源/别人的 HTTP MCP
+        ######################################
+        # （第二种）Client 启动时用 npx 拉起开源 filesystem MCP（需 Node.js）
+        # Node 24 须指定较新版本，否则 zod/v3 目录导入报错 ERR_UNSUPPORTED_DIR_IMPORT
+        stdio:
+          connections:
+            filesystem:
+              command: cmd
+              args:
+                - /c
+                - "D:\\ProgramFiles\\nodejs\\npx.cmd"
+                - -y
+                - "@modelcontextprotocol/server-filesystem@2026.1.14"
+                - "D:/"
+              env:
+                PATH: "D:\\ProgramFiles\\nodejs;C:\\Users\\13688\\AppData\\Roaming\\npm"
+
+demo:
+  mcp-client:
+    startup-enabled: true
+    startup-question: 用一句话介绍什么是 Spring AI
+    filesystem-enabled: true

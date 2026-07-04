@@ -21,6 +21,5 @@ demo:
     manual-path: classpath:data/ops_manual.txt
     top-k: 3
     similarity-threshold: 0.5
-  agent:
     startup-enabled: true
-    startup-question: 磁盘使用率超过 85% 应该怎么处理？
+    startup-question: 用一句话介绍什么是 Spring AI

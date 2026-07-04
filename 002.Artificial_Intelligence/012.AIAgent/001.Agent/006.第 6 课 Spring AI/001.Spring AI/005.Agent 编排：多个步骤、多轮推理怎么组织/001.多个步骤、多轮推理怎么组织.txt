@@ -39,4 +39,7 @@ Step 5  推理-复核     → LLM 第 3 轮（输出最终建议）
 http://localhost:8103/api/orchestration/run?q=linux-231磁盘快满了
 
 
+http://localhost:8103/
 
+
+能告诉我 linux-231 还剩下多少磁盘空间吗

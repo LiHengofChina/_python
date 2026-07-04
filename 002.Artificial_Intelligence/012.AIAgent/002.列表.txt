@@ -24,21 +24,19 @@ E:\Java\004.study_java\004.java________________Framework\016.langchain4j
 （1）先 Spring AI
 
 
-	（4）Agent 编排：多个步骤、多轮推理怎么组织
-
-		学习下SSE
-
 
 	（5）MCP：把 Tool 标准化、可扩展（类似 Cursor 的 MCP）
 
-	//有，大量现成 Tool，拿来即用。
+	 //有，大量现成 Tool，拿来即用。
 
-	//====================================
-	// 使用websocket是吗
-	HTTP + SSE：最常见，流式输出回答（ChatGPT 类界面多用这个）
+	 //怎么把工个打成jar包来使用。
 
-	//====================================
-	Agent 界面很多是：HTTP 发请求 + SSE 收流式结果；复杂交互才上 WebSocket。Spring AI 的 ChatClient 也支持流式（stream()），用 SSE 即可。
+	 //====================================
+	 // 使用websocket是吗
+	 HTTP + SSE：最常见，流式输出回答（ChatGPT 类界面多用这个）
+
+	 //====================================
+	 Agent 界面很多是：HTTP 发请求 + SSE 收流式结果；复杂交互才上 WebSocket。Spring AI 的 ChatClient 也支持流式（stream()），用 SSE 即可。
 
 
 （3）再 LangChain4j（可选加深）
