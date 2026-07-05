@@ -11,10 +11,15 @@
         <module name="day06-mcp-client" />
         <module name="day03-spring-ai-rag" />
         <module name="day02-spring-ai-tool" />
+        <module name="day07-lan-mcp-client" />
         <module name="day06-mcp-server" />
         <module name="day05-spring-ai-orchestration" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="day07-lan-mcp-server" target="17" />
+      <module name="day07-lan-mcp-server-01" target="17" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
@@ -25,6 +30,9 @@
       <module name="day05-spring-ai-orchestration" options="-parameters" />
       <module name="day06-mcp-client" options="-parameters" />
       <module name="day06-mcp-server" options="-parameters" />
+      <module name="day07-lan-mcp-client" options="-parameters" />
+      <module name="day07-lan-mcp-server" options="-parameters" />
+      <module name="day07-lan-mcp-server-01" options="-parameters" />
     </option>
   </component>
 </project>

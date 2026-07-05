@@ -1,0 +1,79 @@
+
+
+//======================================================= 自研（打包 → 内网运行）
+//======================================================= 自研（打包 → 内网运行）
+
+mvn package
+java -jar day06-mcp-server.jar
+
+
+（1）
+内网里跑的一个 " MCP 微服务（8104）" ，
+把  "SSH 运维 Tool" 用  "MCP 协议" 暴露出去。
+
+
+（2）
+Agent（8105） 启动时通过 sse.connections 连上它，
+自动发现 Tool，需要时再调用——【不是】把 JAR 嵌进 Agent 里。
+
+/**
+//================== 运行步骤
+//================== 运行步骤
+mvn package
+
+java -jar target/day07-lan-mcp-server-01-1.0.0.jar --spring.config.additional-location=./src/main/resources/application-local.yml
+*/
+
+
+
+//======================================================= 开源
+//======================================================= 开源
+
+（1）部署的机器//这里由我本机windwos充当
+	找一台 Windows/Linux 都行，要装 Node.js，用来跑开源 MCP + supergateway。
+
+
+（2）运行开源工具
+ 
+npx supergateway --stdio "npx @modelcontextprotocol/server-filesystem@2026.1.14 D:/" --port 8106
+
+
+
+//================== 【1】使用哪个开源工具在哪指定的
+//================== 【1】使用哪个开源工具在哪指定的
+  "dependencies": {
+    "@modelcontextprotocol/server-filesystem": "2026.1.14",
+    "supergateway": "latest"
+  }
+
+//================== 【2】使用工具的参数在哪里指定的
+//================== 【2】使用工具的参数在哪里指定的
+deploy/start-supergateway.bat 里 ALLOW_DIR=D:\，传给 mcp-server-filesystem %ALLOW_DIR%
+
+
+//================== 运行步骤
+//================== 运行步骤
+
+
+.\start-supergateway.ps1
+
+或
+
+cd deploy
+start-supergateway.bat
+
+
+//============================================================================ 访问
+//============================================================================ 访问
+
+
+测试：
+
+
+http://localhost:8107/api/mcp-agent/troubleshoot?q=帮我检查一下linux-231 还剩下多少容量，简单回答
+
+
+http://localhost:8107/api/mcp-agent/troubleshoot?q=列出D盘根目录有哪些文件夹
+
+
+

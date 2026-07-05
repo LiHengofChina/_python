@@ -11,6 +11,8 @@
         <option value="$PROJECT_DIR$/day_05_spring_ai_orchestration/pom.xml" />
         <option value="$PROJECT_DIR$/day_06_mcp_server/pom.xml" />
         <option value="$PROJECT_DIR$/day_06_mcp_client/pom.xml" />
+        <option value="$PROJECT_DIR$/day_07_lan_mcp_server/pom.xml" />
+        <option value="$PROJECT_DIR$/day_07_lan_mcp_client/pom.xml" />
       </list>
     </option>
   </component>
