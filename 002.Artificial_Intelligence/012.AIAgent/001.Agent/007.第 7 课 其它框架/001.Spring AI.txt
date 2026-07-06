@@ -1,0 +1,17 @@
+
+//===================================================
+//===================================================
+
+语言： Java
+优势： 和 Spring Boot 一体；Ollama/OpenAI 等可换；
+Tool、RAG、MCP、Memory 都有；适合银行内网、审批、审计。
+
+
+// 你已熟悉的风格
+chatClient.prompt()
+    .user("查 linux-231 磁盘")
+    .toolCallbacks(mcpTools)
+    .call()
+    .content();
+
+

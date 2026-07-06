@@ -1,0 +1,11 @@
+
+
+目前来看，我的项目中，这里的"LangChain4j 的 ChatModel 层"核心能力
+
+我已经使用 OpenAI Java SDK 替换了，
+
+后面要使用 "其它功能" ，再集成 "LangChain4j" 也不迟
+
+
+
+

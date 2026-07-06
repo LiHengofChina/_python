@@ -1,0 +1,62 @@
+
+
+语言： Python
+优势： 生态最大、示例/集成最多、新能力往往先出现在这里。
+劣势： 抽象多、版本变动快；企业生产要自己补治理。
+
+		/**
+
+		1. 抽象多
+		概念、类、层特别多（Chain、Agent、Runnable、Retriever…），入门和排错都更费劲，不像 Spring AI 那样贴着 Boot 一条线走。
+
+		2. 版本变动快
+		包经常大改、改名、废弃旧 API（你笔记里 LCEL、模块拆分就是例子），教程容易过期，项目升级要跟着改代码。
+
+		3. 企业生产要自己补治理
+		LangChain 偏「把 AI 能力拼起来」，不自带银行常用的：统一权限、审计日志、审批流、多租户、和现有 Java 系统对接等——这些要你自己用别的框架或平台层补上。
+
+		一句话： 好用、新，但 乱、变、生产规范得自己建；Java/Spring 那套企业治理更现成。
+
+		*/
+
+		/**
+
+		谁能让 Agent 执行 SSH		//权限
+
+		Tool 调用记不记日志		//审计
+
+		删文件、重启要不要审批		//合规
+
+		密码、密钥放哪				//安全
+
+		多用户会话隔离				//租户
+
+		*/
+
+from langchain_ollama import ChatOllama
+from langchain_core.prompts import ChatPromptTemplate
+
+llm = ChatOllama(model="qwen2.5:7b")
+chain = ChatPromptTemplate.from_template("你是运维助手：{q}") | llm
+print(chain.invoke({"q": "磁盘满了怎么办"}).content)
+
+
+vs Spring AI： 同是「拼 LLM + Prompt + Tool」，LangChain 在 Python 世界更全；Spring AI 在 Java 企业栈更顺。
+
+//====================================================================  LCEL（LangChain Expression Language）
+//====================================================================  LCEL（LangChain Expression Language）
+
+语言： Python（LangChain 的一部分）
+不是独立框架，是用 | 把组件连成链的写法。
+
+# RAG 管道：检索 | 拼 prompt | 调模型
+chain = retriever | format_docs | prompt | llm
+answer = chain.invoke("nginx 502 怎么查")
+
+vs Spring AI：
+
+LCEL = 声明式管道（像 Unix pipe）
+Spring AI = Java 代码 + ChatClient / Advisor / 自己写的 Service 编排（day_05 那种）
+
+
+

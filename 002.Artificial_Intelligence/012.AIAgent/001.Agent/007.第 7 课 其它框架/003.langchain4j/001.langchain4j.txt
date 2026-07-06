@@ -1,0 +1,44 @@
+
+//============================== LangChain4j
+//============================== LangChain4j
+
+Java 世界里的 LLM 应用开发框架
+类似于 Python 里的 LangChain，但更贴近 Java/Spring 生态。
+
+/**
+它本质上就是：
+"Java 世界里的 LLM 应用开发框架"
+*/
+
+//============================== LangChain4j 是干什么的
+//============================== LangChain4j 是干什么的
+
+它主要解决：Java 项目 如何优雅地接入大模型
+
+比如：
+	接 OpenAI
+	接 Ollama
+	接 DeepSeek
+	接 通义千问
+	接本地模型
+	做 RAG
+	做 AI Agent
+	做记忆(memory)
+	做工具调用(Function Calling)
+	做向量检索
+	做聊天助手
+
+它帮你把这些能力：
+	Prompt
+	模型调用
+	上下文
+	工具调用
+	记忆
+	RAG
+	Embedding
+	向量库
+
+统一封装了。
+
+
+

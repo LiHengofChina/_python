@@ -1,0 +1,27 @@
+
+
+语言： Java
+优势： Java 开发者想用 LangChain 概念时的选择；支持 Tool、RAG、部分 Agent；不强制 Spring。
+劣势： 和 Spring AI 功能重叠；在 Spring 项目里通常二选一或少量混用。
+
+
+// LangChain4j 风格（示意）
+interface Assistant {
+    String chat(String message);
+}
+
+Assistant assistant = AiServices.builder(Assistant.class)
+    .chatModel(ollamaModel)
+    .tools(new OpsTools())
+    .build();
+
+assistant.chat("查磁盘使用情况");
+
+
+//==================================================================== vs Spring AI：
+//==================================================================== vs Spring AI：
+
+LangChain4j：接口代理（AiServices）风格，偏 LangChain 思维
+  Spring AI：ChatClient、Spring Boot 自动配置、和 Spring 生态统一
+你做银行平台 → Spring AI 更自然（你已在路上）
+

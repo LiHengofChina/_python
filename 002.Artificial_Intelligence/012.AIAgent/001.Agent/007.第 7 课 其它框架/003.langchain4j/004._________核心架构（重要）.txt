@@ -1,0 +1,100 @@
+
+LangChain4j 核心其实就 5 大块：
+
+//=================================================（1）ChatModel（聊天模型）
+//=================================================（1）ChatModel（聊天模型）
+
+这是最基础的。
+
+本质：封装各种大模型
+例如：
+
+	OpenAI
+	Ollama
+	DeepSeek
+	Azure OpenAI
+
+
+ChatLanguageModel model = OllamaChatModel.builder()
+        .baseUrl("http://localhost:11434")
+        .modelName("qwen3:4b")
+        .build();
+
+这里已经很适合当前现在的 Ollama 场景。
+
+//=================================================（2）AiService（最核心）
+//=================================================（2）AiService（最核心）
+
+你定义接口：
+	interface Assistant {
+		String chat(String message);
+	}
+
+然后：
+	Assistant assistant = AiServices.create(Assistant.class, model);
+
+之后：
+	assistant.chat("你好");
+就直接调用模型了。
+
+
+//=================================================（3）Memory（记忆）
+//=================================================（3）Memory（记忆）
+
+用于：
+	多轮对话
+
+比如：
+	MessageWindowChatMemory.withMaxMessages(10)
+
+它会自动记住上下文。
+类似：
+	用户上一轮说了什么
+
+这是企业最重要的。
+
+//================================================= （4）RAG（检索增强）
+//================================================= （4）RAG（检索增强）
+这是企业最重要的。
+现在做审核平台、规则平台，其实未来很容易做：
+
+	SQL审核知识库
+	安全规范知识库
+	脱敏规则知识库
+
+RAG 的流程：
+	文档
+	→ embedding
+	→ 向量库
+	→ 相似搜索
+	→ 拼Prompt
+	→ LLM回答
+
+LangChain4j 已经封装了。
+支持：
+	Elasticsearch
+	Milvus
+	PGVector
+	Redis Vector
+	Chroma
+	Pinecone
+
+
+
+//================================================= （4）RAG（检索增强）
+//================================================= （4）RAG（检索增强）
+大模型：
+	不仅会聊天
+	还能调用Java方法
+
+比如：
+	@Tool
+	public String queryUser(String id) {
+		return "张三";
+	}
+
+
+模型会自动决定：
+	什么时候调用这个方法
+这就是 Agent 基础。
+

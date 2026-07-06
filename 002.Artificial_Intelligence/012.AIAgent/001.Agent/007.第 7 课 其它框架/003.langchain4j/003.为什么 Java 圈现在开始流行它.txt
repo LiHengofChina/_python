@@ -1,0 +1,19 @@
+
+//============================== 为什么 Java 圈现在开始流行它
+//============================== 为什么 Java 圈现在开始流行它
+
+//======== 2）
+//======== 2）
+以前：Java 接 LLM 很痛苦：
+
+OkHttp + JSON + prompt拼接
+
+//======== 3）
+
+现在：
+	Assistant assistant = AiServices.create(Assistant.class, model);
+	String answer = assistant.chat("你好");
+
+直接变成：接口调用
+这很符合 Java 开发习惯。
+

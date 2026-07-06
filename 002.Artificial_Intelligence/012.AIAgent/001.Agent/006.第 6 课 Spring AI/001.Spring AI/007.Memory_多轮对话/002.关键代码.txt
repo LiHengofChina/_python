@@ -11,3 +11,11 @@ chatClient.prompt()
     .user(userMessage)
     .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
     .call();
+
+//===================================================
+//===================================================
+demo:
+  memory:
+    max-messages: 20 //控制记忆窗口最多保留 20 条消息（MessageWindowChatMemory）
+    startup-enabled: true
+    startup-conversation-id: demo-startup
