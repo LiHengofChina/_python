@@ -1,0 +1,19 @@
+server:
+  port: 8108
+
+spring:
+  application:
+    name: day08-spring-ai-memory
+  ai:
+    ollama:
+      base-url: http://127.0.0.1:11434
+      chat:
+        options:
+          model: qwen2.5:7b
+          temperature: 0.2
+
+demo:
+  memory:
+    max-messages: 20
+    startup-enabled: true
+    startup-conversation-id: demo-startup

@@ -1,0 +1,13 @@
+
+//=================================================== 关键代码
+//=================================================== 关键代码
+
+// 1. 配置 Memory + Advisor
+MessageWindowChatMemory.builder().maxMessages(20).build();
+chatClientBuilder.defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build());
+
+// 2. 每次调用必须带 conversationId
+chatClient.prompt()
+    .user(userMessage)
+    .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+    .call();

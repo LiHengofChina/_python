@@ -12,6 +12,7 @@
         <module name="day03-spring-ai-rag" />
         <module name="day02-spring-ai-tool" />
         <module name="day07-lan-mcp-client" />
+        <module name="day08-spring-ai-memory" />
         <module name="day06-mcp-server" />
         <module name="day05-spring-ai-orchestration" />
       </profile>
@@ -33,6 +34,7 @@
       <module name="day07-lan-mcp-client" options="-parameters" />
       <module name="day07-lan-mcp-server" options="-parameters" />
       <module name="day07-lan-mcp-server-01" options="-parameters" />
+      <module name="day08-spring-ai-memory" options="-parameters" />
     </option>
   </component>
 </project>
