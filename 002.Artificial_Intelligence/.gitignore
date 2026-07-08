@@ -19,6 +19,7 @@ target/
 
 # Node
 node_modules/
+.npm-cache/
 package-lock.json
 
 # Local secrets / overrides
