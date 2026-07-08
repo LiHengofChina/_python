@@ -1,0 +1,33 @@
+# IDE
+.idea/
+.settings/
+*.iml
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+
+# Node
+node_modules/
+package-lock.json
+
+# Local secrets / overrides
+application-local.yml
+*-local.yml
+.env
+.env.*
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
