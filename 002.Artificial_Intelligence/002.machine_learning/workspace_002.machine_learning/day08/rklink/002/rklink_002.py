@@ -771,6 +771,24 @@ def is_id_card_15_format_value(value):
     return bool(ID_CARD_15_REGEX.match(str(value).strip()))
 
 
+def _expand_id_card_15_birth_year(yy: int) -> int:
+    """15 位 YY 展开为 4 位公历年，与 Java expandIdCard15BirthYear / datetime.strptime('%y') 一致。"""
+    return 1900 + yy if yy >= 69 else 2000 + yy
+
+
+def _parse_id_card_15_birth_yymmdd(birth: str):
+    """15 位生日段 YYMMDD → date；非法时返回 None。"""
+    if birth is None or len(birth) != 6 or not birth.isdigit():
+        return None
+    try:
+        yy = int(birth[0:2])
+        month = int(birth[2:4])
+        day = int(birth[4:6])
+        return date(_expand_id_card_15_birth_year(yy), month, day)
+    except (ValueError, TypeError):
+        return None
+
+
 def is_id_card_format_value(value):
     s = str(value).strip()
     return is_id_card_18_format_value(s) or is_id_card_15_format_value(s)
@@ -793,7 +811,9 @@ def valid_birth(id_number):
             birth = s[6:12]
             if not birth.isdigit():
                 return False
-            parsed = datetime.strptime(birth, "%y%m%d").date()
+            parsed = _parse_id_card_15_birth_yymmdd(birth)
+            if parsed is None:
+                return False
             year, month, day = parsed.year, parsed.month, parsed.day
         else:
             return False
