@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import re
 import joblib
-from datetime import date
+from datetime import date, datetime
 import sklearn.model_selection as ms
 from sklearn.base import clone
 from sklearn.ensemble import RandomForestClassifier
@@ -315,25 +315,25 @@ def _extract_id_card_region_prefix(text):
 
 
 def _has_allowed_id_card_region_prefix(text):
-    if not ID_REGEX.match(str(text).strip()):
+    if not is_id_card_format_value(str(text).strip()):
         return False
     prefix = _extract_id_card_region_prefix(text)
     return bool(prefix and prefix in _load_id_card_region_prefixes())
 
 
 def _looks_like_strict_id_card_format_column(text_list):
-    """严格身份证形态列：18 位形态行占比 ≥ ID_CARD_FORMAT_MIN_RATIO（末位可为 X）。"""
+    """严格身份证形态列：15/18 位形态行占比 ≥ ID_CARD_FORMAT_MIN_RATIO。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
-    hit = sum(1 for t in cleaned if ID_REGEX.match(t)) / len(cleaned)
+    hit = sum(1 for t in cleaned if is_id_card_format_value(t)) / len(cleaned)
     return hit >= ID_CARD_FORMAT_MIN_RATIO
 
 
 def _looks_like_strict_id_card_birth_column(text_list):
-    """18 位形态行中第 7–14 位生日 100% 合法（不要求校验位）。"""
+    """身份证形态行中生日段 100% 合法（15 位 YYMMDD / 18 位 YYYYMMDD，不要求校验位）。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
-    format_rows = [t for t in cleaned if ID_REGEX.match(t)]
+    format_rows = [t for t in cleaned if is_id_card_format_value(t)]
     if not format_rows:
         return False
     return all(valid_birth(t) for t in format_rows)
@@ -759,18 +759,44 @@ def _phone_digit_len_13_11_8_hit(text):
     return n in (8, 11, 13)
 
 ID_REGEX = re.compile(r"^\d{17}[\dXx]$")
+ID_CARD_18_REGEX = ID_REGEX
+ID_CARD_15_REGEX = re.compile(r"^\d{15}$")
+
+
+def is_id_card_18_format_value(value):
+    return bool(ID_CARD_18_REGEX.match(str(value).strip()))
+
+
+def is_id_card_15_format_value(value):
+    return bool(ID_CARD_15_REGEX.match(str(value).strip()))
+
+
+def is_id_card_format_value(value):
+    s = str(value).strip()
+    return is_id_card_18_format_value(s) or is_id_card_15_format_value(s)
+
 
 def valid_birth(id_number):
-    """身份证第 7–14 位须为合法公历 YYYYMMDD，且 ID_CARD_MIN_BIRTH_YEAR ≤ 年 ≤ 当前年（与 Java IdCardRecognizeHeuristics 一致）。"""
+    """身份证生日段：18 位取 7–14 位 YYYYMMDD，15 位取 7–12 位 YYMMDD；再校验 ID_CARD_MIN_BIRTH_YEAR≤年≤当前年。"""
     try:
-        if id_number is None or len(id_number) < 14:
+        if id_number is None:
             return False
-        birth = id_number[6:14]
-        if not birth.isdigit():
+        s = str(id_number).strip()
+        if is_id_card_18_format_value(s):
+            birth = s[6:14]
+            if not birth.isdigit():
+                return False
+            year = int(birth[0:4])
+            month = int(birth[4:6])
+            day = int(birth[6:8])
+        elif is_id_card_15_format_value(s):
+            birth = s[6:12]
+            if not birth.isdigit():
+                return False
+            parsed = datetime.strptime(birth, "%y%m%d").date()
+            year, month, day = parsed.year, parsed.month, parsed.day
+        else:
             return False
-        year = int(birth[0:4])
-        month = int(birth[4:6])
-        day = int(birth[6:8])
         if year < ID_CARD_MIN_BIRTH_YEAR or year > date.today().year:
             return False
         date(year, month, day)
@@ -1313,12 +1339,17 @@ ID_CHECK_MAP = {
 }
 
 def id_card_check(id_number):
-    if not re.match(r"^\d{17}[\dXx]$", id_number):
+    if id_number is None:
         return False
-    if not valid_birth(id_number):
+    s = str(id_number).strip()
+    if not valid_birth(s):
+        return False
+    if is_id_card_15_format_value(s):
+        return True
+    if not is_id_card_18_format_value(s):
         return False
 
-    id_number = id_number.upper()
+    id_number = s.upper()
 
     total = 0
     for i in range(17):
@@ -1381,7 +1412,8 @@ def _mixed_sliding_any(length, text, pred):
 
 
 def _mixed_embedded_id_valid_hit(text):
-    return _mixed_sliding_any(18, text, id_card_check)
+    return (_mixed_sliding_any(18, text, id_card_check)
+            or _mixed_sliding_any(15, text, id_card_check))
 
 
 def _mixed_embedded_credit_valid_hit(text):
@@ -1744,7 +1776,7 @@ def _row_single_sensitive_kind(text):
         return "PHONE"
     if is_landline_phone_value(s):
         return "LANDLINE"
-    if ID_REGEX.match(s) and id_card_check(s):
+    if is_id_card_format_value(s) and id_card_check(s):
         return "ID_CARD"
     if PASSPORT_REGEX.match(s.upper()):
         return "PASSPORT"
@@ -1837,14 +1869,14 @@ def extract_column_features(text_list):
     # ==============================
     # （2）ID_CARD
     # ==============================
-    # 4 → id_regex_ratio
-    id_match = sum(1 for t in cleaned if ID_REGEX.match(t))
+    # 4 → id_regex_ratio（15/18 位身份证形态）
+    id_match = sum(1 for t in cleaned if is_id_card_format_value(t))
     id_regex_ratio = id_match / len(cleaned)
 
-    # 5 → birth_valid_ratio 第 7–14 位合法公历生日（ID_CARD_MIN_BIRTH_YEAR≤年≤当前年）比例
+    # 5 → birth_valid_ratio 合法公历生日（15 位 YYMMDD / 18 位 YYYYMMDD，ID_CARD_MIN_BIRTH_YEAR≤年≤当前年）比例
     birth_valid_ratio = sum(
         1 for t in cleaned
-        if ID_REGEX.match(t) and valid_birth(t)
+        if is_id_card_format_value(t) and valid_birth(t)
     ) / len(cleaned)
 
     # 6 → id_check_ratio 身份证校验
