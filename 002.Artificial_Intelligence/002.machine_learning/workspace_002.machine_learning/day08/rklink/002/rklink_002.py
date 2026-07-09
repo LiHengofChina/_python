@@ -173,6 +173,7 @@ LANDLINE_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_LAND
 ID_CARD_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_CONFIDENCE_THRESHOLD", "0.55"))
 ID_CARD_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_DEFAULT_MIN_MARGIN", "0.1"))
 ID_CARD_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_FORMAT_MIN_RATIO", "0.95"))
+ID_CARD_BIRTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_BIRTH_MIN_RATIO", "0.85"))
 ID_CARD_REGION_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_REGION_PREFIX_MIN_RATIO", "0.75"))
 
 def _parse_id_card_min_birth_year():
@@ -331,12 +332,13 @@ def _looks_like_strict_id_card_format_column(text_list):
 
 
 def _looks_like_strict_id_card_birth_column(text_list):
-    """身份证形态行中生日段 100% 合法（15 位 YYMMDD / 18 位 YYYYMMDD，不要求校验位）。"""
+    """身份证形态行中生日段合法占比 ≥ ID_CARD_BIRTH_MIN_RATIO（15 位 YYMMDD / 18 位 YYYYMMDD，不要求校验位）。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     format_rows = [t for t in cleaned if is_id_card_format_value(t)]
     if not format_rows:
         return False
-    return all(valid_birth(t) for t in format_rows)
+    hit = sum(1 for t in format_rows if valid_birth(t)) / len(format_rows)
+    return hit >= ID_CARD_BIRTH_MIN_RATIO
 
 
 def _looks_like_strict_id_card_region_prefix_column(text_list):
@@ -3948,8 +3950,8 @@ print("8 类门控（环境变量，与 Java Nacos masks.recognize-* 对齐）�
          PHONE_GATE_CONFIDENCE_THRESHOLD, PHONE_GATE_DEFAULT_MIN_MARGIN,
          LANDLINE_GATE_CONFIDENCE_THRESHOLD, LANDLINE_GATE_DEFAULT_MIN_MARGIN,
          ID_CARD_GATE_CONFIDENCE_THRESHOLD, ID_CARD_GATE_DEFAULT_MIN_MARGIN))
-print("ID_CARD 后处理：format_min_ratio=%.2f region_prefix_min_ratio=%.2f min_birth_year=%d"
-      % (ID_CARD_FORMAT_MIN_RATIO, ID_CARD_REGION_PREFIX_MIN_RATIO, ID_CARD_MIN_BIRTH_YEAR))
+print("ID_CARD 后处理：format_min_ratio=%.2f birth_min_ratio=%.2f region_prefix_min_ratio=%.2f min_birth_year=%d"
+      % (ID_CARD_FORMAT_MIN_RATIO, ID_CARD_BIRTH_MIN_RATIO, ID_CARD_REGION_PREFIX_MIN_RATIO, ID_CARD_MIN_BIRTH_YEAR))
 print("NAME 后处理占比：han=%.2f 2~3han=%.2f surname=%.2f exclude_col=%.2f"
       % (NAME_HAN_CHAR_MIN_RATIO, NAME_2_OR_3_HAN_MIN_RATIO,
          NAME_SURNAME_HEAD_MIN_RATIO, EXCLUDED_NAME_COLUMN_MIN_RATIO))
