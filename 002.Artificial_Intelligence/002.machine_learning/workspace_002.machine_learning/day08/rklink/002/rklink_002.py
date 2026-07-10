@@ -3698,7 +3698,7 @@ EXCLUDED_NAME_MANUAL_EXACT_TOKENS = frozenset({
     "年龄", "年度", "年月", "年份", "年薪", "年金", "年报", "年限",
     "是", "是否", "是非", "是的", "是这样", "是对", "是对的", "是吗", "是有", "是在", "是不是", "同意",
     "水电费", "归档", "兰州", "查证", "国债", "国债券", "成都",
-    "白银", "黄金",
+    "白银", "黄金", "白银连", "黄金连",
 })
 # 「是」开头时第二字为下列字符则视为明显非人名（保留姓「是」+ 名如「是伟」）
 _SHI_PREFIX_NON_NAME_SECOND_CHARS = frozenset("否非对这吗有的不在因真还就也都只可被从要会能应该")
@@ -3728,18 +3728,13 @@ def _is_excluded_name_like_value(text):
 
 
 def _looks_like_excluded_name_column(text_list):
-    """列内是否存在单个黑名单取值，其出现次数占非空行数 ≥ EXCLUDED_NAME_COLUMN_MIN_RATIO。"""
+    """列内黑名单命中行合计占非空行数 ≥ EXCLUDED_NAME_COLUMN_MIN_RATIO。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
     n = len(cleaned)
-    freq = {}
-    for t in cleaned:
-        freq[t] = freq.get(t, 0) + 1
-    for value, count in freq.items():
-        if _is_excluded_name_like_value(value) and count / n >= EXCLUDED_NAME_COLUMN_MIN_RATIO:
-            return True
-    return False
+    excluded = sum(1 for t in cleaned if _is_excluded_name_like_value(t))
+    return excluded / n >= EXCLUDED_NAME_COLUMN_MIN_RATIO
 
 # 部署置信度阈值（非 8 类门控类使用；与 Java confidence_thresholds.json 一致）
 # 训练后会写入 confidence_thresholds.json；测试推理优先读该文件，可用环境变量覆盖
