@@ -221,7 +221,7 @@ ENTERPRISE_LENGTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRIS
 # NAME 后处理（masks.recognize-name-han-char-min-ratio 等；默认与 Java NameRecognizeHeuristics 一致）
 NAME_HAN_CHAR_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_HAN_CHAR_MIN_RATIO", "1.0"))
 NAME_2_OR_3_HAN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_2_OR_3_HAN_MIN_RATIO", "1.0"))
-NAME_SURNAME_HEAD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_SURNAME_HEAD_MIN_RATIO", "1.0"))
+NAME_SURNAME_HEAD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_SURNAME_HEAD_MIN_RATIO", "0.9"))
 EXCLUDED_NAME_COLUMN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_EXCLUDE_COLUMN_MIN_RATIO", "0.5"))
 SYSTEM_CODE_C_PATTERN = re.compile(r'^C\d{8,}$')
 SERVICE_SHORT_95_REGEX = re.compile(r'^9[56]\d{3,6}$')
@@ -3610,21 +3610,44 @@ def _iter_test_column_groups(all_groups_dict):
 # 推理后处理（与 Java RecognizeOverrideSupport.applyPythonAligned 对齐）
 # ==============================
 
+def _is_pure_han_text(text):
+    return all("\u4e00" <= c <= "\u9fff" for c in text)
+
+
+def _is_name_shape_token(text):
+    """2~3 字姓名，或 4 字且前两字为复姓（在姓氏字典中）；无数字、无公司/集团后缀。"""
+    t = str(text).strip()
+    if len(t) < 2 or len(t) > 4:
+        return False
+    if any(x in t for x in ("公司", "有限", "集团")):
+        return False
+    if any(c.isdigit() for c in t):
+        return False
+    if not _is_pure_han_text(t):
+        return False
+    if len(t) <= 3:
+        return True
+    return t[:2] in surname_dict
+
+
+def _name_column_recognizable_name_row_ratio(text_list):
+    """列内符合姓名形态（2~3 字或复姓 4 字）的取值占比；用于后处理拦截/抬升，不影响 PMML 特征 f127。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return 0.0
+    hit = sum(1 for t in cleaned if _is_name_shape_token(t))
+    return hit / len(cleaned)
+
+
 def _looks_like_chinese_name_column(text_list):
-    """整列 2~3 字中文、无数字、无公司/集团后缀，首字或复姓前两字在姓氏字典命中率 ≥75%。"""
+    """整列均为姓名形态（2~3 字或复姓 4 字），且首字/复姓前两字在姓氏字典命中率达标。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
     n = len(cleaned)
     surname_hit = 0
     for t in cleaned:
-        if len(t) < 2 or len(t) > 3:
-            return False
-        if any(x in t for x in ("公司", "有限", "集团")):
-            return False
-        if any(c.isdigit() for c in t):
-            return False
-        if not all("\u4e00" <= c <= "\u9fff" for c in t):
+        if not _is_name_shape_token(t):
             return False
         if _surname_head_in_dict(t):
             surname_hit += 1
@@ -3903,7 +3926,7 @@ def apply_recognize_overrides(predicted, text_list):
         result = "DEFAULT"
     if result == "NAME" and _name_column_han_char_ratio(text_list) < NAME_HAN_CHAR_MIN_RATIO:
         result = "DEFAULT"
-    if result == "NAME" and _name_column_2_or_3_han_row_ratio(text_list) < NAME_2_OR_3_HAN_MIN_RATIO:
+    if result == "NAME" and _name_column_recognizable_name_row_ratio(text_list) < NAME_2_OR_3_HAN_MIN_RATIO:
         result = "DEFAULT"
     if result == "NAME" and _name_column_surname_head_dict_ratio(text_list) < NAME_SURNAME_HEAD_MIN_RATIO:
         result = "DEFAULT"
@@ -3980,6 +4003,8 @@ for label_name, group_idx, group_total, test_column in _iter_test_column_groups(
     if prediction != after_gate:
         print("规则后处理:", prediction)
     print("预测类别(最终):", prediction)
+    print("姓名后处理 recognizable_name_row_ratio: %.4f（须≥%.2f 才保留 NAME）"
+          % (_name_column_recognizable_name_row_ratio(test_column), NAME_2_OR_3_HAN_MIN_RATIO))
     print("姓名特征 f129 name_surname_head_dict_ratio: %.4f（须≥%.2f 才保留 NAME）"
           % (feature[129], NAME_SURNAME_HEAD_MIN_RATIO))
     print("手机严格校验 looks_like_strict_mobile_column: %s"
