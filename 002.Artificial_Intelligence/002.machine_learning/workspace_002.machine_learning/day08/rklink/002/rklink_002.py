@@ -221,7 +221,7 @@ ENTERPRISE_LENGTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRIS
 # NAME 后处理（masks.recognize-name-han-char-min-ratio 等；默认与 Java NameRecognizeHeuristics 一致）
 NAME_HAN_CHAR_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_HAN_CHAR_MIN_RATIO", "1.0"))
 NAME_2_OR_3_HAN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_2_OR_3_HAN_MIN_RATIO", "1.0"))
-NAME_SURNAME_HEAD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_SURNAME_HEAD_MIN_RATIO", "0.9"))
+NAME_SURNAME_HEAD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_SURNAME_HEAD_MIN_RATIO", "1.0"))
 EXCLUDED_NAME_COLUMN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_EXCLUDE_COLUMN_MIN_RATIO", "0.5"))
 SYSTEM_CODE_C_PATTERN = re.compile(r'^C\d{8,}$')
 SERVICE_SHORT_95_REGEX = re.compile(r'^9[56]\d{3,6}$')
@@ -361,6 +361,8 @@ def _qualifies_for_id_card_recognize_override(text_list):
 
 def _is_credit_code_format_value(text):
     s = str(text).strip().upper()
+    if "-" in s:
+        return False
     if len(s) != 18:
         return False
     if not all(c in CREDIT_CODE_CHARS for c in s):
@@ -1331,6 +1333,8 @@ def credit_code_check(code):
         return False
 
     code = code.upper()
+    if "-" in code:
+        return False
 
     # 检查非法字符
     for c in code:
@@ -3694,6 +3698,7 @@ EXCLUDED_NAME_MANUAL_EXACT_TOKENS = frozenset({
     "年龄", "年度", "年月", "年份", "年薪", "年金", "年报", "年限",
     "是", "是否", "是非", "是的", "是这样", "是对", "是对的", "是吗", "是有", "是在", "是不是", "同意",
     "水电费", "归档", "兰州", "查证", "国债", "国债券", "成都",
+    "白银", "黄金",
 })
 # 「是」开头时第二字为下列字符则视为明显非人名（保留姓「是」+ 名如「是伟」）
 _SHI_PREFIX_NON_NAME_SECOND_CHARS = frozenset("否非对这吗有的不在因真还就也都只可被从要会能应该")
