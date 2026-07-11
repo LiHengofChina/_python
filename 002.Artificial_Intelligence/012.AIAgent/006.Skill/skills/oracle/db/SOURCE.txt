@@ -1,0 +1,7 @@
+来源：https://github.com/oracle/skills/tree/main/db
+技能名：db（Oracle Database 官方 Skill 路由）
+下载命令：
+  git clone --depth 1 --filter=blob:none --sparse https://github.com/oracle/skills.git _src
+  cd _src && git sparse-checkout set db
+
+与 openocta MySQL 不同：无 scripts/*.py，是 Markdown 路由 + 子文档按需读取。

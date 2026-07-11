@@ -1,0 +1,68 @@
+
+//=========================================================== 和 MySQL 巡检最接近
+//=========================================================== 和 MySQL 巡检最接近
+仓库
+
+oracle-dba-agentic-skills
+	// DBA 总路由：巡检、备份、RAC、Data Guard、性能、安全等，偏运维实操
+	// https://github.com/Shreyas70773/oracle-dba-agentic-skills
+
+
+oracle/skills（官方）
+	//Oracle 官方 Skill 集合，db/ 下有 performance、monitoring、agent、security 等
+	//https://github.com/oracle/skills
+
+
+→ 数据库入口
+	//官方 db 域 SKILL.md（路由表）
+	//https://github.com/oracle/skills/tree/main/db
+
+//=========================================================== 偏 OCI 云数据库（Autonomous DB）
+//=========================================================== 偏 OCI 云数据库（Autonomous DB）
+oracle-dba-skill
+	//ADB 运维、SQL 调优、MCP 集成
+	//https://github.com/acedergren/oracle-dba-skill
+
+oci-agent-skills
+	//OCI 全家桶，含 oracle-dba、database-management
+	//https://github.com/acedergren/oci-agent-skills
+
+→ oracle-dba
+	//上面仓库里的 DBA Skill
+	//https://github.com/acedergren/oci-agent-skills/tree/main/skills/oracle-dba
+
+//=========================================================== 偏知识 / 设计（不是巡检脚本）
+//=========================================================== 偏知识 / 设计（不是巡检脚本）
+oracle-database-expert
+	//23ai、SQL 调优、高可用、安全等通用知识
+	//https://github.com/frankxai/claude-skills-library/tree/main/free-skills/oracle-database-expert
+
+
+
+
+
+//=========================================================== 使用示例
+//=========================================================== 使用示例
+
+以 https://github.com/oracle/skills 的 db 域为例
+
+（1）下载 Skill 到本地
+    skills/oracle/db/
+
+（2）编写 Agent，加载 Skill
+    workspace/day_03_oracle_skill_agent/
+
+（3）配置
+    cd workspace/day_03_oracle_skill_agent
+    copy config.example.yml config.local.yml
+    填 ssh（已有 Oracle 再开 oracle.enabled=true）
+
+（4）安装依赖
+    pip install -r requirements.txt
+
+（5）运行
+	python main.py "查一下 lg_user 有哪些表，并看当前实例版本"
+
+	python main.py "Oracle 有一条 SQL 很慢，帮我定位"
+
+

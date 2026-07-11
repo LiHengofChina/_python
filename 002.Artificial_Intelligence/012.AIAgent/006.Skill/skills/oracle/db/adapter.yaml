@@ -1,0 +1,11 @@
+# ponytail: 官方 db 域无 tools 字段；本平台绑定两个 Tool
+tools: oracle_skill_read, oracle_sql_run
+platform_hint: |
+  【本平台适配】Oracle 官方 Skill 是「路由 + 子文档」，不要一次读完所有 md。
+  1) 按 SKILL.md 的 Category Routing / Common Multi-Step Flows 选路径
+  2) 用 oracle_skill_read 按需读子文档，如 performance/explain-plan.md
+  3) 需要库上数据时，用 oracle_sql_run 执行只读 SQL（SELECT / 数据字典视图）
+  oracle_sql_run 以 config.local.yml 的 oracle.user 登录；返回首行含 connected_user=xxx。
+  查当前连接用户的表用 user_tables，不要用 all_tables 查其他 owner（无权限会 0 行）。
+  慢 SQL 定位推荐顺序：explain-plan → wait-events → optimizer-stats → awr-reports
+  危险 DDL/DML 只给方案，末尾写「需人工审批」。
