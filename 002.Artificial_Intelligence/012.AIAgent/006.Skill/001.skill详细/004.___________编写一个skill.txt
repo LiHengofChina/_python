@@ -24,4 +24,5 @@ pip install -r requirements.txt
 
 （2）运行
 python main.py "linux-231 磁盘满了，帮我排查"
+python main.py "帮我看看 linux-231 还有多少G空间可以使用，简单回答，不要超过30字。"
 

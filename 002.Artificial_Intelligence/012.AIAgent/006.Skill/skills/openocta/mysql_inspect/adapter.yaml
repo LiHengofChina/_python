@@ -1,0 +1,8 @@
+# ponytail: 开源 Skill 无 tools 字段；本平台用 adapter 绑定 Tool
+tools: mysql_inspect_run
+platform_hint: |
+  【本平台适配】MySQL 连接已在 config.local.yml 配置，用 mysql_inspect_run 按 SKILL 流程巡检。
+  参数 inspect_module 取值（按顺序执行前 5 项）：
+    basic → connection → performance → architecture → security
+  汇总各模块 JSON 输出写报告。不要向用户索要数据库密码。
+  Prometheus / 飞书推送未配置时可跳过。

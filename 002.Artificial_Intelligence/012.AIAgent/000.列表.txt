@@ -9,17 +9,28 @@
 
 	 （1）MySQL运维 Skills指开源工具
 
-（2）Chat → Tool → RAG → RAG+Tool → Agent编排(LangGraph) → MCP → Memory
 
-//==================== 发问？
-//==================== 发问？
 
-（1）有没有开源的agent可以直接使用的
+
+//==================== python 来做
+//==================== python 来做
+
+
+
+（1）python项目
+	我的 AiAgent 工作流结构？
+
+
+（2）web的方式，划好目录
+	Chat → Tool → RAG → RAG+Tool → Agent编排(LangGraph) → MCP → Memory
+
+
+（3）有没有开源的agent可以直接使用的
 
 	Embedding 
 	核心逻辑 与 落地优化
 
-（2）RAG怎么处理Word和PDF。
+（4）RAG怎么处理Word和PDF。
 
 //====================
 //====================

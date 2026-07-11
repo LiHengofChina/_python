@@ -1,0 +1,7 @@
+来源：https://github.com/openocta/openocta_skills/tree/main/MySQL数据库巡检
+技能名：mysql-full-inspection-skill
+下载命令：
+  git clone --depth 1 --filter=blob:none --sparse https://github.com/openocta/openocta_skills.git _src
+  cd _src && git sparse-checkout set "MySQL数据库巡检"
+
+SKILL.md 未改；对接见 adapter.yaml。

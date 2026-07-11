@@ -1,0 +1,51 @@
+
+
+别人写的 Skill，若也是 SKILL.md 格式，加载方式和你的几乎一样
+
+//=========================================================== 开源 Skill 从哪来
+//=========================================================== 开源 Skill 从哪来
+
+（1）GitHub 搜 SKILL.md、cursor skills、agent skills
+			//下载到 skills/某名字/
+
+（2）Cursor 社区 Skill
+			//多为 Markdown 指令包
+
+//=========================================================== 使用示例
+//=========================================================== 使用示例
+
+在 https://github.com/openocta/openocta_skills 
+
+以 "MySQL数据库巡检" 为列
+
+
+（1）下载 skill到本地 目录 
+	skills/openocta/mysql_inspect/
+
+（2）编写agent，加载skill
+	workspace/day_02_open_skill_agent/
+
+
+（3）配置数据库信息
+ 
+	cd workspace/day_02_open_skill_agent
+    copy config.example.yml config.local.yml
+    填 mysql.host / user / password
+
+（4）安装依赖
+	pip install -r requirements.txt
+
+（5）运行
+	# 全量巡检（最常用）
+	python main.py "对 MySQL 做一次全维度健康巡检"
+
+	# 专项
+	python main.py "检查一下 MySQL 连接负载有没有问题"
+	python main.py "MySQL 慢查询和性能有没有风险"
+	python main.py "查一下 MySQL 主从同步状态"
+	python main.py "做一次 MySQL 安全合规扫描"
+
+	# 带场景
+	python main.py "数据库响应变慢了，帮我做 MySQL 性能审计"
+
+
