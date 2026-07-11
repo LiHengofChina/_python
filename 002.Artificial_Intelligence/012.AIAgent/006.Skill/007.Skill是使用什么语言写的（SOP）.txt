@@ -1,0 +1,23 @@
+
+//================================================== Skill 用什么写？
+//================================================== Skill 用什么写？
+
+Skill 主体：**Markdown**（SKILL.md），不是 Python/Java 业务代码。
+
+---
+name: disk-alert-triage
+description: ...
+tools: ssh_exec, rag_search
+---
+
+# 标题
+## 步骤（SOP）
+...
+
+可选附件：
+  scripts/*.py 或 *.sh   ← 辅助脚本，可选
+  checklist.md           ← 检查清单，可选
+
+SOP = Standard Operating Procedure（标准作业流程）= Skill 里的「步骤清单」。
+
+Python 用在：**加载 Skill 的 Agent Demo**（LangChain + LangGraph），不是写在 SKILL.md 里。

@@ -1,0 +1,13 @@
+
+//================================================== skill 目录约定
+//================================================== skill 目录约定
+
+skills/
+└── disk_alert/              # 一个 Skill 一个目录
+    ├── SKILL.md             # 必需：专长包主体
+    ├── checklist.md         # 可选：检查清单
+    └── scripts/             # 可选：辅助脚本
+        └── verify.sh
+
+笔记目录：006.Skill/
+代码 Demo：006.Skill/workspace/day_01_skill_agent/

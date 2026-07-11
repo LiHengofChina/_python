@@ -1,0 +1,20 @@
+
+//================================================== SKILL.md 标准结构
+//================================================== SKILL.md 标准结构
+
+---
+name: disk-alert-triage
+description: 磁盘告警排查。磁盘满、df、231…时使用。   ← 路由用，决定何时选中
+tools: ssh_exec, rag_search                              ← 本 Skill 允许哪些 Tool
+host: 192.168.100.231
+manual: ops_manual.txt
+---
+
+# 磁盘告警排查
+
+## 触发条件
+## 步骤（SOP）
+## 手册要点
+## 验收清单
+
+frontmatter 三字段必记：name / description / tools
