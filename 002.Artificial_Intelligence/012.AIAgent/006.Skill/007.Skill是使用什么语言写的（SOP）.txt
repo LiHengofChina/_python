@@ -2,22 +2,25 @@
 //================================================== Skill 用什么写？
 //================================================== Skill 用什么写？
 
-Skill 主体：**Markdown**（SKILL.md），不是 Python/Java 业务代码。
+Skill 不是 Python 代码，是 带元数据的 SOP 包；description 决定以后会不会被选中。
 
----
-name: disk-alert-triage
-description: ...
-tools: ssh_exec, rag_search
----
 
-# 标题
-## 步骤（SOP）
-...
+//==================================================
+//==================================================
 
-可选附件：
-  scripts/*.py 或 *.sh   ← 辅助脚本，可选
-  checklist.md           ← 检查清单，可选
+SOP = Standard Operating Procedure，标准作业流程。
 
-SOP = Standard Operating Procedure（标准作业流程）= Skill 里的「步骤清单」。
+就是一套固定步骤：遇到某类问题，先做什么、再做什么、最后怎么验收。
 
-Python 用在：**加载 Skill 的 Agent Demo**（LangChain + LangGraph），不是写在 SKILL.md 里。
+Skill 里的 SOP 例子：
+
+1. 先 ssh 连机器
+2. 再 df -h 看分区
+3. 再 du 查大目录
+4. 查手册给建议
+5. 危险操作要人工批
+
+一句话：SOP = 把老师傅的经验写成「照着做就不会漏」的步骤清单；Skill 把这个清单打包给 Agent 用。
+
+
+

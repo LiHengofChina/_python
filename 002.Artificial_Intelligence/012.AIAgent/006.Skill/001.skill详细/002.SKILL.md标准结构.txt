@@ -4,17 +4,35 @@
 
 ---
 name: disk-alert-triage
-description: 磁盘告警排查。磁盘满、df、231…时使用。   ← 路由用，决定何时选中
-tools: ssh_exec, rag_search                              ← 本 Skill 允许哪些 Tool
-host: 192.168.100.231
-manual: ops_manual.txt
+description: 磁盘告警排查。用户提到磁盘满、df、空间不足、inode 时使用。
+tools: ssh_exec, rag_search    # 本 Skill 允许用的 Tool（day_03 再接线）
 ---
 
 # 磁盘告警排查
 
 ## 触发条件
-## 步骤（SOP）
-## 手册要点
-## 验收清单
+- 磁盘使用率 > 85%
+- 用户问「为什么满」「怎么清理」
 
-frontmatter 三字段必记：name / description / tools
+## 步骤（SOP）
+1. ssh 连目标机，执行 df -h
+2. 找 >80% 的分区，du 查大目录
+3. rag_search 查运维手册标准处理方式
+4. 汇总根因 + 建议（删/轮转/扩容）
+5. 涉及 rm、重启 → 只给方案，标记「需人工审批」
+
+## 验收
+- [ ] 给出占用最大的目录
+- [ ] 建议来自手册或有依据
+- [ ] 危险操作未自动执行
+
+//================================================== 和 Tool/MCP 的分工（这一课只记一句）
+//================================================== 和 Tool/MCP 的分工（这一课只记一句）
+
+name			//	唯一 ID
+description		//	路由用——Agent 靠它判断要不要用这个 Skill
+tools			//	这个 Skill 能用哪些 Tool
+
+
+
+
