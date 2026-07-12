@@ -11,6 +11,11 @@ app/infrastructure/      ← OllamaChatGateway、配置
 
 app/interfaces/web/      ← FastAPI + static 聊天页
 						//接口：FastAPI + 浏览器页面
+						//主要是 接口层 / Controller 层
+						//app.py 里的路由 Controller（HTTP API）
+
+						// static/ 静态页面（顺便放在同层，方便同仓访问）
+						//interfaces = 对外接口层；static 只是网页静态资源，
 
 main.py					//main.py 里的 uvicorn.run(...) 就
 						//相当于 SpringApplication.run(...)：程序入口，
