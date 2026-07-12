@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-day_02 聊天管理（会话）— 在 day_01 Chat 上增加 SQLite 会话/消息
+day_03 LangChain Tool — 对标 Spring AI day_02_spring_ai_tool
 
 用法：
   pip install -r requirements.txt
   python main.py
-  浏览器打开 http://127.0.0.1:8101/
+  浏览器 http://127.0.0.1:8101/
 """
 from __future__ import annotations
 
@@ -18,10 +18,10 @@ def main() -> None:
     cfg = load_config()
     server = cfg.get("server", {})
     host = server.get("host", "127.0.0.1")
-    port = int(server.get("port", 8102))
+    port = int(server.get("port", 8101))
     print("=== 框架 ===")
-    print("FastAPI + LangChain + SQLite 会话管理")
-    print("=== 固定用户 user_id=1 ===")
+    print("FastAPI + LangGraph Tool Agent + SQLite 会话")
+    print("=== 对标 Spring AI day_02 Tool ===")
     print(f"=== 浏览器访问 http://{host}:{port}/ ===")
     uvicorn.run(
         "app.interfaces.web.app:app",

@@ -1,0 +1,23 @@
+server:
+  host: 127.0.0.1
+  port: 8101
+
+ollama:
+  base_url: http://127.0.0.1:11434
+  model: qwen2.5:7b
+  temperature: 0.2
+
+chat:
+  db_path: data/chat.db
+
+# SSH 目标主机（对标 Spring demo.ops.ssh）；密码只写 config.local.yml
+ssh:
+  enabled: true
+  host: 192.168.100.231
+  port: 22
+  username: root
+  host_label: linux-231
+  # password: "在 local 里配置"
+
+demo:
+  question: linux-231 磁盘满了，帮我排查一下

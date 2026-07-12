@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tool Agent · LangChain</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --border: #2d3a4d;
+      --text: #e7ecf3;
+      --muted: #8b9bb4;
+      --accent: #3d8bfd;
+      --user: #243044;
+      --bot: #1e2a3a;
+      --side: #141c28;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, #1a2a44, var(--bg));
+      color: var(--text);
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      max-width: 980px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 16px;
+      gap: 12px;
+    }
+    @media (max-width: 720px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    .side, .main {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      display: flex;
+      flex-direction: column;
+      min-height: 520px;
+    }
+    .side { background: var(--side); padding: 12px; }
+    .side h2 { margin: 0 0 8px; font-size: 0.95rem; }
+    .hint { color: var(--muted); font-size: 0.75rem; margin-bottom: 10px; }
+    #sessions {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .session-item {
+      text-align: left;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .session-item:hover { background: #1e2a3a; }
+    .session-item.active { border-color: var(--accent); background: #1e2a3a; }
+    .side button.new {
+      margin-top: 8px;
+      padding: 8px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
+    .main { padding: 12px; }
+    .main h1 { margin: 0 0 4px; font-size: 1.2rem; }
+    .sub { color: var(--muted); font-size: 0.8rem; margin-bottom: 10px; }
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #121821;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .msg {
+      max-width: 90%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.92rem;
+    }
+    .msg.user { align-self: flex-end; background: var(--user); }
+    .msg.bot { align-self: flex-start; background: var(--bot); border: 1px solid var(--border); }
+    .msg.err { color: #ff8a8a; }
+    .role { display: block; font-size: 0.7rem; color: var(--muted); margin-bottom: 3px; }
+    form {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #121821;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+    form button {
+      padding: 0 16px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
+    form button:disabled { opacity: 0.55; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="side">
+      <h2>会话列表</h2>
+      <div class="hint">固定用户 user_id=1 · SQLite</div>
+      <div id="sessions"></div>
+      <button class="new" id="btnNew" type="button">新建会话</button>
+    </aside>
+    <section class="main">
+      <h1>Tool Agent</h1>
+      <div class="sub" id="sub">LangGraph + SSH Tools · linux-231 · 请先新建或选择会话</div>
+      <div id="log"></div>
+      <form id="form">
+        <input id="q" type="text" placeholder="输入问题（同会话可追问）…" autocomplete="off" required />
+        <button id="btn" type="submit">发送</button>
+      </form>
+    </section>
+  </div>
+  <script>
+    const log = document.getElementById("log");
+    const form = document.getElementById("form");
+    const input = document.getElementById("q");
+    const btn = document.getElementById("btn");
+    const btnNew = document.getElementById("btnNew");
+    const sessionsEl = document.getElementById("sessions");
+    const sub = document.getElementById("sub");
+    let sessionId = null;
+
+    function addMsg(role, text, isErr) {
+      const div = document.createElement("div");
+      div.className = "msg " + (role === "user" ? "user" : "bot") + (isErr ? " err" : "");
+      const tag = document.createElement("span");
+      tag.className = "role";
+      tag.textContent = role === "user" ? "你" : "助手";
+      div.appendChild(tag);
+      div.appendChild(document.createTextNode(text));
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function clearLog() { log.innerHTML = ""; }
+
+    async function loadSessions() {
+      const res = await fetch("/api/sessions");
+      const list = await res.json();
+      sessionsEl.innerHTML = "";
+      list.forEach((s) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "session-item" + (s.id === sessionId ? " active" : "");
+        b.textContent = "#" + s.id + " " + s.title;
+        b.onclick = () => selectSession(s.id, s.title);
+        sessionsEl.appendChild(b);
+      });
+    }
+
+    async function selectSession(id, title) {
+      sessionId = id;
+      sub.textContent = "当前会话 #" + id + (title ? " · " + title : "") + " · user_id=1";
+      clearLog();
+      const res = await fetch("/api/sessions/" + id + "/messages");
+      const msgs = await res.json();
+      msgs.forEach((m) => addMsg(m.role === "user" ? "user" : "assistant", m.content));
+      await loadSessions();
+      input.focus();
+    }
+
+    async function createSession() {
+      const res = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "新对话" }),
+      });
+      const s = await res.json();
+      await selectSession(s.id, s.title);
+    }
+
+    btnNew.addEventListener("click", createSession);
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = input.value.trim();
+      if (!question) return;
+      if (!sessionId) {
+        await createSession();
+      }
+      addMsg("user", question);
+      input.value = "";
+      btn.disabled = true;
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, session_id: sessionId }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          addMsg("assistant", data.detail || ("HTTP " + res.status), true);
+        } else {
+          addMsg("assistant", data.answer || "(空回复)");
+          await loadSessions();
+        }
+      } catch (err) {
+        addMsg("assistant", String(err), true);
+      } finally {
+        btn.disabled = false;
+        input.focus();
+      }
+    });
+
+    loadSessions().then(() => input.focus());
+  </script>
+</body>
+</html>

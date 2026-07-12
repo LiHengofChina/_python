@@ -1,20 +1,25 @@
 
 //（1）Chat → 
-（2）先做聊天记录（固定 user_id=1）：对，合理，也是 Memory 的基础。
-（3）Memory
+
+	
+（2）Tool → 
+
+（ 2.1 ）配置怎么关联起来
+
+（ 2.2 ）接入 SSE
+像cursor的处理过程展示出来，
+让用户知道模型正在处理。
 
 
 
 
-	Tool → 
-	//先把 Demo01复制出来，以后都在那上面增加就行了。
-	SSE
 
 
 	RAG → 
 	RAG+Tool → 
 	Agent编排(LangGraph) → 
 	MCP → 
+	Memory → 
 
 
 	//框架不用单独学习，需要的时候用到了，
