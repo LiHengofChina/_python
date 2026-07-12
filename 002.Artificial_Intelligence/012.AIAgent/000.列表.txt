@@ -25,6 +25,11 @@
 	【langGraph】
 	【CrewAi】
 
+	LangGraph：后面做 Agent / 多步编排再用
+	CrewAI：多 Agent 协作时再学
+
+
+
 （3）有没有开源的agent可以直接使用的
 
 	Embedding 

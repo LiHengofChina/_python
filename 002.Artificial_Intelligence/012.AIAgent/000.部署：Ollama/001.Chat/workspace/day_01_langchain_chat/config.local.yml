@@ -1,0 +1,7 @@
+ollama:
+  base_url: http://127.0.0.1:11434
+  model: qwen2.5:7b
+  temperature: 0.3
+
+demo:
+  question: 用一句话介绍什么是 LangChain
