@@ -1,5 +1,46 @@
 
 
+（12）java中有静态，就是在编译的时候就决定了的东西（类、方法、变量等）,python这边有吗
+
+	有类似的，但不像 Java 那么“编译期定死”。
+	（1）Java		static 字段/方法 编译期就绑定好
+	（2）Python 近似	类属性、@staticmethod 仍偏动态，多在运行时决定
+
+	Python 没有 Java 那种严格的“编译期静态绑定”；
+	需要“属于类、不依赖实例”时，用类属性或 @staticmethod 即可。
+	类属性大家共用一份，概念上就相当于 Java 的 静态成员变量。
+	方法要用 @staticmethod（或 @classmethod）才更像静态方法。
+
+
+（11） 反射 python 这边不需要反射吧，因为它不是class文件，代码可以直接看到
+	  能不能看见源码 和 要不要反射 不是一回事。
+	 （1）Java 反射：运行时靠名字找类/方法再调用（因为很多时候只有 .class，或框架要动态装配）。
+	 （2）Python 也有类似能力，叫 内省（introspection）：
+		 getattr、hasattr、type()、dir() 等，框架里照样用。
+
+		 你平时写业务确实很少 "手写反射" ，
+		 是因为 Python 动态、写法更直接；不是因为“代码能看见就不需要”。
+		 FastAPI、LangChain 这类框架底层仍会用动态查找/调用。
+	/**
+	就是说启动项目时没加载，在运行时想调用，
+		这时java就用反射，而python使用内省是吗，
+
+		大体对。
+
+		两边都是：运行时按名字找对象/方法再调用。
+		Java 常叫反射，Python 常叫内省——同一类事，叫法不同。
+	*/
+
+（10）invoke 在java里面很多设计模式（好像有代理模式）都使用了 这个名字，它是意思，在哪些方常用?
+
+	invoke =「调用 / 触发执行」，不是某个模式专有名词。
+
+	【反射】 Java Method.invoke(obj, args)：动态调用方法
+	【代理】 代理对象最终还是 invoke 去调真实方法（JDK 动态代理里就有 InvocationHandler.invoke）
+	【RPC / 远程】 客户端 invoke 一次远程服务
+	【框架 API】 LangChain llm.invoke(...)：把输入交给模型跑一遍
+	【一般口语】 “invoke a function” = 调用函数
+
 （9）python理论上也是可以做 银行那些大型系统
 
 	银行里已经有不少用 Python 的：风控模型、数据分析、AI/Agent 平台、内部工具、部分 API 服务。
