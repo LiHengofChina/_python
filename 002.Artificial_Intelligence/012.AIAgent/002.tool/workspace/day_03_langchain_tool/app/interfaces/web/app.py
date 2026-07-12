@@ -54,7 +54,7 @@ def health() -> dict:
     ssh = _cfg.get("ssh", {})
     return {
         "status": "ok",
-        "framework": "FastAPI + LangGraph Tool Agent",
+        "framework": "FastAPI + LangChain Tool Agent",
         "model": ora.get("model"),
         "user_id": FIXED_USER_ID,
         "ssh_enabled": bool(ssh.get("enabled")),

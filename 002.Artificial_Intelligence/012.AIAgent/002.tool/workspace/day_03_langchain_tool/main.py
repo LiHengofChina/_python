@@ -20,7 +20,7 @@ def main() -> None:
     host = server.get("host", "127.0.0.1")
     port = int(server.get("port", 8101))
     print("=== 框架 ===")
-    print("FastAPI + LangGraph Tool Agent + SQLite 会话")
+    print("FastAPI + LangChain Tool Agent + SQLite 会话")
     print("=== 对标 Spring AI day_02 Tool ===")
     print(f"=== 浏览器访问 http://{host}:{port}/ ===")
     uvicorn.run(

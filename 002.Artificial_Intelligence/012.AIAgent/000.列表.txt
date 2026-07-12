@@ -1,25 +1,25 @@
 
-//（1）Chat → 
 
-	
 （2）Tool → 
 
 （ 2.1 ）配置怎么关联起来
 
-（ 2.2 ）接入 SSE
-像cursor的处理过程展示出来，
-让用户知道模型正在处理。
+（ 2.2 ）聊天窗高度的问题
+
+（ 2.3 ）接入 SSE
+	像cursor的处理过程展示出来，
+	让用户知道模型正在处理。
 
 
-
-
-
-
+（2.4）
 	RAG → 
 	RAG+Tool → 
-	Agent编排(LangGraph) → 
-	MCP → 
-	Memory → 
+
+	（ 2.5 ） Agent编排(LangGraph) → 
+
+	（ 2.6 ） MCP → 
+
+	（ 2.7 ） Memory → 
 
 
 	//框架不用单独学习，需要的时候用到了，
@@ -29,8 +29,10 @@
 	【langGraph】
 	【CrewAi】
 
+
 	LangGraph：后面做 Agent / 多步编排再用
 	CrewAI：多 Agent 协作时再学
+
 
 （3）有没有开源的agent可以直接使用的
 

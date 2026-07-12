@@ -4,9 +4,13 @@ day_03_langchain_tool — Python Tool Demo
 
 对照：
   Spring @Tool OpsTools          ↔  LangChain @tool build_ops_tools
-  ChatClient.defaultTools(...)   ↔  LangGraph create_react_agent(llm, tools)
+  ChatClient.defaultTools(...)   ↔  ChatOllama.bind_tools + 手动 Tool 循环
   LinuxSshExecutor               ↔  infrastructure/ssh/LinuxSshExecutor
   GET /api/agent/troubleshoot    ↔  同路径
+
+说明：
+  qwen2.5:7b 偶发把工具写成 JSON 文本；网关会兜底解析并真正执行 Tool。
+  控制台出现 [Tool] / [Tool-Fallback] 即表示工具已跑。
 
 目录要点：
   app/infrastructure/tool/     4 个运维 Tool（磁盘/内存/进程/日志目录）
