@@ -1,0 +1,15 @@
+server:
+  host: 127.0.0.1
+  port: 8102
+
+ollama:
+  base_url: http://127.0.0.1:11434
+  model: qwen2.5:7b
+  temperature: 0.3
+
+chat:
+  # SQLite 文件路径（相对项目根）
+  db_path: data/chat.db
+
+demo:
+  question: 用一句话介绍什么是会话管理

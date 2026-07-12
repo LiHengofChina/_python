@@ -1,19 +1,31 @@
 
-【python 来做】
+//（1）Chat → 
+（2）先做聊天记录（固定 user_id=1）：对，合理，也是 Memory 的基础。
+（3）Memory
 
 
 
-（2）然后开始主流框架的学习
-	Chat → Tool → RAG → RAG+Tool → Agent编排(LangGraph) → MCP → Memory
+
+	Tool → 
+	//先把 Demo01复制出来，以后都在那上面增加就行了。
+	SSE
+
+
+	RAG → 
+	RAG+Tool → 
+	Agent编排(LangGraph) → 
+	MCP → 
+
+
+	//框架不用单独学习，需要的时候用到了，
+	//它自然就会出现呢
+	//然后开始主流框架的学习
 	【langChain】
 	【langGraph】
 	【CrewAi】
 
-
 	LangGraph：后面做 Agent / 多步编排再用
 	CrewAI：多 Agent 协作时再学
-
-
 
 （3）有没有开源的agent可以直接使用的
 
