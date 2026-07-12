@@ -1,3 +1,7 @@
+server:
+  host: 127.0.0.1
+  port: 8101
+
 ollama:
   # Ollama 服务地址（本机默认 11434；内网部署改成实际 IP）
   base_url: http://127.0.0.1:11434
@@ -5,5 +9,4 @@ ollama:
   temperature: 0.3
 
 demo:
-  # 无命令行参数时的默认问题（对标 Spring AI startup-question）
   question: 用一句话介绍什么是 LangChain

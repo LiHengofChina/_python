@@ -8,22 +8,12 @@
 
 从这里来学习吧
 
-
-（2）加一小节【chat聊天】
-	//和大llm通信，加在 Ollama 里面
-
-（1）加一小节【目录规划】，加在 Ollama 里面
-	python项目 "目录规划"
-	"我的 AiAgent 工作流结构"？
-	要做成web的，
-
-
-
 （2）然后开始主流框架的学习
 	Chat → Tool → RAG → RAG+Tool → Agent编排(LangGraph) → MCP → Memory
 	【langChain】
 	【langGraph】
 	【CrewAi】
+
 
 	LangGraph：后面做 Agent / 多步编排再用
 	CrewAI：多 Agent 协作时再学

@@ -1,0 +1,34 @@
+
+（5）并发那边在python这边
+
+	并发后面主要靠：FastAPI/uvicorn、异步、队列、缓存等，
+
+（4）ddd领域在python这边也是标准的、流行的、业界认可？
+	算业界认可的一种做法，但不是 Python 唯一“标准”。
+	（1）分层（domain / application / infrastructure / interfaces）在 中大型、要对标 Java/DDD 的项目里很常见，完全正规。
+
+	（2）Python / FastAPI 社区很多小项目更扁平：routers/ + services/ + main.py，也很流行。
+
+	（3）Python 也做大型项目（Instagram、Dropbox、很多 AI/数据平台后端都是）。
+
+	（4）分层少见，多半是因为很多 Python 项目起步小、先扁平；项目变大后一样会拆层。
+
+（3）像spring那样的注入功能，在python这边有吗，简
+	有，但不如 Spring 那么「全家桶」。
+
+	FastAPI：用 Depends() 做依赖注入（够用）
+	通用库：也有 dependency-injector 等
+
+	它也是为了提前把对象注入进来，不用自己new是吧
+	框架帮你创建好对象并传进来，业务代码里少自己 new。
+
+（2）pyhon这边有java那边的注解那种用法吗
+	有，最接近的是 装饰器（decorator），写法是 @xxx。
+	@app.get("/api/chat")      # ≈ @GetMapping
+	def chat_get(q: str): ...
+	可以这么理解：装饰器 ≈ Java 注解，都是给代码加标记，让框架自动干活。
+
+（1）python这边不需要先写接口，再写实现这种写法吧？
+	Java 里常先写接口再写实现，是因为静态类型 + 依赖注入习惯。
+	Python 更常见：先直接用具体类（比如 OllamaChatGateway），
+	真有第二个实现（Mock、换厂商）再抽接口。

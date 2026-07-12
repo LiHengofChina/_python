@@ -1,0 +1,21 @@
+
+
+app/domain/              ← model + gateway 端口
+						//领域：ChatReply、网关接口（可选）
+
+app/application/         ← ChatApplicationService
+						//应用：编排对话用例
+
+app/infrastructure/      ← OllamaChatGateway、配置
+						//基础设施：连 Ollama、读配置
+
+app/interfaces/web/      ← FastAPI + static 聊天页
+						//接口：FastAPI + 浏览器页面
+
+main.py					//main.py 里的 uvicorn.run(...) 就
+						//相当于 SpringApplication.run(...)：程序入口，
+						//把 Web 应用拉起来。
+
+
+config.local.yml		//本机配置（端口、模型等）
+

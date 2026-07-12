@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LangChain Chat · Ollama</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --border: #2d3a4d;
+      --text: #e7ecf3;
+      --muted: #8b9bb4;
+      --accent: #3d8bfd;
+      --user: #243044;
+      --bot: #1e2a3a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, #1a2a44, var(--bg));
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 16px 16px;
+    }
+    h1 {
+      margin: 0 0 4px;
+      font-size: 1.35rem;
+      font-weight: 600;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 360px;
+    }
+    .msg {
+      max-width: 90%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.95rem;
+    }
+    .msg.user { align-self: flex-end; background: var(--user); }
+    .msg.bot { align-self: flex-start; background: var(--bot); border: 1px solid var(--border); }
+    .msg.err { color: #ff8a8a; }
+    .role { display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+    form {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+    button {
+      padding: 0 18px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>LangChain Chat</h1>
+    <div class="sub">FastAPI + ChatOllama · 对标 Spring AI day_01</div>
+    <div id="log"></div>
+    <form id="form">
+      <input id="q" type="text" placeholder="输入问题，回车发送…" autocomplete="off" required />
+      <button id="btn" type="submit">发送</button>
+    </form>
+  </div>
+  <script>
+    const log = document.getElementById("log");
+    const form = document.getElementById("form");
+    const input = document.getElementById("q");
+    const btn = document.getElementById("btn");
+
+    function addMsg(role, text, isErr) {
+      const div = document.createElement("div");
+      div.className = "msg " + role + (isErr ? " err" : "");
+      const tag = document.createElement("span");
+      tag.className = "role";
+      tag.textContent = role === "user" ? "你" : "助手";
+      div.appendChild(tag);
+      div.appendChild(document.createTextNode(text));
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = input.value.trim();
+      if (!question) return;
+      addMsg("user", question);
+      input.value = "";
+      btn.disabled = true;
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          addMsg("bot", data.detail || ("HTTP " + res.status), true);
+        } else {
+          addMsg("bot", data.answer || "(空回复)");
+        }
+      } catch (err) {
+        addMsg("bot", String(err), true);
+      } finally {
+        btn.disabled = false;
+        input.focus();
+      }
+    });
+
+    input.focus();
+  </script>
+</body>
+</html>

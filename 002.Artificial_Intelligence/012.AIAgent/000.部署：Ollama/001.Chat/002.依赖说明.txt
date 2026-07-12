@@ -1,0 +1,23 @@
+
+
+//=================================================
+//=================================================
+
+requirements.txt ≈ Java 的 pom.xml 依赖清单
+
+（1）langchain-ollama	//LangChain 连接 Ollama 的客户端（ChatOllama）
+（2）langchain-core	//LangChain 核心：消息类型等基础能力
+
+（3）pyyaml	//读写 config.local.yml
+
+（4）fastapi	//Web 框架：写 HTTP 接口、挂静态页面
+			//相当于Spring Web（写接口、路由）
+（5）uvicorn[standard]	//Web 框架：写 HTTP 接口、挂静态页面 
+						//相当于Tomcat / 内嵌容器（真正起 HTTP 服务）
+						/**
+							Django
+							更像「全家桶」框架（ORM、Admin、模板都带），
+							偏传统网站；做纯 API / AI 平台现在更常选 FastAPI
+						*/
+
+
