@@ -1,25 +1,19 @@
 
-（ 2.4 ）
+（ 1）  MCP → 
+（ 2 ） Memory → 
+（ 3 ） Skill → 
 
-	//========== 这两个中的哪一个？
-	//========== 这两个中的哪一个？
-	（ 2.5 ） Agent编排(LangGraph) → 
+//框架不用单独学习，需要的时候用到了，
+//它自然就会出现呢
+//然后开始主流框架的学习
+【langChain】
+【langGraph】
+【CrewAi】
 
-	（ 2.6 ） MCP → 
+（ 2.5 ） Agent编排(LangGraph) → 
+LangGraph：后面做 Agent / 多步编排再用
+CrewAI：多 Agent 协作时再学
 
-	（ 2.7 ） Memory → 
-
-
-	//框架不用单独学习，需要的时候用到了，
-	//它自然就会出现呢
-	//然后开始主流框架的学习
-	【langChain】
-	【langGraph】
-	【CrewAi】
-
-
-	LangGraph：后面做 Agent / 多步编排再用
-	CrewAI：多 Agent 协作时再学
 
 
 （2）
