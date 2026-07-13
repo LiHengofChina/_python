@@ -10,10 +10,11 @@
 	像cursor的处理过程展示出来，
 	让用户知道模型正在处理。
 
-
-（2.4）
+（ 2.4 ）
 	RAG → 
 	RAG+Tool → 
+
+
 
 	（ 2.5 ） Agent编排(LangGraph) → 
 
