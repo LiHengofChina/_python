@@ -376,31 +376,39 @@
     form.ask button:hover { background: linear-gradient(#6aa8de, #3878b8); }
     form.ask button:disabled { opacity: 0.55; cursor: not-allowed; }
 
-    /* Cursor 风格过程展示 */
+    /* Cursor 风格：默认折叠，点击展开过程 */
     .activity {
       align-self: stretch;
       max-width: 100%;
-      margin: 4px 0 8px;
-      padding: 10px 12px;
-      border: 1px solid #d0d7de;
-      border-radius: 8px;
-      background: #f6f8fa;
+      margin: 2px 0 6px;
       font-size: 0.82rem;
       color: #57606a;
     }
-    .activity.done { border-color: #c8e0c8; background: #f4faf4; }
-    .activity.error { border-color: #e0a0a0; background: #fff5f5; color: #a40000; }
     .activity-title {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      padding: 2px 0;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font: inherit;
       font-weight: 600;
-      color: #24292f;
-      margin-bottom: 8px;
+      color: #57606a;
+      user-select: none;
     }
+    .activity-title:hover { color: #24292f; }
+    .activity.error .activity-title { color: #a40000; }
+    .activity .chevron {
+      display: inline-block;
+      font-size: 0.7rem;
+      transition: transform 0.15s ease;
+      color: #8b949e;
+    }
+    .activity.open .chevron { transform: rotate(90deg); }
     .spinner {
-      width: 12px;
-      height: 12px;
+      width: 11px;
+      height: 11px;
       border: 2px solid #c8d1dc;
       border-top-color: #2f6fad;
       border-radius: 50%;
@@ -409,6 +417,17 @@
     }
     .activity.done .spinner, .activity.error .spinner { display: none; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .activity .steps {
+      display: none;
+      margin: 6px 0 4px 2px;
+      padding: 8px 10px;
+      border: 1px solid #e6ebf0;
+      border-radius: 8px;
+      background: #f6f8fa;
+      color: #57606a;
+    }
+    .activity.open .steps { display: block; }
+    .activity.error .steps { border-color: #e0a0a0; background: #fff5f5; }
     .step {
       display: flex;
       gap: 8px;
@@ -424,13 +443,6 @@
     .step.tool .mark { color: #8250df; }
     .step.ok .mark { color: #1a7f37; }
     .step.err .mark { color: #a40000; }
-    .step code {
-      font-family: Consolas, "Courier New", monospace;
-      font-size: 0.78rem;
-      background: #eef2f6;
-      padding: 0 4px;
-      border-radius: 3px;
-    }
     .msg.streaming {
       border-style: dashed;
       opacity: 0.95;
@@ -688,16 +700,48 @@ password: "your-password"
 
     function createActivity() {
       const box = document.createElement("div");
-      box.className = "activity";
+      // 进行中先展开看进度；完成后自动折叠成 Thought briefly
+      box.className = "activity open";
       box.innerHTML =
-        '<div class="activity-title"><span class="spinner"></span><span class="title-text">Working…</span></div>' +
+        '<button type="button" class="activity-title">' +
+          '<span class="spinner"></span>' +
+          '<span class="title-text">Thinking…</span>' +
+          '<span class="chevron">›</span>' +
+        '</button>' +
         '<div class="steps"></div>';
+      box.querySelector(".activity-title").onclick = () => {
+        box.classList.toggle("open");
+      };
       log.appendChild(box);
       log.scrollTop = log.scrollHeight;
       return box;
     }
     function setActivityTitle(box, text) {
       box.querySelector(".title-text").textContent = text;
+    }
+    function finishActivity(box, ok) {
+      box.classList.add(ok ? "done" : "error");
+      box.classList.remove("open"); // 默认折叠，点击再看
+      setActivityTitle(box, ok ? "Thought briefly" : "Error");
+    }
+    function renderSavedTrace(events) {
+      const box = createActivity();
+      box.classList.remove("open");
+      box.classList.add("done");
+      setActivityTitle(box, "Thought briefly");
+      (events || []).forEach((ev) => {
+        const type = ev.type;
+        if (type === "status") {
+          addStep(box, ev.message || "status");
+        } else if (type === "tool_start") {
+          const args = ev.args ? " " + JSON.stringify(ev.args) : "";
+          addStep(box, "Running " + (ev.name || "tool") + args, "tool");
+        } else if (type === "tool_end") {
+          addStep(box, "Finished " + (ev.name || "tool"), "ok");
+          if (ev.preview) addStep(box, String(ev.preview));
+        }
+      });
+      return box;
     }
     function addStep(box, text, kind) {
       const row = document.createElement("div");
@@ -710,7 +754,7 @@ password: "your-password"
       row.appendChild(mark);
       row.appendChild(body);
       box.querySelector(".steps").appendChild(row);
-      log.scrollTop = log.scrollHeight;
+      if (box.classList.contains("open")) log.scrollTop = log.scrollHeight;
     }
     async function readSse(res, onEvent) {
       const reader = res.body.getReader();
@@ -749,7 +793,13 @@ password: "your-password"
       sub.textContent = "当前会话 #" + id + (title ? " · " + title : "") + " · SSE 过程展示";
       clearLog();
       const msgs = await (await fetch("/api/sessions/" + id + "/messages")).json();
-      msgs.forEach((m) => addMsg(m.role === "user" ? "user" : "assistant", m.content));
+      msgs.forEach((m) => {
+        if (m.role === "user") addMsg("user", m.content);
+        else if (m.role === "trace") {
+          try { renderSavedTrace(JSON.parse(m.content)); }
+          catch (_) { /* ignore bad trace */ }
+        } else if (m.role === "assistant") addMsg("assistant", m.content);
+      });
       await loadSessions();
       input.focus();
     }
@@ -785,9 +835,9 @@ password: "your-password"
         });
         if (!res.ok) {
           const errText = await res.text();
-          activity.classList.add("error");
-          setActivityTitle(activity, "Failed");
           addStep(activity, errText || ("HTTP " + res.status), "err");
+          finishActivity(activity, false);
+          activity.classList.add("open");
           return;
         }
         await readSse(res, (ev) => {
@@ -810,25 +860,23 @@ password: "your-password"
             answerEl.appendChild(document.createTextNode(ev.content || "(空回复)"));
             log.scrollTop = log.scrollHeight;
           } else if (type === "done") {
-            activity.classList.add("done");
-            setActivityTitle(activity, "Done");
+            finishActivity(activity, true);
             if (answerEl) answerEl.classList.remove("streaming");
             loadSessions();
           } else if (type === "error") {
-            activity.classList.add("error");
-            setActivityTitle(activity, "Error");
             addStep(activity, ev.message || "error", "err");
+            finishActivity(activity, false);
+            activity.classList.add("open");
             addMsg("assistant", ev.message || "error", true);
           }
         });
         if (!activity.classList.contains("done") && !activity.classList.contains("error")) {
-          activity.classList.add("done");
-          setActivityTitle(activity, "Done");
+          finishActivity(activity, true);
         }
       } catch (err) {
-        activity.classList.add("error");
-        setActivityTitle(activity, "Error");
         addStep(activity, String(err), "err");
+        finishActivity(activity, false);
+        activity.classList.add("open");
         addMsg("assistant", String(err), true);
       } finally {
         btnSend.disabled = false;

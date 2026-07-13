@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from typing import Any
 
@@ -53,23 +54,31 @@ class ChatApplicationService:
         yield {"type": "status", "message": "Loading session…"}
 
         history = self._sessions.list_messages(session_id)
-        recent = history[-20:]
+        # ponytail: trace 只给人看，不喂模型
+        recent = [m for m in history if m.role in ("user", "assistant")][-20:]
         payload = [(m.role, m.content) for m in recent]
         payload.append(("user", question))
 
         answer = ""
+        trace: list[dict[str, Any]] = []
         try:
             for ev in self._agent.iter_chat_messages_with_tools(
                 OPS_SYSTEM_PROMPT, payload
             ):
                 if ev.get("type") == "answer":
                     answer = str(ev.get("content") or "")
+                elif ev.get("type") in ("status", "tool_start", "tool_end"):
+                    trace.append(ev)
                 yield ev
         except Exception as e:
             yield {"type": "error", "message": str(e)}
             return
 
         self._sessions.add_message(session_id, "user", question)
+        if trace:
+            self._sessions.add_message(
+                session_id, "trace", json.dumps(trace, ensure_ascii=False)
+            )
         self._sessions.add_message(session_id, "assistant", answer or "(无输出)")
         yield {
             "type": "done",
