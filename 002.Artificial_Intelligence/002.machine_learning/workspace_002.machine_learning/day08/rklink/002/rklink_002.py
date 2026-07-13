@@ -67,16 +67,27 @@ df = _load_fit_data()
 # 手机号、身份证 正则规则
 # ==============================
 PHONE_REGEX = re.compile(r"^1[3-9]\d{9}$")
-# 港澳台手机（与 Java PhoneRecognizeHeuristics 一致）：HK +852+8 位、MO +853+8 位、TW +886+9 位（9 开头）
+# 港澳台手机（与 Java PhoneRecognizeHeuristics 一致）：HK +852+8 位（4~9 开头）、MO +853+8 位（6 开头）、TW +886+9 位（9 开头）
 HMT_MOBILE_PHONE_REGEX = re.compile(
     r'^(\+?852[- ]?[456789]\d{7}|'
-    r'\+?853[- ]?\d{8}|'
+    r'\+?853[- ]?[6]\d{7}|'
     r'\+?886[- ]?9\d{8})$'
 )
 HMT_MOBILE_DIGITS_REGEX = re.compile(
-    r'^(852[456789]\d{7}|853\d{8}|8869\d{8})$'
+    r'^(852[456789]\d{7}|853[6]\d{7}|8869\d{8})$'
 )
-# 固话形态（与 Java PhoneRecognizeHeuristics.LANDLINE_PHONE_REGEX 一致）：
+# 港澳台固话（与 Java PhoneRecognizeHeuristics 一致）：
+# HK +852+8 位（2/3 开头地理号）、MO +853+8 位（2/3 开头座机）、TW +886+区号+本地（非 9 开头手机）
+HMT_LANDLINE_PHONE_REGEX = re.compile(
+    r'^(\+?852[- ]?[23]\d{7}|'
+    r'\+?853[- ]?[23]\d{7}|'
+    r'\+?886[- ]?(?:2|3[0-9]?|4[0-9]?|5[0-9]?|6[0-9]?|7|8[0-9]?|37|49|82|89)[- ]?\d{7,8})$'
+)
+HMT_LANDLINE_DIGITS_REGEX = re.compile(
+    r'^(852[23]\d{7}|853[23]\d{7}|'
+    r'886(?:2\d{8}|[3-8]\d{7,8}|37\d{7,8}|49\d{7,8}|82\d{7,8}|89\d{7,8}))$'
+)
+# 大陆固话形态（与 Java PhoneRecognizeHeuristics.LANDLINE_PHONE_REGEX 一致）：
 # 主格式（0+区号+本地，共 11 位）：0XX+8 位本地（如 01012345678 / 010-12345678）；
 # 0XXX+7 位本地（如 07551234567 / 0755-1234567）；部分城市 0XXX+8 位本地（如 0755-83301199）。
 # 另含：本市 7~8 位本地号、400/800、95·12·100 短号、+86/86 国际写法。
@@ -161,9 +172,20 @@ def _is_invalid_landline_digits(norm):
         return True
     return False
 
-def is_landline_phone_value(text):
+def _is_hmt_landline_phone_value(text):
+    """港澳台固话：+852/+853/+886 或纯数字 852/853/886 前缀写法。"""
     s = str(text).strip()
-    if not s or is_mobile_phone_value(s) or _is_date_like_phone_exclusion(s):
+    if not s:
+        return False
+    if HMT_LANDLINE_PHONE_REGEX.match(s):
+        return True
+    norm = re.sub(r'[\s\-+]', '', s)
+    return bool(HMT_LANDLINE_DIGITS_REGEX.match(norm))
+
+
+def _is_mainland_landline_phone_value(text):
+    s = str(text).strip()
+    if not s:
         return False
     if LANDLINE_PHONE_REGEX.match(s):
         return not _is_invalid_landline_digits(_normalize_phone_digits(s))
@@ -171,6 +193,13 @@ def is_landline_phone_value(text):
     if _looks_like_iso_date_digits(norm):
         return False
     return bool(LANDLINE_PHONE_REGEX.match(norm)) and not _is_invalid_landline_digits(norm)
+
+
+def is_landline_phone_value(text):
+    s = str(text).strip()
+    if not s or is_mobile_phone_value(s) or _is_date_like_phone_exclusion(s):
+        return False
+    return _is_mainland_landline_phone_value(s) or _is_hmt_landline_phone_value(s)
 
 def is_phone_value(text):
     return is_mobile_phone_value(text) or is_landline_phone_value(text)
@@ -248,6 +277,82 @@ NAME_2_OR_3_HAN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_2_OR_3
 NAME_SURNAME_HEAD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_SURNAME_HEAD_MIN_RATIO", "1.0"))
 EXCLUDED_NAME_COLUMN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_EXCLUDE_COLUMN_MIN_RATIO", "0.5"))
 SYSTEM_CODE_C_PATTERN = re.compile(r'^C\d{8,}$')
+# 护照/出入境证件（与 Java PassportRecognizeHeuristics 一致）
+MAINLAND_PASSPORT_PREFIXES = frozenset('EGDSP')
+HMT_TRAVEL_PERMIT_PREFIXES = frozenset('HMTL')
+MAINLAND_PASSPORT_REGEX = re.compile(
+    r'^(G\d{8}|E(\d{8}|[A-HJ-NP-Z]\d{7})|[DSP]\d{7,8})$', re.IGNORECASE)
+HMT_MO_PASSPORT_REGEX = re.compile(r'^[A-Z]{1,2}\d{7}$', re.IGNORECASE)
+HMT_TRAVEL_PERMIT_REGEX = re.compile(r'^[HMTL]\d{8}$', re.IGNORECASE)
+HMT_TW_PASSPORT_DIGITS_REGEX = re.compile(r'^\d{9}$')
+HMT_TW_PERMIT_8_DIGITS_REGEX = re.compile(r'^\d{8}$')
+HMT_HK_PASSPORT_REGEX = re.compile(r'^[A-Z]\d{7,8}$', re.IGNORECASE)
+# 兼容旧引用
+PASSPORT_REGEX = re.compile(r'^[A-Z]{1,2}\d{7,8}$')
+
+
+def _is_mainland_passport_value(text):
+    s = str(text).strip().upper()
+    return bool(s and MAINLAND_PASSPORT_REGEX.match(s))
+
+
+def _is_hmt_travel_permit_value(text):
+    s = str(text).strip().upper()
+    return bool(s and HMT_TRAVEL_PERMIT_REGEX.match(s))
+
+
+def _is_hmt_mo_passport_value(text):
+    s = str(text).strip().upper()
+    return bool(s and HMT_MO_PASSPORT_REGEX.match(s) and len(s) in (8, 9))
+
+
+def _is_hmt_tw_passport_digits_value(text):
+    s = str(text).strip()
+    return bool(s and HMT_TW_PASSPORT_DIGITS_REGEX.match(s))
+
+
+def _is_hmt_tw_permit_8_digit_value(text):
+    s = str(text).strip()
+    return bool(s and HMT_TW_PERMIT_8_DIGITS_REGEX.match(s))
+
+
+def _is_hmt_hk_passport_value(text):
+    s = str(text).strip().upper()
+    if not s or not HMT_HK_PASSPORT_REGEX.match(s):
+        return False
+    return s[0] not in MAINLAND_PASSPORT_PREFIXES and s[0] not in HMT_TRAVEL_PERMIT_PREFIXES
+
+
+def _is_hmt_passport_value(text):
+    return (_is_hmt_travel_permit_value(text)
+            or _is_hmt_mo_passport_value(text)
+            or _is_hmt_tw_passport_digits_value(text)
+            or _is_hmt_tw_permit_8_digit_value(text)
+            or _is_hmt_hk_passport_value(text))
+
+
+def is_passport_value(text):
+    s = str(text).strip()
+    if not s or _is_passport_system_code_value(s):
+        return False
+    return _is_mainland_passport_value(s) or _is_hmt_passport_value(s)
+
+
+def _has_allowed_passport_prefix_or_morph(text):
+    if not is_passport_value(text):
+        return False
+    if (_is_mainland_passport_value(text) or _is_hmt_travel_permit_value(text)
+            or _is_hmt_mo_passport_value(text)):
+        return True
+    if _is_hmt_tw_passport_digits_value(text) or _is_hmt_tw_permit_8_digit_value(text):
+        return True
+    return _is_hmt_hk_passport_value(text)
+
+
+def _is_passport_length_value(text):
+    return is_passport_value(text) and 8 <= len(str(text).strip()) <= 10
+
+
 SERVICE_SHORT_95_REGEX = re.compile(r'^9[56]\d{3,6}$')
 SERVICE_SHORT_12_REGEX = re.compile(r'^12\d{3}$')
 LANDLINE_FORMAT_CHARS_REGEX = re.compile(r'^[0-9+\s\-()]+$')
@@ -514,7 +619,7 @@ def _looks_like_strict_passport_format_column(text_list):
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
-    hit = sum(1 for t in cleaned if PASSPORT_REGEX.match(t.upper())) / len(cleaned)
+    hit = sum(1 for t in cleaned if is_passport_value(t)) / len(cleaned)
     return hit >= PASSPORT_FORMAT_MIN_RATIO
 
 
@@ -522,7 +627,7 @@ def _looks_like_strict_passport_prefix_letter_column(text_list):
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
-    hit = sum(1 for t in cleaned if t and t[0].isalpha()) / len(cleaned)
+    hit = sum(1 for t in cleaned if _has_allowed_passport_prefix_or_morph(t)) / len(cleaned)
     return hit >= PASSPORT_PREFIX_LETTER_MIN_RATIO
 
 
@@ -530,7 +635,7 @@ def _looks_like_strict_passport_length_column(text_list):
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
-    hit = sum(1 for t in cleaned if 8 <= len(t) <= 10) / len(cleaned)
+    hit = sum(1 for t in cleaned if _is_passport_length_value(t)) / len(cleaned)
     return hit >= PASSPORT_LENGTH_MIN_RATIO
 
 
@@ -629,6 +734,8 @@ def _is_local_landline_without_area_code(text):
 def _has_allowed_landline_area_or_morph(text):
     if not is_landline_phone_value(text):
         return False
+    if _is_hmt_landline_phone_value(text):
+        return True
     if _is_service_short_code_value(text):
         return LANDLINE_ALLOW_SERVICE_SHORT
     area = _extract_landline_area_code(text)
@@ -1113,10 +1220,8 @@ def _qualifies_for_enterprise_recognize_override(text_list):
     return _looks_like_strict_enterprise_column(text_list)
 
 # ==============================
-# PASSPORT 护照正则
+# PASSPORT 护照正则（定义见文件前部 MAINLAND/HMT 规则）
 # ==============================
-
-PASSPORT_REGEX = re.compile(r'^[A-Z]{1,2}\d{7,8}$')
 
 # ==============================
 # 基金名称关键词
@@ -1448,8 +1553,10 @@ def _mixed_embedded_phone_or_landline_hit(text):
 def _mixed_embedded_passport_hit(text):
     u = text.upper()
     for m in _EMBEDDED_PASSPORT_BLOCK.finditer(u):
-        seg = m.group(0)
-        if 8 <= len(seg) <= 10 and re.fullmatch(r"[A-Z]{1,2}\d{7,8}", seg):
+        if is_passport_value(m.group(0)):
+            return True
+    for length in (8, 9):
+        if _mixed_sliding_any(length, text, is_passport_value):
             return True
     return False
 
@@ -1830,7 +1937,7 @@ def _row_single_sensitive_kind(text):
         return "LANDLINE"
     if is_id_card_format_value(s) and id_card_check(s):
         return "ID_CARD"
-    if PASSPORT_REGEX.match(s.upper()):
+    if is_passport_value(s):
         return "PASSPORT"
     if len(s) == 18 and credit_code_check(s):
         return "CREDIT_CODE"
@@ -2515,10 +2622,7 @@ def extract_column_features(text_list):
     # ==============================
 
     # 89 → passport_regex_ratio 护照正则匹配比例
-    passport_regex_ratio = sum(
-        1 for t in cleaned
-        if PASSPORT_REGEX.match(t.upper())
-    ) / len(cleaned)
+    passport_regex_ratio = sum(1 for t in cleaned if is_passport_value(t)) / len(cleaned)
 
     # 90 → passport_letter_digit_ratio 字母+数字结构比例
     passport_letter_digit_ratio = sum(
@@ -2529,7 +2633,7 @@ def extract_column_features(text_list):
     # 91 → passport_prefix_letter_ratio 首位为字母比例
     passport_prefix_letter_ratio = sum(
         1 for t in cleaned
-        if len(t) > 0 and t[0].isalpha()
+        if _has_allowed_passport_prefix_or_morph(t)
     ) / len(cleaned)
 
     # 92 → passport_length_9_ratio 长度为9位比例
