@@ -1,4 +1,12 @@
 
+（14）python这里修改了代码，需要重新启动吗
+
+	要。 现在 main.py 里 reload=False，
+	改完 Tool/业务代码必须重新跑一次 python main.py 才生效。
+
+	（以后若开 reload=True，改代码会自动重载，开发时更方便。）
+	//多占资源
+
 （13）python作为后端服务的时候，是不是也可以做分布式，集群这些呢
 
 	Python 做后端一样能上分布式 / 集群
@@ -6,7 +14,6 @@
 	（3）【任务异步/削峰】 Celery、RQ、Kafka、RabbitMQ
 	（3）【共享状态】 Redis、MySQL/PostgreSQL（会话、缓存别放单机内存）
 	（3）【容器编排】 Docker + Kubernetes
-
 
 （12）java中有静态，就是在编译的时候就决定了的东西（类、方法、变量等）,python这边有吗
 

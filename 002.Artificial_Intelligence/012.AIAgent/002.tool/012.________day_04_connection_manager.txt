@@ -1,0 +1,15 @@
+
+
+//============================================= day_04_connection_manager
+//============================================= day_04_connection_manager
+
+（1）pip install -r requirements.txt
+
+（2）python main.py
+
+（3）http://127.0.0.1:8101/
+
+（4）提问？
+	linux-231磁盘满了帮我排查
+
+ 

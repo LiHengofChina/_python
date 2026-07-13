@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>运维 Agent Demo</title>
+  <style>
+    :root {
+      --nav-bg: #2b2b2b;
+      --nav-hover: #3c3f41;
+      --nav-active: #4b6eaf;
+      --nav-text: #bbbbbb;
+      --nav-text-active: #ffffff;
+      --border: #555555;
+      --accent: #3d8bfd;
+      --danger: #e35d6a;
+      --muted: #8b9bb4;
+      --dark-panel: #1a2332;
+      --dark-side: #141c28;
+      --dark-text: #e7ecf3;
+      --dark-input: #121821;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #3c3f41;
+      color: #ccc;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      height: 100%;
+      width: 100%;
+    }
+    /* ===== 左侧菜单树 ===== */
+    .nav {
+      background: var(--nav-bg);
+      border-right: 1px solid #1e1e1e;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 10px 0;
+    }
+    .nav-brand {
+      padding: 8px 14px 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #ddd;
+      border-bottom: 1px solid #1e1e1e;
+      margin-bottom: 8px;
+    }
+    .nav-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      color: var(--nav-text);
+      padding: 9px 16px;
+      cursor: pointer;
+      font-size: 0.88rem;
+    }
+    .nav-item:hover { background: var(--nav-hover); color: #ddd; }
+    .nav-item.active {
+      background: var(--nav-active);
+      color: var(--nav-text-active);
+    }
+    .nav-group-title {
+      padding: 10px 16px 4px;
+      font-size: 0.72rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .nav-hint {
+      margin-top: auto;
+      padding: 10px 14px;
+      font-size: 0.72rem;
+      color: #777;
+      border-top: 1px solid #1e1e1e;
+    }
+    /* ===== 主内容区 ===== */
+    .main {
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+      background: #4b4b4b;
+    }
+    .page {
+      display: none;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .page.active { display: flex; flex-direction: column; }
+
+    /* ----- 连接管理页（与聊天同为 Eclipse 浅色） ----- */
+    #page-conn {
+      background: #f5f5f5;
+      color: #333;
+      padding: 14px;
+    }
+    #page-conn h1 {
+      margin: 0 0 4px;
+      font-size: 1.15rem;
+      color: #2a2a2a;
+      font-weight: 600;
+    }
+    #page-conn .hint { color: #666; font-size: 0.78rem; margin-bottom: 12px; }
+    .toolbar { display: flex; gap: 6px; margin-bottom: 10px; flex: 0 0 auto; }
+    .toolbar button {
+      border: 1px solid #a0a0a0;
+      border-radius: 2px;
+      padding: 7px 12px;
+      cursor: pointer;
+      color: #333;
+      background: linear-gradient(#fafafa, #e6e6e6);
+      font-size: 0.82rem;
+    }
+    .toolbar button:hover { background: linear-gradient(#ffffff, #ececec); }
+    .toolbar button.primary {
+      border-color: #2f6fad;
+      background: linear-gradient(#5b9bd5, #2f6fad);
+      color: #fff;
+    }
+    .toolbar button.danger {
+      border-color: #a05050;
+      background: linear-gradient(#e8a0a0, #c05050);
+      color: #fff;
+    }
+    .toolbar button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .conn-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #connList {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      border: 1px solid #a0a0a0;
+      background: #ffffff;
+    }
+    .conn-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      color: #333;
+    }
+    .conn-table th, .conn-table td {
+      border-bottom: 1px solid #d0d0d0;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    .conn-table th {
+      background: #e8e8e8;
+      font-weight: 600;
+      color: #333;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      border-bottom: 1px solid #a0a0a0;
+    }
+    .conn-table tbody tr {
+      cursor: pointer;
+      background: #fff;
+    }
+    .conn-table tbody tr:hover { background: #d8e6f2; }
+    .conn-table tbody tr.active {
+      background: #b8d4f0;
+    }
+    .conn-table .mono {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.82rem;
+      color: #555;
+      max-width: 420px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .conn-empty {
+      padding: 24px;
+      text-align: center;
+      color: #888;
+      font-size: 0.88rem;
+    }
+    .form {
+      flex: 0 0 auto;
+      border: 1px solid #a0a0a0;
+      border-radius: 0;
+      padding: 12px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 50%;
+      overflow: auto;
+    }
+    .form.hidden { display: none; }
+    .form label { font-size: 0.75rem; color: #666; }
+    .form input, .form select, .form textarea {
+      width: 100%;
+      border: 1px solid #a0a0a0;
+      border-radius: 2px;
+      background: #ffffff;
+      color: #222;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .form input:focus, .form select:focus, .form textarea:focus {
+      border-color: #2f6fad;
+      box-shadow: 0 0 0 1px #9ec0e0;
+    }
+    .form textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: Consolas, "Courier New", monospace;
+    }
+    .form-actions { display: flex; gap: 6px; margin-top: 4px; }
+    .form-actions button {
+      flex: 1;
+      border: 1px solid #2f6fad;
+      border-radius: 2px;
+      padding: 8px 10px;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(#5b9bd5, #2f6fad);
+      font-size: 0.82rem;
+    }
+    .form-actions button.ghost {
+      border-color: #a0a0a0;
+      background: linear-gradient(#fafafa, #e6e6e6);
+      color: #333;
+    }
+
+    /* ----- 聊天页（Eclipse 浅色） ----- */
+    #page-chat {
+      display: none;
+      flex-direction: row;
+      background: #f0f0f0;
+      color: #333;
+    }
+    #page-chat.active { display: flex; }
+    .sessions {
+      width: 200px;
+      flex: 0 0 200px;
+      border-right: 1px solid #a0a0a0;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: #e8e8e8;
+    }
+    .sessions h3 {
+      margin: 0 0 8px;
+      font-size: 0.9rem;
+      color: #333;
+      font-weight: 600;
+    }
+    .sessions .btn {
+      border: 1px solid #a0a0a0;
+      border-radius: 2px;
+      padding: 6px 8px;
+      cursor: pointer;
+      color: #333;
+      background: linear-gradient(#fafafa, #e6e6e6);
+      font-size: 0.82rem;
+      margin-bottom: 8px;
+      width: 100%;
+    }
+    .sessions .btn:hover { background: linear-gradient(#ffffff, #ececec); }
+    #sessions {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .session-item {
+      text-align: left;
+      padding: 6px 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #333;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .session-item:hover { background: #d8e6f2; }
+    .session-item.active {
+      border-color: #6b9bc3;
+      background: #b8d4f0;
+      color: #000;
+    }
+    .chat {
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: #f5f5f5;
+    }
+    .right-head h1 {
+      margin: 0 0 4px;
+      font-size: 1.05rem;
+      color: #2a2a2a;
+      font-weight: 600;
+    }
+    .sub { color: #666; font-size: 0.78rem; margin-bottom: 8px; }
+    #log {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      border: 1px solid #a0a0a0;
+      background: #ffffff;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .msg {
+      max-width: 92%;
+      padding: 8px 10px;
+      border-radius: 2px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.9rem;
+      color: #222;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: #e8f0fe;
+      border: 1px solid #b0c4de;
+    }
+    .msg.bot {
+      align-self: flex-start;
+      background: #f7f7f7;
+      border: 1px solid #c8c8c8;
+    }
+    .msg.err { color: #a40000; background: #fff0f0; border-color: #e0a0a0; }
+    .role { display: block; font-size: 0.7rem; color: #666; margin-bottom: 3px; }
+    form.ask {
+      margin-top: 8px;
+      display: flex;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+    form.ask input {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 2px;
+      border: 1px solid #a0a0a0;
+      background: #ffffff;
+      color: #222;
+      outline: none;
+    }
+    form.ask input:focus { border-color: #2f6fad; box-shadow: 0 0 0 1px #9ec0e0; }
+    form.ask button {
+      padding: 0 14px;
+      border: 1px solid #2f6fad;
+      border-radius: 2px;
+      background: linear-gradient(#5b9bd5, #2f6fad);
+      color: #fff;
+      cursor: pointer;
+    }
+    form.ask button:hover { background: linear-gradient(#6aa8de, #3878b8); }
+    form.ask button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* 预留菜单禁用项 */
+    .nav-item.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="nav">
+      <div class="nav-brand">运维 Agent</div>
+      <div class="nav-group-title">功能</div>
+      <button type="button" class="nav-item active" data-page="conn">连接管理</button>
+      <button type="button" class="nav-item" data-page="chat">聊天</button>
+      <div class="nav-group-title">后续</div>
+      <button type="button" class="nav-item disabled" title="后续再做" disabled>RAG 资料</button>
+      <div class="nav-hint">左侧菜单切换页面<br/>后续可继续加模块</div>
+    </nav>
+
+    <div class="main">
+      <!-- 连接管理 -->
+      <section class="page active" id="page-conn">
+        <h1>连接管理</h1>
+        <div class="hint">连接对象列表 · 新增/编辑才展开表单 · Tool 按 label 取配置</div>
+        <div class="toolbar">
+          <button type="button" id="btnNewConn" class="primary">新增</button>
+          <button type="button" id="btnEditConn" disabled>编辑</button>
+          <button type="button" id="btnDelConn" class="danger" disabled>删除</button>
+        </div>
+        <div class="conn-body">
+          <div id="connList"></div>
+          <div class="form hidden" id="connForm">
+            <input type="hidden" id="connId" value="" />
+            <label>label（给模型/Tool 用）</label>
+            <input id="connLabel" placeholder="linux-231" />
+            <label>type</label>
+            <select id="connType">
+              <option value="linux">linux</option>
+              <option value="mysql">mysql</option>
+              <option value="oracle">oracle</option>
+              <option value="ftp">ftp</option>
+            </select>
+            <label>config_yaml</label>
+            <textarea id="connYaml" placeholder="enabled: true&#10;host: 192.168.100.231&#10;port: 22&#10;username: root&#10;password: xxx"></textarea>
+            <div class="form-actions">
+              <button type="button" id="btnSaveConn">保存</button>
+              <button type="button" id="btnCancelConn" class="ghost">取消</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 聊天 -->
+      <section class="page" id="page-chat">
+        <div class="sessions">
+          <h3>会话</h3>
+          <button class="btn" type="button" id="btnNewSession">新建会话</button>
+          <div id="sessions"></div>
+        </div>
+        <div class="chat">
+          <div class="right-head">
+            <h1>Tool Agent</h1>
+            <div class="sub" id="sub">host_id 使用「连接管理」中的 label</div>
+          </div>
+          <div id="log"></div>
+          <form class="ask" id="chatForm">
+            <input id="q" type="text" placeholder="例如：linux-231 磁盘满了帮我排查" autocomplete="off" required />
+            <button id="btnSend" type="submit">发送</button>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_YAML = `enabled: true
+host: 192.168.100.231
+port: 22
+username: root
+password: "your-password"
+`;
+
+    let sessionId = null;
+    let selectedConnId = null;
+    let connectionsCache = [];
+
+    const connList = document.getElementById("connList");
+    const connForm = document.getElementById("connForm");
+    const connIdEl = document.getElementById("connId");
+    const connLabel = document.getElementById("connLabel");
+    const connType = document.getElementById("connType");
+    const connYaml = document.getElementById("connYaml");
+    const btnEditConn = document.getElementById("btnEditConn");
+    const btnDelConn = document.getElementById("btnDelConn");
+    const sessionsEl = document.getElementById("sessions");
+    const log = document.getElementById("log");
+    const sub = document.getElementById("sub");
+    const chatForm = document.getElementById("chatForm");
+    const input = document.getElementById("q");
+    const btnSend = document.getElementById("btnSend");
+
+    // ----- 菜单切页 -----
+    function switchPage(name) {
+      document.querySelectorAll(".nav-item[data-page]").forEach((el) => {
+        el.classList.toggle("active", el.dataset.page === name);
+      });
+      document.querySelectorAll(".page").forEach((el) => {
+        el.classList.toggle("active", el.id === "page-" + name);
+      });
+      if (name === "chat") {
+        loadSessions();
+        input.focus();
+      }
+      if (name === "conn") loadConnections();
+    }
+    document.querySelectorAll(".nav-item[data-page]").forEach((el) => {
+      el.addEventListener("click", () => switchPage(el.dataset.page));
+    });
+
+    // ----- 连接管理 -----
+    function showForm(show) {
+      connForm.classList.toggle("hidden", !show);
+    }
+    function selectConn(c) {
+      selectedConnId = c ? c.id : null;
+      btnEditConn.disabled = !c;
+      btnDelConn.disabled = !c;
+      [...connList.querySelectorAll("tbody tr")].forEach((el) => {
+        el.classList.toggle("active", c && Number(el.dataset.id) === c.id);
+      });
+    }
+    function fillForm(c) {
+      connIdEl.value = c ? c.id : "";
+      connLabel.value = c ? c.label : "";
+      connType.value = c ? c.type : "linux";
+      connYaml.value = c ? c.config_yaml : DEFAULT_YAML;
+      showForm(true);
+    }
+    function previewYaml(text) {
+      const one = String(text || "").replace(/\s+/g, " ").trim();
+      return one.length > 80 ? one.slice(0, 80) + "…" : one;
+    }
+    async function loadConnections() {
+      connectionsCache = await (await fetch("/api/connections")).json();
+      if (!connectionsCache.length) {
+        connList.innerHTML = '<div class="conn-empty">暂无连接，点击「新增」创建</div>';
+        return;
+      }
+      const rows = connectionsCache.map((c) => `
+        <tr data-id="${c.id}" class="${selectedConnId === c.id ? "active" : ""}">
+          <td>${c.id}</td>
+          <td><strong>${c.label}</strong></td>
+          <td>${c.type}</td>
+          <td class="mono" title="${String(c.config_yaml || "").replace(/"/g, "&quot;")}">${previewYaml(c.config_yaml)}</td>
+          <td>${c.updated_at || c.created_at || ""}</td>
+        </tr>
+      `).join("");
+      connList.innerHTML = `
+        <table class="conn-table">
+          <thead>
+            <tr>
+              <th style="width:64px">ID</th>
+              <th style="width:140px">label</th>
+              <th style="width:90px">type</th>
+              <th>config</th>
+              <th style="width:160px">更新时间</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+      connList.querySelectorAll("tbody tr").forEach((tr) => {
+        tr.onclick = () => {
+          const cur = connectionsCache.find((x) => x.id === Number(tr.dataset.id));
+          if (cur) selectConn(cur);
+        };
+        tr.ondblclick = () => {
+          const cur = connectionsCache.find((x) => x.id === Number(tr.dataset.id));
+          if (cur) {
+            selectConn(cur);
+            fillForm(cur);
+            connLabel.focus();
+          }
+        };
+      });
+      if (selectedConnId) {
+        const cur = connectionsCache.find((x) => x.id === selectedConnId);
+        if (cur) selectConn(cur);
+        else { selectedConnId = null; selectConn(null); showForm(false); }
+      }
+    }
+    document.getElementById("btnNewConn").onclick = () => {
+      selectConn(null);
+      fillForm(null);
+      connLabel.focus();
+    };
+    btnEditConn.onclick = () => {
+      const cur = connectionsCache.find((x) => x.id === selectedConnId);
+      if (!cur) return;
+      fillForm(cur);
+      connLabel.focus();
+    };
+    document.getElementById("btnCancelConn").onclick = () => showForm(false);
+    document.getElementById("btnSaveConn").onclick = async () => {
+      const body = {
+        label: connLabel.value.trim(),
+        type: connType.value,
+        config_yaml: connYaml.value,
+      };
+      if (!body.label) { alert("label 必填"); return; }
+      const id = connIdEl.value;
+      const res = await fetch(id ? `/api/connections/${id}` : "/api/connections", {
+        method: id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.detail || "保存失败"); return; }
+      selectedConnId = data.id;
+      showForm(false);
+      await loadConnections();
+    };
+    btnDelConn.onclick = async () => {
+      const id = selectedConnId;
+      if (!id) return;
+      if (!confirm("确认删除该连接？")) return;
+      const res = await fetch(`/api/connections/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) { alert(data.detail || "删除失败"); return; }
+      selectedConnId = null;
+      selectConn(null);
+      showForm(false);
+      await loadConnections();
+    };
+
+    // ----- 聊天 -----
+    function addMsg(role, text, isErr) {
+      const div = document.createElement("div");
+      div.className = "msg " + (role === "user" ? "user" : "bot") + (isErr ? " err" : "");
+      const tag = document.createElement("span");
+      tag.className = "role";
+      tag.textContent = role === "user" ? "你" : "助手";
+      div.appendChild(tag);
+      div.appendChild(document.createTextNode(text));
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+    function clearLog() { log.innerHTML = ""; }
+
+    async function loadSessions() {
+      const list = await (await fetch("/api/sessions")).json();
+      sessionsEl.innerHTML = "";
+      list.forEach((s) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "session-item" + (s.id === sessionId ? " active" : "");
+        b.textContent = "#" + s.id + " " + s.title;
+        b.onclick = () => selectSession(s.id, s.title);
+        sessionsEl.appendChild(b);
+      });
+    }
+    async function selectSession(id, title) {
+      sessionId = id;
+      sub.textContent = "当前会话 #" + id + (title ? " · " + title : "") + " · host_id=连接 label";
+      clearLog();
+      const msgs = await (await fetch("/api/sessions/" + id + "/messages")).json();
+      msgs.forEach((m) => addMsg(m.role === "user" ? "user" : "assistant", m.content));
+      await loadSessions();
+      input.focus();
+    }
+    async function createSession() {
+      const s = await (await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "新对话" }),
+      })).json();
+      await selectSession(s.id, s.title);
+    }
+    document.getElementById("btnNewSession").onclick = createSession;
+
+    chatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = input.value.trim();
+      if (!question) return;
+      if (!sessionId) await createSession();
+      addMsg("user", question);
+      input.value = "";
+      btnSend.disabled = true;
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, session_id: sessionId }),
+        });
+        const data = await res.json();
+        if (!res.ok) addMsg("assistant", data.detail || ("HTTP " + res.status), true);
+        else {
+          addMsg("assistant", data.answer || "(空回复)");
+          await loadSessions();
+        }
+      } catch (err) {
+        addMsg("assistant", String(err), true);
+      } finally {
+        btnSend.disabled = false;
+        input.focus();
+      }
+    });
+
+    loadConnections();
+  </script>
+</body>
+</html>

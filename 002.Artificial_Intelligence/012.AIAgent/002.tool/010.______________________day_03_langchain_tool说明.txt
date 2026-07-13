@@ -8,6 +8,22 @@ create_react_agent(llm, tools)
 
 infrastructure/ssh/
 
+//============================================= 工具层拿到配置的账号密码
+//============================================= 工具层拿到配置的账号密码
+
+ssh = LinuxSshExecutor(cfg.get("ssh", {}))   # ← 账号密码在这里传入
+
+取的就是
+ssh:
+  enabled: true
+  host: 192.168.100.231
+  port: 22
+  username: root
+  host_label: linux-231
+  password: "Rklink_1024"
+
+
+
 //=============================================
 //=============================================
 
@@ -19,5 +35,4 @@ infrastructure/ssh/
 
 （4）提问？
 	linux-231磁盘满了帮我排查
-
 
