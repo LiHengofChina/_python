@@ -1,0 +1,16 @@
+server:
+  host: 127.0.0.1
+  port: 8101
+
+ollama:
+  base_url: http://127.0.0.1:11434
+  model: qwen2.5:7b
+  temperature: 0.1
+
+chat:
+  db_path: data/app.db
+
+# 机器账号密码改到「连接管理」页面 / SQLite，不再写在这里
+
+demo:
+  question: linux-231 磁盘满了帮我排查一下
