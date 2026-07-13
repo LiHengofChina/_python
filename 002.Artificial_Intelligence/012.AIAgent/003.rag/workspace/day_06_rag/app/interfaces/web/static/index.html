@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>运维 Agent Demo</title>
+  <style>
+    :root {
+      --nav-bg: #2b2b2b;
+      --nav-hover: #3c3f41;
+      --nav-active: #4b6eaf;
+      --nav-text: #bbbbbb;
+      --nav-text-active: #ffffff;
+      --border: #555555;
+      --accent: #3d8bfd;
+      --danger: #e35d6a;
+      --muted: #8b9bb4;
+      --dark-panel: #1a2332;
+      --dark-side: #141c28;
+      --dark-text: #e7ecf3;
+      --dark-input: #121821;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #3c3f41;
+      color: #ccc;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      height: 100%;
+      width: 100%;
+    }
+    /* ===== 左侧菜单树 ===== */
+    .nav {
+      background: var(--nav-bg);
+      border-right: 1px solid #1e1e1e;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 10px 0;
+    }
+    .nav-brand {
+      padding: 8px 14px 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #ddd;
+      border-bottom: 1px solid #1e1e1e;
+      margin-bottom: 8px;
+    }
+    .nav-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      color: var(--nav-text);
+      padding: 9px 16px;
+      cursor: pointer;
+      font-size: 0.88rem;
+    }
+    .nav-item:hover { background: var(--nav-hover); color: #ddd; }
+    .nav-item.active {
+      background: var(--nav-active);
+      color: var(--nav-text-active);
+    }
+    .nav-group-title {
+      padding: 10px 16px 4px;
+      font-size: 0.72rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .nav-hint {
+      margin-top: auto;
+      padding: 10px 14px;
+      font-size: 0.72rem;
+      color: #777;
+      border-top: 1px solid #1e1e1e;
+    }
+    /* ===== 主内容区 ===== */
+    .main {
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+      background: #4b4b4b;
+    }
+    .page {
+      display: none;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .page.active { display: flex; flex-direction: column; }
+
+    /* ----- 管理页共用（连接 / 文档 / 以后新页都用 page-panel） ----- */
+    .page-panel {
+      background: #f5f5f5;
+      color: #333;
+      padding: 14px;
+    }
+    .page-panel h1 {
+      margin: 0 0 4px;
+      font-size: 1.15rem;
+      color: #2a2a2a;
+      font-weight: 600;
+    }
+    .page-panel .hint { color: #666; font-size: 0.78rem; margin-bottom: 12px; }
+    .toolbar { display: flex; gap: 6px; margin-bottom: 10px; flex: 0 0 auto; align-items: center; }
+    .toolbar button,
+    .toolbar label.file-btn {
+      border: 1px solid #a0a0a0;
+      border-radius: 2px;
+      padding: 7px 12px;
+      cursor: pointer;
+      color: #333;
+      background: linear-gradient(#fafafa, #e6e6e6);
+      font-size: 0.82rem;
+      display: inline-block;
+      line-height: 1.2;
+    }
+    .toolbar button:hover,
+    .toolbar label.file-btn:hover { background: linear-gradient(#ffffff, #ececec); }
+    .toolbar button.primary,
+    .toolbar label.file-btn.primary {
+      border-color: #2f6fad;
+      background: linear-gradient(#5b9bd5, #2f6fad);
+      color: #fff;
+    }
+    .toolbar button.danger {
+      border-color: #a05050;
+      background: linear-gradient(#e8a0a0, #c05050);
+      color: #fff;
+    }
+    .toolbar button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .toolbar label.file-btn input { display: none; }
+    .panel-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .panel-list {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      border: 1px solid #a0a0a0;
+      background: #fff;
+    }
+
+    /* 欢迎页能力清单 */
+    .feature-list {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      border: 1px solid #a0a0a0;
+      background: #fff;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+    .feature-list li {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 12px 14px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+    .feature-list li:last-child { border-bottom: none; }
+    .feature-list .idx {
+      flex: 0 0 28px;
+      color: #2f6fad;
+      font-weight: 700;
+      font-family: Consolas, monospace;
+    }
+    .feature-list .title {
+      font-weight: 600;
+      color: #2a2a2a;
+      margin-bottom: 2px;
+    }
+    .feature-list .desc { color: #666; font-size: 0.82rem; }
+    .welcome-meta {
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: #666;
+    }
+    .conn-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      color: #333;
+    }
+    .conn-table th, .conn-table td {
+      border-bottom: 1px solid #d0d0d0;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    .conn-table th {
+      background: #e8e8e8;
+      font-weight: 600;
+      color: #333;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      border-bottom: 1px solid #a0a0a0;
+    }
+    .conn-table tbody tr {
+      cursor: pointer;
+      background: #fff;
+    }
+    .conn-table tbody tr:hover { background: #d8e6f2; }
+    .conn-table tbody tr.active {
+      background: #b8d4f0;
+    }
+    .conn-table .mono {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.82rem;
+      color: #555;
+      max-width: 420px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .conn-empty {
+      padding: 24px;
+      text-align: center;
+      color: #888;
+      font-size: 0.88rem;
+    }
+    .form {
+      flex: 0 0 auto;
+      border: 1px solid #a0a0a0;
+      border-radius: 0;
+      padding: 12px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 50%;
+      overflow: auto;
+    }
+    .form.hidden { display: none; }
+    .form label { font-size: 0.75rem; color: #666; }
+    .form input, .form select, .form textarea {
+      width: 100%;
+      border: 1px solid #a0a0a0;
+      border-radius: 2px;
+      background: #ffffff;
+      color: #222;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .form input:focus, .form select:focus, .form textarea:focus {
+      border-color: #2f6fad;
+      box-shadow: 0 0 0 1px #9ec0e0;
+    }
+    .form textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: Consolas, "Courier New", monospace;
+    }
+    .form-actions { display: flex; gap: 6px; margin-top: 4px; }
+    .form-actions button {
+      flex: 1;
+      border: 1px solid #2f6fad;
+      border-radius: 2px;
+      padding: 8px 10px;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(#5b9bd5, #2f6fad);
+      font-size: 0.82rem;
+    }
+    .form-actions button.ghost {
+      border-color: #a0a0a0;
+      background: linear-gradient(#fafafa, #e6e6e6);
+      color: #333;
+    }
+
+    /* ----- 聊天页（Eclipse 浅色） ----- */
+    #page-chat {
+      display: none;
+      flex-direction: row;
+      background: #f0f0f0;
+      color: #333;
+    }
+    #page-chat.active { display: flex; }
+    .sessions {
+      width: 200px;
+      flex: 0 0 200px;
+      border-right: 1px solid #a0a0a0;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: #e8e8e8;
+    }
+    .sessions h3 {
+      margin: 0 0 8px;
+      font-size: 0.9rem;
+      color: #333;
+      font-weight: 600;
+    }
+    .sessions .btn {
+      border: 1px solid #a0a0a0;
+      border-radius: 2px;
+      padding: 6px 8px;
+      cursor: pointer;
+      color: #333;
+      background: linear-gradient(#fafafa, #e6e6e6);
+      font-size: 0.82rem;
+      margin-bottom: 8px;
+      width: 100%;
+    }
+    .sessions .btn:hover { background: linear-gradient(#ffffff, #ececec); }
+    #sessions {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .session-item {
+      text-align: left;
+      padding: 6px 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #333;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .session-item:hover { background: #d8e6f2; }
+    .session-item.active {
+      border-color: #6b9bc3;
+      background: #b8d4f0;
+      color: #000;
+    }
+    .chat {
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: #f5f5f5;
+    }
+    .right-head h1 {
+      margin: 0 0 4px;
+      font-size: 1.05rem;
+      color: #2a2a2a;
+      font-weight: 600;
+    }
+    .sub { color: #666; font-size: 0.78rem; margin-bottom: 8px; }
+    #log {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      border: 1px solid #a0a0a0;
+      background: #ffffff;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .msg {
+      max-width: 92%;
+      padding: 8px 10px;
+      border-radius: 2px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.9rem;
+      color: #222;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: #e8f0fe;
+      border: 1px solid #b0c4de;
+    }
+    .msg.bot {
+      align-self: flex-start;
+      background: #f7f7f7;
+      border: 1px solid #c8c8c8;
+    }
+    .msg.err { color: #a40000; background: #fff0f0; border-color: #e0a0a0; }
+    .role { display: block; font-size: 0.7rem; color: #666; margin-bottom: 3px; }
+    form.ask {
+      margin-top: 8px;
+      display: flex;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+    form.ask input {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 2px;
+      border: 1px solid #a0a0a0;
+      background: #ffffff;
+      color: #222;
+      outline: none;
+    }
+    form.ask input:focus { border-color: #2f6fad; box-shadow: 0 0 0 1px #9ec0e0; }
+    form.ask button {
+      padding: 0 14px;
+      border: 1px solid #2f6fad;
+      border-radius: 2px;
+      background: linear-gradient(#5b9bd5, #2f6fad);
+      color: #fff;
+      cursor: pointer;
+    }
+    form.ask button:hover { background: linear-gradient(#6aa8de, #3878b8); }
+    form.ask button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* Cursor 风格：默认折叠，点击展开过程 */
+    .activity {
+      align-self: stretch;
+      max-width: 100%;
+      margin: 2px 0 6px;
+      font-size: 0.82rem;
+      color: #57606a;
+    }
+    .activity-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 0;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+      color: #57606a;
+      user-select: none;
+    }
+    .activity-title:hover { color: #24292f; }
+    .activity.error .activity-title { color: #a40000; }
+    .activity .chevron {
+      display: inline-block;
+      font-size: 0.7rem;
+      transition: transform 0.15s ease;
+      color: #8b949e;
+    }
+    .activity.open .chevron { transform: rotate(90deg); }
+    .spinner {
+      width: 11px;
+      height: 11px;
+      border: 2px solid #c8d1dc;
+      border-top-color: #2f6fad;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex: 0 0 auto;
+    }
+    .activity.done .spinner, .activity.error .spinner { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .activity .steps {
+      display: none;
+      margin: 6px 0 4px 2px;
+      padding: 8px 10px;
+      border: 1px solid #e6ebf0;
+      border-radius: 8px;
+      background: #f6f8fa;
+      color: #57606a;
+    }
+    .activity.open .steps { display: block; }
+    .activity.error .steps { border-color: #e0a0a0; background: #fff5f5; }
+    .step {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      padding: 3px 0;
+      line-height: 1.4;
+    }
+    .step .mark {
+      color: #2f6fad;
+      font-family: Consolas, monospace;
+      min-width: 14px;
+    }
+    .step.tool .mark { color: #8250df; }
+    .step.ok .mark { color: #1a7f37; }
+    .step.err .mark { color: #a40000; }
+    .step.rag .mark { color: #0969da; }
+    .badge {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      background: #eef2f6;
+    }
+    .badge.ready { background: #dafbe1; color: #1a7f37; }
+    .badge.failed { background: #ffebe9; color: #a40000; }
+    .badge.indexing { background: #ddf4ff; color: #0969da; }
+    .badge.pending { background: #fff8c5; color: #9a6700; }
+    .msg.streaming {
+      border-style: dashed;
+      opacity: 0.95;
+    }
+
+    /* 预留菜单禁用项 */
+    .nav-item.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="nav">
+      <div class="nav-brand">运维 Agent</div>
+      <button type="button" class="nav-item active" data-page="home">欢迎页</button>
+      <button type="button" class="nav-item" data-page="conn">连接管理</button>
+      <button type="button" class="nav-item" data-page="docs">文档管理</button>
+      <button type="button" class="nav-item" data-page="chat">聊天</button>
+    </nav>
+
+    <div class="main">
+      <!-- 欢迎页 -->
+      <section class="page page-panel active" id="page-home">
+        <h1>运维 Agent Demo</h1>
+        <div class="hint">当前版本能力一览（按学习路径累积）</div>
+        <ul class="feature-list">
+          <li>
+            <span class="idx">01</span>
+            <div>
+              <div class="title">Chat · 基础对话</div>
+              <div class="desc">FastAPI + LangChain，接入本地 Ollama（qwen2.5:7b），完成最基础的问答闭环。</div>
+            </div>
+          </li>
+          <li>
+            <span class="idx">02</span>
+            <div>
+              <div class="title">会话管理</div>
+              <div class="desc">多会话、消息落库（SQLite），支持多轮上下文。</div>
+            </div>
+          </li>
+          <li>
+            <span class="idx">03</span>
+            <div>
+              <div class="title">工具调用（Tool Calling）</div>
+              <div class="desc">模型按需调用只读运维工具（如磁盘、登录用户），用现场数据回答。</div>
+            </div>
+          </li>
+          <li>
+            <span class="idx">04</span>
+            <div>
+              <div class="title">连接管理</div>
+              <div class="desc">统一维护 Linux 等连接档案；Tool 按 label 解析凭证，配置与对话解耦。</div>
+            </div>
+          </li>
+          <li>
+            <span class="idx">05</span>
+            <div>
+              <div class="title">SSE 流式过程</div>
+              <div class="desc">聊天走 Server-Sent Events，实时展示 Thinking / Tool / Answer（可折叠）。</div>
+            </div>
+          </li>
+          <li>
+            <span class="idx">06</span>
+            <div>
+              <div class="title">文档管理（知识库）</div>
+              <div class="desc">上传 / 删除 / 列表；同步索引完成切块与入库，状态可见（pending / ready / failed）。</div>
+            </div>
+          </li>
+          <li>
+            <span class="idx">07</span>
+            <div>
+              <div class="title">RAG 检索增强</div>
+              <div class="desc">提问前 Chroma 检索，将参考资料注入 Prompt，再调用 LLM / Tool 生成答案。</div>
+            </div>
+          </li>
+        </ul>
+        <div class="welcome-meta">栈：FastAPI · LangChain · Ollama · Chroma · SSE · 端口 8101</div>
+      </section>
+
+      <!-- 连接管理 -->
+      <section class="page page-panel" id="page-conn">
+        <h1>连接管理</h1>
+        <div class="hint">连接对象列表 · 新增/编辑才展开表单 · Tool 按 label 取配置</div>
+        <div class="toolbar">
+          <button type="button" id="btnNewConn" class="primary">新增</button>
+          <button type="button" id="btnEditConn" disabled>编辑</button>
+          <button type="button" id="btnDelConn" class="danger" disabled>删除</button>
+        </div>
+        <div class="panel-body">
+          <div id="connList" class="panel-list"></div>
+          <div class="form hidden" id="connForm">
+            <input type="hidden" id="connId" value="" />
+            <label>label（给模型/Tool 用）</label>
+            <input id="connLabel" placeholder="linux-231" />
+            <label>type</label>
+            <select id="connType">
+              <option value="linux">linux</option>
+              <option value="mysql">mysql</option>
+              <option value="oracle">oracle</option>
+              <option value="ftp">ftp</option>
+            </select>
+            <label>config_yaml</label>
+            <textarea id="connYaml" placeholder="enabled: true&#10;host: 192.168.100.231&#10;port: 22&#10;username: root&#10;password: xxx"></textarea>
+            <div class="form-actions">
+              <button type="button" id="btnSaveConn">保存</button>
+              <button type="button" id="btnCancelConn" class="ghost">取消</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 文档管理 / 知识库 -->
+      <section class="page page-panel" id="page-docs">
+        <h1>文档管理</h1>
+        <div class="hint">知识库原料 · 仅 .txt · 上传后点「同步索引」切块入库（Chroma）</div>
+        <div class="toolbar">
+          <label class="file-btn primary">
+            上传 txt
+            <input type="file" id="docFile" accept=".txt,text/plain" />
+          </label>
+          <button type="button" id="btnReindexAll" class="primary">全部重建索引</button>
+          <button type="button" id="btnIndexDoc" disabled>同步索引</button>
+          <button type="button" id="btnDelDoc" class="danger" disabled>删除</button>
+        </div>
+        <div class="panel-body">
+          <div id="docList" class="panel-list"></div>
+        </div>
+      </section>
+
+      <!-- 聊天 -->
+      <section class="page" id="page-chat">
+        <div class="sessions">
+          <h3>会话</h3>
+          <button class="btn" type="button" id="btnNewSession">新建会话</button>
+          <div id="sessions"></div>
+        </div>
+        <div class="chat">
+          <div class="right-head">
+            <h1>RAG + Tool · SSE</h1>
+            <div class="sub" id="sub">先检索知识库，再思考 / 调工具（Cursor 风格）</div>
+          </div>
+          <div id="log"></div>
+          <form class="ask" id="chatForm">
+            <input id="q" type="text" placeholder="例如：linux-231 磁盘满了帮我排查" autocomplete="off" required />
+            <button id="btnSend" type="submit">发送</button>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_YAML = `enabled: true
+host: 192.168.100.231
+port: 22
+username: root
+password: "your-password"
+`;
+
+    let sessionId = null;
+    let selectedConnId = null;
+    let connectionsCache = [];
+    let selectedDocId = null;
+    let docsCache = [];
+
+    const connList = document.getElementById("connList");
+    const connForm = document.getElementById("connForm");
+    const connIdEl = document.getElementById("connId");
+    const connLabel = document.getElementById("connLabel");
+    const connType = document.getElementById("connType");
+    const connYaml = document.getElementById("connYaml");
+    const btnEditConn = document.getElementById("btnEditConn");
+    const btnDelConn = document.getElementById("btnDelConn");
+    const sessionsEl = document.getElementById("sessions");
+    const log = document.getElementById("log");
+    const sub = document.getElementById("sub");
+    const chatForm = document.getElementById("chatForm");
+    const input = document.getElementById("q");
+    const btnSend = document.getElementById("btnSend");
+
+    // ----- 菜单切页 -----
+    function switchPage(name) {
+      document.querySelectorAll(".nav-item[data-page]").forEach((el) => {
+        el.classList.toggle("active", el.dataset.page === name);
+      });
+      document.querySelectorAll(".page").forEach((el) => {
+        el.classList.toggle("active", el.id === "page-" + name);
+      });
+      if (name === "chat") {
+        loadSessions();
+        input.focus();
+      }
+      if (name === "conn") loadConnections();
+      if (name === "docs") loadDocuments();
+      if (name === "chat") loadSessions();
+    }
+    document.querySelectorAll(".nav-item[data-page]").forEach((el) => {
+      el.addEventListener("click", () => switchPage(el.dataset.page));
+    });
+
+    // ----- 连接管理 -----
+    function showForm(show) {
+      connForm.classList.toggle("hidden", !show);
+    }
+    function selectConn(c) {
+      selectedConnId = c ? c.id : null;
+      btnEditConn.disabled = !c;
+      btnDelConn.disabled = !c;
+      [...connList.querySelectorAll("tbody tr")].forEach((el) => {
+        el.classList.toggle("active", c && Number(el.dataset.id) === c.id);
+      });
+    }
+    function fillForm(c) {
+      connIdEl.value = c ? c.id : "";
+      connLabel.value = c ? c.label : "";
+      connType.value = c ? c.type : "linux";
+      connYaml.value = c ? c.config_yaml : DEFAULT_YAML;
+      showForm(true);
+    }
+    function previewYaml(text) {
+      const one = String(text || "").replace(/\s+/g, " ").trim();
+      return one.length > 80 ? one.slice(0, 80) + "…" : one;
+    }
+    async function loadConnections() {
+      connectionsCache = await (await fetch("/api/connections")).json();
+      if (!connectionsCache.length) {
+        connList.innerHTML = '<div class="conn-empty">暂无连接，点击「新增」创建</div>';
+        return;
+      }
+      const rows = connectionsCache.map((c) => `
+        <tr data-id="${c.id}" class="${selectedConnId === c.id ? "active" : ""}">
+          <td>${c.id}</td>
+          <td><strong>${c.label}</strong></td>
+          <td>${c.type}</td>
+          <td class="mono" title="${String(c.config_yaml || "").replace(/"/g, "&quot;")}">${previewYaml(c.config_yaml)}</td>
+          <td>${c.updated_at || c.created_at || ""}</td>
+        </tr>
+      `).join("");
+      connList.innerHTML = `
+        <table class="conn-table">
+          <thead>
+            <tr>
+              <th style="width:64px">ID</th>
+              <th style="width:140px">label</th>
+              <th style="width:90px">type</th>
+              <th>config</th>
+              <th style="width:160px">更新时间</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+      connList.querySelectorAll("tbody tr").forEach((tr) => {
+        tr.onclick = () => {
+          const cur = connectionsCache.find((x) => x.id === Number(tr.dataset.id));
+          if (cur) selectConn(cur);
+        };
+        tr.ondblclick = () => {
+          const cur = connectionsCache.find((x) => x.id === Number(tr.dataset.id));
+          if (cur) {
+            selectConn(cur);
+            fillForm(cur);
+            connLabel.focus();
+          }
+        };
+      });
+      if (selectedConnId) {
+        const cur = connectionsCache.find((x) => x.id === selectedConnId);
+        if (cur) selectConn(cur);
+        else { selectedConnId = null; selectConn(null); showForm(false); }
+      }
+    }
+    document.getElementById("btnNewConn").onclick = () => {
+      selectConn(null);
+      fillForm(null);
+      connLabel.focus();
+    };
+    btnEditConn.onclick = () => {
+      const cur = connectionsCache.find((x) => x.id === selectedConnId);
+      if (!cur) return;
+      fillForm(cur);
+      connLabel.focus();
+    };
+    document.getElementById("btnCancelConn").onclick = () => showForm(false);
+    document.getElementById("btnSaveConn").onclick = async () => {
+      const body = {
+        label: connLabel.value.trim(),
+        type: connType.value,
+        config_yaml: connYaml.value,
+      };
+      if (!body.label) { alert("label 必填"); return; }
+      const id = connIdEl.value;
+      const res = await fetch(id ? `/api/connections/${id}` : "/api/connections", {
+        method: id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.detail || "保存失败"); return; }
+      selectedConnId = data.id;
+      showForm(false);
+      await loadConnections();
+    };
+    btnDelConn.onclick = async () => {
+      const id = selectedConnId;
+      if (!id) return;
+      if (!confirm("确认删除该连接？")) return;
+      const res = await fetch(`/api/connections/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) { alert(data.detail || "删除失败"); return; }
+      selectedConnId = null;
+      selectConn(null);
+      showForm(false);
+      await loadConnections();
+    };
+
+    // ----- 文档管理 -----
+    const docList = document.getElementById("docList");
+    const btnIndexDoc = document.getElementById("btnIndexDoc");
+    const btnDelDoc = document.getElementById("btnDelDoc");
+
+    function selectDoc(doc) {
+      selectedDocId = doc ? doc.id : null;
+      btnIndexDoc.disabled = !selectedDocId;
+      btnDelDoc.disabled = !selectedDocId;
+      docList.querySelectorAll("tbody tr").forEach((tr) => {
+        tr.classList.toggle("active", Number(tr.dataset.id) === selectedDocId);
+      });
+    }
+    async function loadDocuments() {
+      docsCache = await (await fetch("/api/documents")).json();
+      if (!docsCache.length) {
+        docList.innerHTML = '<div class="hint">暂无文档。可上传 data/samples/ops_manual.txt</div>';
+        selectDoc(null);
+        return;
+      }
+      const rows = docsCache.map((d) => `
+        <tr data-id="${d.id}" class="${d.id === selectedDocId ? "active" : ""}">
+          <td>${d.id}</td>
+          <td>${d.filename}</td>
+          <td><span class="badge ${d.status}">${d.status}</span></td>
+          <td>${d.chunk_count}</td>
+          <td title="${(d.error_message || "").replace(/"/g, "&quot;")}">${d.error_message || "-"}</td>
+          <td>${d.updated_at || ""}</td>
+        </tr>`).join("");
+      docList.innerHTML = `
+        <table class="conn-table">
+          <thead>
+            <tr>
+              <th style="width:56px">ID</th>
+              <th>文件名</th>
+              <th style="width:90px">状态</th>
+              <th style="width:70px">块数</th>
+              <th>错误</th>
+              <th style="width:150px">更新时间</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+      docList.querySelectorAll("tbody tr").forEach((tr) => {
+        tr.onclick = () => {
+          const cur = docsCache.find((x) => x.id === Number(tr.dataset.id));
+          if (cur) selectDoc(cur);
+        };
+      });
+      if (selectedDocId) {
+        const cur = docsCache.find((x) => x.id === selectedDocId);
+        selectDoc(cur || null);
+      }
+    }
+    document.getElementById("docFile").onchange = async (e) => {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (!file) return;
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/documents", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) { alert(data.detail || "上传失败"); return; }
+      selectedDocId = data.id;
+      await loadDocuments();
+    };
+    btnIndexDoc.onclick = async () => {
+      if (!selectedDocId) return;
+      btnIndexDoc.disabled = true;
+      btnIndexDoc.textContent = "索引中…";
+      try {
+        const res = await fetch(`/api/documents/${selectedDocId}/index`, { method: "POST" });
+        const data = await res.json();
+        if (!res.ok) alert(data.detail || "索引失败");
+        else if (data.status === "failed") alert(data.error_message || "索引失败");
+      } finally {
+        btnIndexDoc.textContent = "同步索引";
+        await loadDocuments();
+      }
+    };
+    document.getElementById("btnReindexAll").onclick = async () => {
+      if (!confirm("重建全部文档索引？")) return;
+      const res = await fetch("/api/documents/reindex", { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.detail || "重建失败");
+      }
+      await loadDocuments();
+    };
+    btnDelDoc.onclick = async () => {
+      if (!selectedDocId) return;
+      if (!confirm("确认删除该文档及向量？")) return;
+      const res = await fetch(`/api/documents/${selectedDocId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) { alert(data.detail || "删除失败"); return; }
+      selectedDocId = null;
+      await loadDocuments();
+    };
+
+    // ----- 聊天（SSE） -----
+    function addMsg(role, text, isErr) {
+      const div = document.createElement("div");
+      div.className = "msg " + (role === "user" ? "user" : "bot") + (isErr ? " err" : "");
+      const tag = document.createElement("span");
+      tag.className = "role";
+      tag.textContent = role === "user" ? "你" : "助手";
+      div.appendChild(tag);
+      div.appendChild(document.createTextNode(text));
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+      return div;
+    }
+    function clearLog() { log.innerHTML = ""; }
+
+    function createActivity() {
+      const box = document.createElement("div");
+      // 进行中先展开看进度；完成后自动折叠成 Thought briefly
+      box.className = "activity open";
+      box.innerHTML =
+        '<button type="button" class="activity-title">' +
+          '<span class="spinner"></span>' +
+          '<span class="title-text">Thinking…</span>' +
+          '<span class="chevron">›</span>' +
+        '</button>' +
+        '<div class="steps"></div>';
+      box.querySelector(".activity-title").onclick = () => {
+        box.classList.toggle("open");
+      };
+      log.appendChild(box);
+      log.scrollTop = log.scrollHeight;
+      return box;
+    }
+    function setActivityTitle(box, text) {
+      box.querySelector(".title-text").textContent = text;
+    }
+    function finishActivity(box, ok) {
+      box.classList.add(ok ? "done" : "error");
+      box.classList.remove("open"); // 默认折叠，点击再看
+      setActivityTitle(box, ok ? "Thought briefly" : "Error");
+    }
+    function renderSavedTrace(events) {
+      const box = createActivity();
+      box.classList.remove("open");
+      box.classList.add("done");
+      setActivityTitle(box, "Thought briefly");
+      (events || []).forEach((ev) => {
+        const type = ev.type;
+        if (type === "status") {
+          addStep(box, ev.message || "status");
+        } else if (type === "rag") {
+          addStep(box, ev.message || "RAG", "rag");
+          (ev.hits || []).forEach((h) => {
+            addStep(box, (h.filename || "") + ": " + (h.snippet || ""), "rag");
+          });
+        } else if (type === "tool_start") {
+          const args = ev.args ? " " + JSON.stringify(ev.args) : "";
+          addStep(box, "Running " + (ev.name || "tool") + args, "tool");
+        } else if (type === "tool_end") {
+          addStep(box, "Finished " + (ev.name || "tool"), "ok");
+          if (ev.preview) addStep(box, String(ev.preview));
+        }
+      });
+      return box;
+    }
+    function addStep(box, text, kind) {
+      const row = document.createElement("div");
+      row.className = "step " + (kind || "");
+      const mark = document.createElement("span");
+      mark.className = "mark";
+      mark.textContent = kind === "tool" ? "⚙" : kind === "ok" ? "✓" : kind === "err" ? "!" : "·";
+      const body = document.createElement("span");
+      body.textContent = text;
+      row.appendChild(mark);
+      row.appendChild(body);
+      box.querySelector(".steps").appendChild(row);
+      if (box.classList.contains("open")) log.scrollTop = log.scrollHeight;
+    }
+    async function readSse(res, onEvent) {
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buf = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const chunks = buf.split("\n\n");
+        buf = chunks.pop() || "";
+        for (const chunk of chunks) {
+          const line = chunk.split("\n").find((l) => l.startsWith("data:"));
+          if (!line) continue;
+          const raw = line.slice(5).trim();
+          if (!raw) continue;
+          try { onEvent(JSON.parse(raw)); } catch (_) {}
+        }
+      }
+    }
+
+    async function loadSessions() {
+      const list = await (await fetch("/api/sessions")).json();
+      sessionsEl.innerHTML = "";
+      list.forEach((s) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "session-item" + (s.id === sessionId ? " active" : "");
+        b.textContent = "#" + s.id + " " + s.title;
+        b.onclick = () => selectSession(s.id, s.title);
+        sessionsEl.appendChild(b);
+      });
+    }
+    async function selectSession(id, title) {
+      sessionId = id;
+      sub.textContent = "当前会话 #" + id + (title ? " · " + title : "") + " · SSE 过程展示";
+      clearLog();
+      const msgs = await (await fetch("/api/sessions/" + id + "/messages")).json();
+      msgs.forEach((m) => {
+        if (m.role === "user") addMsg("user", m.content);
+        else if (m.role === "trace") {
+          try { renderSavedTrace(JSON.parse(m.content)); }
+          catch (_) { /* ignore bad trace */ }
+        } else if (m.role === "assistant") addMsg("assistant", m.content);
+      });
+      await loadSessions();
+      input.focus();
+    }
+    async function createSession() {
+      const s = await (await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "新对话" }),
+      })).json();
+      await selectSession(s.id, s.title);
+    }
+    document.getElementById("btnNewSession").onclick = createSession;
+
+    chatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = input.value.trim();
+      if (!question) return;
+      if (!sessionId) await createSession();
+      addMsg("user", question);
+      input.value = "";
+      btnSend.disabled = true;
+      btnSend.textContent = "进行中";
+
+      const activity = createActivity();
+      setActivityTitle(activity, "Thinking…");
+      let answerEl = null;
+
+      try {
+        const res = await fetch("/api/chat/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
+          body: JSON.stringify({ question, session_id: sessionId }),
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          addStep(activity, errText || ("HTTP " + res.status), "err");
+          finishActivity(activity, false);
+          activity.classList.add("open");
+          return;
+        }
+        await readSse(res, (ev) => {
+          const type = ev.type;
+          if (type === "status") {
+            setActivityTitle(activity, ev.message || "Working…");
+            addStep(activity, ev.message || "status");
+          } else if (type === "rag") {
+            setActivityTitle(activity, ev.message || "RAG");
+            addStep(activity, ev.message || "Retrieved", "rag");
+            (ev.hits || []).forEach((h) => {
+              addStep(activity, (h.filename || "") + ": " + (h.snippet || ""), "rag");
+            });
+          } else if (type === "tool_start") {
+            setActivityTitle(activity, ev.message || ("Running " + ev.name));
+            const args = ev.args ? " " + JSON.stringify(ev.args) : "";
+            addStep(activity, "Running " + ev.name + args, "tool");
+          } else if (type === "tool_end") {
+            addStep(activity, "Finished " + ev.name, "ok");
+            if (ev.preview) addStep(activity, String(ev.preview));
+          } else if (type === "answer") {
+            setActivityTitle(activity, "Generating answer…");
+            if (!answerEl) answerEl = addMsg("assistant", "");
+            answerEl.classList.add("streaming");
+            while (answerEl.childNodes.length > 1) answerEl.removeChild(answerEl.lastChild);
+            answerEl.appendChild(document.createTextNode(ev.content || "(空回复)"));
+            log.scrollTop = log.scrollHeight;
+          } else if (type === "done") {
+            finishActivity(activity, true);
+            if (answerEl) answerEl.classList.remove("streaming");
+            loadSessions();
+          } else if (type === "error") {
+            addStep(activity, ev.message || "error", "err");
+            finishActivity(activity, false);
+            activity.classList.add("open");
+            addMsg("assistant", ev.message || "error", true);
+          }
+        });
+        if (!activity.classList.contains("done") && !activity.classList.contains("error")) {
+          finishActivity(activity, true);
+        }
+      } catch (err) {
+        addStep(activity, String(err), "err");
+        finishActivity(activity, false);
+        activity.classList.add("open");
+        addMsg("assistant", String(err), true);
+      } finally {
+        btnSend.disabled = false;
+        btnSend.textContent = "发送";
+        input.focus();
+      }
+    });
+
+    loadConnections();
+    loadDocuments();
+  </script>
+</body>
+</html>

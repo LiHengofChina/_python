@@ -1,0 +1,22 @@
+server:
+  host: 127.0.0.1
+  port: 8101
+
+ollama:
+  base_url: http://127.0.0.1:11434
+  model: qwen2.5:7b
+  embed_model: nomic-embed-text
+  temperature: 0.1
+
+chat:
+  db_path: data/app.db
+
+rag:
+  upload_dir: data/uploads
+  chroma_dir: data/chroma
+  chunk_size: 500
+  chunk_overlap: 50
+  top_k: 3
+
+demo:
+  question: 磁盘使用率超过 85% 怎么办？
