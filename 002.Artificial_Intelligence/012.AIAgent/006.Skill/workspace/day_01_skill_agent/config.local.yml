@@ -1,0 +1,9 @@
+ssh:
+  enabled: true
+  host: 192.168.100.231
+  port: 22
+  username: root
+  password: "Rklink_1024"
+
+ollama:
+  model: qwen2.5:7b
