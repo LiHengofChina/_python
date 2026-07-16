@@ -1,0 +1,49 @@
+server:
+  port: 8107
+
+spring:
+  application:
+    name: day07-lan-mcp-client
+  ai:
+    ollama:
+      base-url: http://127.0.0.1:11434
+      chat:
+        options:
+          model: qwen2.5:7b
+          temperature: 0.2
+    mcp:
+      client:
+        enabled: true
+        name: lan-mcp-client
+        type: SYNC
+        request-timeout: 120s
+        toolcallback:
+          enabled: true
+        ######################################
+        # Day07：局域网部署 — Agent 只走 SSE，不用 stdio/npx
+        #
+        # 自研：day_07_lan_mcp_server_01 → mvn package → java -jar（8104）
+        # 开源：day_07_lan_mcp_server_02/deploy/start-supergateway.bat（8106）
+        #
+        # 本机模拟：下面 IP 都用 127.0.0.1
+        # 真内网：改成 192.168.x.x
+        ######################################
+        sse:
+          connections:
+            ops-server:
+              url: http://127.0.0.1:8104
+#              url: http://192.168.31.5:8104
+            filesystem:
+              url: http://127.0.0.1:8106
+#              url: http://192.168.31.5:8106
+              sse-endpoint: /sse
+        stdio:
+          connections: {}
+
+demo:
+  mcp-client:
+    startup-enabled: true
+    startup-question: 查一下 linux-231 磁盘使用情况
+    lan-mode: true
+    ops-server-url: http://127.0.0.1:8104
+    filesystem-url: http://127.0.0.1:8106/sse

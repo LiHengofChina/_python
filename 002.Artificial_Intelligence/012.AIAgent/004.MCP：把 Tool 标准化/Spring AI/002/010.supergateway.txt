@@ -1,0 +1,25 @@
+
+//======================================================= supergateway
+//======================================================= supergateway
+
+
+supergateway 是一个转换器（npm 小工具）。
+
+问题： 很多开源 MCP（如 filesystem）只支持 stdio —— 只能本机用 npx 拉起，
+	  Agent 在别的机器上连不上。
+
+作用： 把 stdio 版 MCP 包装成 SSE 服务，让局域网里的 Agent 用 HTTP 远程连接。
+
+//===============
+//===============
+原来：Agent 本机 ──stdio──► npx filesystem   （只能同机）
+
+加网关：Agent ──SSE──► supergateway ──stdio──► filesystem   （可跨机器）
+
+
+
+//=============== 总结
+//=============== 总结
+
+开源工具只会 stdio 时，用 supergateway 包一层，内网 Agent 才能连。
+不是 Spring AI 的东西，是 MCP 社区常用的部署工具。
