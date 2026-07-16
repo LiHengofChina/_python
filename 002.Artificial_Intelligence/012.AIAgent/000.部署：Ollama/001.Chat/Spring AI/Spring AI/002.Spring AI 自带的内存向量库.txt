@@ -1,0 +1,27 @@
+
+SimpleVectorStore — Spring AI 自带的内存向量库。
+
+在 OpsAgentInfrastructureConfig 里配置：
+
+//============================================================
+//============================================================
+
+@Bean
+public VectorStore vectorStore(EmbeddingModel embeddingModel) {
+    return SimpleVectorStore.builder(embeddingModel).build();
+}
+
+特点：
+
+（1）数据存在 JVM 内存里
+（2）启动时由 OpsManualIndexRunner 把 ops_manual.txt 切块、Embedding 后写入
+（3）重启后需重新索引（内存会清空）
+（4）适合学习 Demo；生产可换 PGVector、Milvus 等
+
+//============================================================
+//============================================================
+
+Embedding 由 Ollama 的 nomic-embed-text 生成，向量库只负责 "存和检索"。
+
+
+
