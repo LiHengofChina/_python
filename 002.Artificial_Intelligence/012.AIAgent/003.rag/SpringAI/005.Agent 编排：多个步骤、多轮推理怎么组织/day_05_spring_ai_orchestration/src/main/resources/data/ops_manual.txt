@@ -1,0 +1,37 @@
+# 运维手册（与 day_29 Python RAG Demo 相同）
+
+## 磁盘空间告警处理
+
+当 Linux 服务器磁盘使用率超过 85% 时，应优先排查 /var/log 目录。
+常见步骤：
+1. 使用 df -h 查看各挂载点使用率。
+2. 使用 du -sh /var/log/* 找出占用最大的日志目录。
+3. 对已归档的旧日志执行 logrotate 或手工压缩后移走。
+4. 禁止直接 rm -rf 正在写入的日志文件，应 truncate 或重启对应服务后再清理。
+
+## 内存溢出（OOM）排查
+
+若 dmesg 中出现 "Out of memory: Kill process"，说明系统触发了 OOM Killer。
+排查步骤：
+1. 使用 free -h 查看内存与 swap 使用情况。
+2. 使用 ps aux --sort=-%mem | head 找出内存占用最高的进程。
+3. 检查应用 JVM 参数（-Xmx）是否设置过大。
+4. 临时缓解可重启高占用进程；长期方案是扩容内存或优化程序。
+
+## MySQL 连接数过多
+
+错误信息 "Too many connections" 表示 MySQL 当前连接数达到 max_connections 上限。
+处理建议：
+1. 登录 MySQL 执行 show status like 'Threads_connected'; 确认当前连接数。
+2. 检查应用连接池配置，是否存在连接泄漏（借出不归还）。
+3. 临时可调大 max_connections，但需评估服务器内存。
+4. 找出长时间 Sleep 的连接：show processlist;
+
+## Nginx 502 Bad Gateway
+
+502 通常表示 Nginx 无法从上游（如 Tomcat、Spring Boot）获得有效响应。
+排查顺序：
+1. 检查上游服务进程是否存活：systemctl status 或 ps。
+2. 查看上游应用日志是否有 OOM、端口未监听。
+3. 检查 Nginx upstream 配置中的 IP 和端口是否正确。
+4. 确认防火墙与安全组未阻断内网端口。
