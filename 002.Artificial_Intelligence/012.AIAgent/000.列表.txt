@@ -1,4 +1,39 @@
 
+//==============================
+//==============================
+（ 1 ） 笔记 再整理一次
+
+//==============================（2）
+//==============================（2）
+	我们现在开始复习 mcp吧
+	（1）
+	先复制 day_06_rag
+
+	在 day_06_rag 基础上面修改吧
+
+	（2）
+	在E:\_python\002.Artificial_Intelligence\012.AIAgent\004.MCP
+	下面创建工作空间
+
+
+	（3）参考 java的 
+
+	第一对：现在只做这一对
+	E:\_python\002.Artificial_Intelligence\012.AIAgent\098.第 98 课 Spring AI\workspace\day_06_mcp_client
+	E:\_python\002.Artificial_Intelligence\012.AIAgent\098.第 98 课 Spring AI\workspace\day_06_mcp_server
+
+
+	第二对：第二对暂时不做（过一会再做）
+	E:\_python\002.Artificial_Intelligence\012.AIAgent\098.第 98 课 Spring AI\workspace\day_07_lan_mcp_client
+	E:\_python\002.Artificial_Intelligence\012.AIAgent\098.第 98 课 Spring AI\workspace\day_07_lan_mcp_server_01
+	E:\_python\002.Artificial_Intelligence\012.AIAgent\098.第 98 课 Spring AI\workspace\day_07_lan_mcp_server_02
+
+
+
+//==============================（3）
+//==============================（3）
+
+
 （ 1）  MCP → 
 （ 3 ） Skill → 
 （ 2 ） Memory → 
