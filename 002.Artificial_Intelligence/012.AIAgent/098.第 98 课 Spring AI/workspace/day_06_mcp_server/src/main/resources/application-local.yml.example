@@ -1,5 +1,0 @@
-# 复制为 application-local.yml 并填写密码
-demo:
-  ops:
-    ssh:
-      password: your-password-here

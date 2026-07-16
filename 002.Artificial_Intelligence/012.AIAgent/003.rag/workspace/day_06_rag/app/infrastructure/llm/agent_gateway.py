@@ -25,11 +25,10 @@ _NAME_ARGS = re.compile(
 )
 
 TOOL_SYSTEM_EXTRA = """
-调用工具时，必须使用系统提供的函数调用（function/tool calling），不要把工具调用写成 JSON 文本或代码块给用户看。
+涉及某台机器的现场状态（登录用户、磁盘、内存、日志占用等）时：必须先发起真正的工具调用（function/tool calling），禁止只教用户去跑 who/df/free 等命令，禁止把工具调用写成 JSON 或 shell 代码块。
 拿到工具返回的真实数据后，再用中文简洁总结。
-host_id 必须与「当前可用连接」中的 label 完全一致（逐字匹配），不要自行改写。
-若上方有【参考资料】，请优先依据资料回答手册类问题；资料没有的请说「资料中未找到」。
-现场状态仍应调用工具核实，不要只用资料臆测当前机器数据。
+host_id 必须与「当前可用连接」中的 label 完全一致（逐字匹配）；用户说的「xxx机器」里的 xxx 就是 label。
+若上方有【参考资料】，手册规范类问题可依据资料；现场数据必须以工具结果为准，资料不能代替工具。
 """.strip()
 
 
@@ -157,11 +156,16 @@ class OllamaAgentChatGateway:
                 if self._looks_like_fake_tool_plan(text):
                     yield {
                         "type": "status",
-                        "message": "Model printed fake tool JSON, retrying…",
+                        "message": "Model skipped tools, retrying…",
                     }
+                    tool_names = "、".join(self._tool_map.keys())
                     messages.append(
                         HumanMessage(
-                            content="不要输出 JSON。请直接发起真正的工具调用（function call）。"
+                            content=(
+                                "不要教用户跑命令，也不要输出 JSON/shell 代码块。"
+                                f"请直接发起真正的工具调用（function call）。可用工具：{tool_names}。"
+                                "查询登录用户用 query_logged_in_users，host_id 填连接 label。"
+                            )
                         )
                     )
                     continue
@@ -253,7 +257,28 @@ class OllamaAgentChatGateway:
 
     @staticmethod
     def _looks_like_fake_tool_plan(text: str) -> bool:
+        """拦住：假 JSON 工具计划，或只教用户跑 who/df 而不给工具结果。"""
         if not text:
             return False
-        markers = ("请等待工具", "```json", '"name":', "arguments", "函数调用")
-        return any(m in text for m in markers) and "exit=" not in text
+        # 已有工具真实输出则放行
+        if "exit=" in text:
+            return False
+        markers = (
+            "请等待工具",
+            "```json",
+            '"name":',
+            "arguments",
+            "函数调用",
+            "```sh",
+            "```bash",
+            "```shell",
+            "可以通过以下命令",
+            "可以使用以下命令",
+            "请执行",
+            "执行以下命令",
+        )
+        if any(m in text for m in markers):
+            return True
+        # 光提 who/df/free 当答案，没工具结果
+        cmd_hints = ("\nwho", "`who`", " who\n", "df -h", "free -h")
+        return any(h in text for h in cmd_hints)
