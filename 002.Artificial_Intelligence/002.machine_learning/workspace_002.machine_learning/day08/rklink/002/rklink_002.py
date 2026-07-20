@@ -67,26 +67,6 @@ df = _load_fit_data()
 # 手机号、身份证 正则规则
 # ==============================
 PHONE_REGEX = re.compile(r"^1[3-9]\d{9}$")
-# 港澳台手机（与 Java PhoneRecognizeHeuristics 一致）：HK +852+8 位（4~9 开头）、MO +853+8 位（6 开头）、TW +886+9 位（9 开头）
-HMT_MOBILE_PHONE_REGEX = re.compile(
-    r'^(\+?852[- ]?[456789]\d{7}|'
-    r'\+?853[- ]?[6]\d{7}|'
-    r'\+?886[- ]?9\d{8})$'
-)
-HMT_MOBILE_DIGITS_REGEX = re.compile(
-    r'^(852[456789]\d{7}|853[6]\d{7}|8869\d{8})$'
-)
-# 港澳台固话（与 Java PhoneRecognizeHeuristics 一致）：
-# HK +852+8 位（2/3 开头地理号）、MO +853+8 位（2/3 开头座机）、TW +886+区号+本地（非 9 开头手机）
-HMT_LANDLINE_PHONE_REGEX = re.compile(
-    r'^(\+?852[- ]?[23]\d{7}|'
-    r'\+?853[- ]?[23]\d{7}|'
-    r'\+?886[- ]?(?:2|3[0-9]?|4[0-9]?|5[0-9]?|6[0-9]?|7|8[0-9]?|37|49|82|89)[- ]?\d{7,8})$'
-)
-HMT_LANDLINE_DIGITS_REGEX = re.compile(
-    r'^(852[23]\d{7}|853[23]\d{7}|'
-    r'886(?:2\d{8}|[3-8]\d{7,8}|37\d{7,8}|49\d{7,8}|82\d{7,8}|89\d{7,8}))$'
-)
 # 大陆固话形态（与 Java PhoneRecognizeHeuristics.LANDLINE_PHONE_REGEX 一致）：
 # 主格式（0+区号+本地，共 11 位）：0XX+8 位本地（如 01012345678 / 010-12345678）；
 # 0XXX+7 位本地（如 07551234567 / 0755-1234567）；部分城市 0XXX+8 位本地（如 0755-83301199）。
@@ -146,19 +126,8 @@ def _is_mainland_mobile_phone_value(text):
     return bool(tail11 and PHONE_REGEX.match(tail11))
 
 
-def _is_hmt_mobile_phone_value(text):
-    """港澳台手机号：+852/+853/+886 或纯数字 852/853/886 前缀写法。"""
-    s = str(text).strip()
-    if not s:
-        return False
-    if HMT_MOBILE_PHONE_REGEX.match(s):
-        return True
-    norm = re.sub(r'[\s\-+]', '', s)
-    return bool(HMT_MOBILE_DIGITS_REGEX.match(norm))
-
-
 def is_mobile_phone_value(text):
-    return _is_mainland_mobile_phone_value(text) or _is_hmt_mobile_phone_value(text)
+    return _is_mainland_mobile_phone_value(text)
 
 def _is_invalid_landline_digits(norm):
     """占位/脏数据：全 0、本地段全 0、或无区号的同数字占位（如 999999999）。"""
@@ -171,17 +140,6 @@ def _is_invalid_landline_digits(norm):
     if not norm.startswith('0') and len(norm) == 9 and len(set(norm)) == 1:
         return True
     return False
-
-def _is_hmt_landline_phone_value(text):
-    """港澳台固话：+852/+853/+886 或纯数字 852/853/886 前缀写法。"""
-    s = str(text).strip()
-    if not s:
-        return False
-    if HMT_LANDLINE_PHONE_REGEX.match(s):
-        return True
-    norm = re.sub(r'[\s\-+]', '', s)
-    return bool(HMT_LANDLINE_DIGITS_REGEX.match(norm))
-
 
 def _is_mainland_landline_phone_value(text):
     s = str(text).strip()
@@ -199,7 +157,7 @@ def is_landline_phone_value(text):
     s = str(text).strip()
     if not s or is_mobile_phone_value(s) or _is_date_like_phone_exclusion(s):
         return False
-    return _is_mainland_landline_phone_value(s) or _is_hmt_landline_phone_value(s)
+    return _is_mainland_landline_phone_value(s)
 
 def is_phone_value(text):
     return is_mobile_phone_value(text) or is_landline_phone_value(text)
@@ -673,8 +631,6 @@ def _extract_mobile_prefix_from_last_11(text):
 def _has_allowed_mobile_prefix(text):
     if not is_mobile_phone_value(text):
         return False
-    if _is_hmt_mobile_phone_value(text):
-        return True
     prefix = _extract_mobile_prefix_from_last_11(text)
     return bool(prefix and prefix in _load_mobile_prefixes())
 
@@ -746,8 +702,6 @@ def _is_local_landline_without_area_code(text):
 def _has_allowed_landline_area_or_morph(text):
     if not is_landline_phone_value(text):
         return False
-    if _is_hmt_landline_phone_value(text):
-        return True
     if _is_service_short_code_value(text):
         return LANDLINE_ALLOW_SERVICE_SHORT
     area = _extract_landline_area_code(text)
@@ -903,9 +857,9 @@ def _digit_only_length(text):
     return sum(1 for c in str(text) if c.isdigit())
 
 def _phone_digit_len_13_11_8_hit(text):
-    """电话常见纯数字长度：8 本地 / 11 手机或区号+座机 / 12 886+台湾手机 / 13 86+手机。"""
+    """电话常见纯数字长度：8 本地 / 11 手机或区号+座机 / 13 86+手机。"""
     n = _digit_only_length(text)
-    return n in (8, 11, 12, 13)
+    return n in (8, 11, 13)
 
 ID_REGEX = re.compile(r"^\d{17}[\dXx]$")
 ID_CARD_18_REGEX = ID_REGEX
