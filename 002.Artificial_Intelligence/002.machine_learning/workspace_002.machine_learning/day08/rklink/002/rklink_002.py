@@ -875,8 +875,8 @@ def is_id_card_15_format_value(value):
 
 
 def _expand_id_card_15_birth_year(yy: int) -> int:
-    """15 位 YY 展开为 4 位公历年，与 Java expandIdCard15BirthYear / datetime.strptime('%y') 一致。"""
-    return 1900 + yy if yy >= 69 else 2000 + yy
+    """15 位 YY 展开为 4 位公历年：中国一代证按 19YY（与 Java expandIdCard15BirthYear 一致）。"""
+    return 1900 + yy
 
 
 def _parse_id_card_15_birth_yymmdd(birth: str):
