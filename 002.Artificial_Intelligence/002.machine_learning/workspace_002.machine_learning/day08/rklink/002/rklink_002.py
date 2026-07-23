@@ -70,7 +70,8 @@ PHONE_REGEX = re.compile(r"^1[3-9]\d{9}$")
 # 大陆固话形态（与 Java PhoneRecognizeHeuristics.LANDLINE_PHONE_REGEX 一致）：
 # 主格式（0+区号+本地，共 11 位）：0XX+8 位本地（如 01012345678 / 010-12345678）；
 # 0XXX+7 位本地（如 07551234567 / 0755-1234567）；部分城市 0XXX+8 位本地（如 0755-83301199）。
-# 另含：本市 7~8 位本地号、400/800、95·12·100 短号、+86/86 国际写法。
+# 另含：本市无区号仅 8 位本地号、400/800、95·12·100 短号、+86/86 国际写法。
+# 裸 7 位全数字归手机短号（PHONE），不归 LANDLINE。
 LANDLINE_PHONE_REGEX = re.compile(
     r'^('
     r'(\+?86[- ]?)?0\d{2}[- ]?\d{8}|'
@@ -82,15 +83,15 @@ LANDLINE_PHONE_REGEX = re.compile(
     r'9[56]\d{3,6}|'
     r'12\d{3}|'
     r'100\d{2,4}|'
-    r'[2-8]\d{2,3}[- ]?\d{4}|'
-    r'[2-8]\d{6,7}'
+    r'[2-8]\d{3}[- ]?\d{4}|'
+    r'[2-8]\d{7}'
     r')$'
 )
 ISO_DATE_REGEX = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 ISO_DATE_TIME_REGEX = re.compile(r'^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$')
 
 def _looks_like_iso_date_digits(norm):
-    """去横杠后 8 位 YYYYMMDD，避免与本地固话 [2-8]\\d{6,7} 冲突。"""
+    """去横杠后 8 位 YYYYMMDD，避免与本地固话 [2-8]\\d{7} 冲突。"""
     if len(norm) != 8 or not norm.isdigit():
         return False
     try:
@@ -126,8 +127,22 @@ def _is_mainland_mobile_phone_value(text):
     return bool(tail11 and PHONE_REGEX.match(tail11))
 
 
+def is_mobile_short_number_value(text):
+    """手机短号：整段恰为 7 位数字（如 7552011）；无区号裸 7 位不归固话，统一归 PHONE。"""
+    s = str(text).strip()
+    if not s or _is_date_like_phone_exclusion(s):
+        return False
+    norm = _normalize_phone_digits(s)
+    if len(norm) != 7 or not norm.isdigit():
+        return False
+    if all(c == '0' for c in norm):
+        return False
+    return len(set(norm)) > 1
+
+
 def is_mobile_phone_value(text):
-    return _is_mainland_mobile_phone_value(text)
+    """中国大陆手机号（含 11 位手机与 7 位短号）。"""
+    return _is_mainland_mobile_phone_value(text) or is_mobile_short_number_value(text)
 
 def _is_invalid_landline_digits(norm):
     """占位/脏数据：全 0、本地段全 0、或无区号的同数字占位（如 999999999）。"""
@@ -315,7 +330,7 @@ def _is_passport_length_value(text):
 SERVICE_SHORT_95_REGEX = re.compile(r'^9[56]\d{3,6}$')
 SERVICE_SHORT_12_REGEX = re.compile(r'^12\d{3}$')
 LANDLINE_FORMAT_CHARS_REGEX = re.compile(r'^[0-9+\s\-()]+$')
-LOCAL_LANDLINE_NO_AREA_REGEX = re.compile(r'^[2-8]\d{2,3}[- ]?\d{4}$|^[2-8]\d{6,7}$')
+LOCAL_LANDLINE_NO_AREA_REGEX = re.compile(r'^[2-8]\d{3}[- ]?\d{4}$|^[2-8]\d{7}$')
 # 规则字典仅在 Python dict/ 维护；训练结束时随 recognize_model 一并覆盖同步到 Java SDK。
 _MOBILE_PREFIXES_CACHE = None
 _AREA_CODES_CACHE = None
@@ -629,21 +644,27 @@ def _extract_mobile_prefix_from_last_11(text):
 
 
 def _has_allowed_mobile_prefix(text):
-    if not is_mobile_phone_value(text):
+    """11 位号段命中字典，或 7 位短号视为前缀达标。"""
+    if is_mobile_short_number_value(text):
+        return True
+    if not _is_mainland_mobile_phone_value(text):
         return False
     prefix = _extract_mobile_prefix_from_last_11(text)
     return bool(prefix and prefix in _load_mobile_prefixes())
 
 
 def _looks_like_strict_mobile_prefix_column(text_list):
-    """严格号段前缀列：非空行末 11 位前 3 位号段命中 mobile_prefixes.json 占比 ≥ PHONE_PREFIX_MIN_RATIO。"""
-    prefixes = _load_mobile_prefixes()
-    if not prefixes:
-        return False
+    """严格号段前缀列：11 位号段命中字典或 7 位短号占比 ≥ PHONE_PREFIX_MIN_RATIO。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
     n = len(cleaned)
+    short_hit = sum(1 for t in cleaned if is_mobile_short_number_value(t)) / n
+    if short_hit >= PHONE_PREFIX_MIN_RATIO:
+        return True
+    prefixes = _load_mobile_prefixes()
+    if not prefixes:
+        return False
     hit = sum(1 for t in cleaned if _has_allowed_mobile_prefix(t)) / n
     return hit >= PHONE_PREFIX_MIN_RATIO
 
@@ -823,7 +844,7 @@ def _landline_column_noise_excluded(text_list):
 
 
 def _looks_like_strict_mobile_column(text_list):
-    """严格手机列：非空行中末 11 位数字符合手机号占比 ≥ PHONE_COLUMN_STRICT_RATIO。"""
+    """严格手机列：非空行中手机号（11 位或 7 位短号）占比 ≥ PHONE_COLUMN_STRICT_RATIO。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
@@ -1075,9 +1096,18 @@ surname_dict = set(
 )
 
 
+def _strip_trailing_ascii_digits(text):
+    """去掉末尾连续 ASCII 数字，得到姓名汉字核。"""
+    t = str(text) if text is not None else ""
+    end = len(t)
+    while end > 0 and "0" <= t[end - 1] <= "9":
+        end -= 1
+    return t[:end]
+
+
 def _surname_head_in_dict(text):
-    """姓名首字或复姓前两字是否在姓氏字典（百家姓）中。"""
-    t = str(text).strip()
+    """姓名首字或复姓前两字是否在姓氏字典（百家姓）中；先去掉末尾数字后缀。"""
+    t = _strip_trailing_ascii_digits(str(text).strip())
     if not t:
         return False
     if len(t) >= 2 and t[:2] in surname_dict:
@@ -3715,23 +3745,24 @@ def _is_pure_han_text(text):
 
 
 def _is_name_shape_token(text):
-    """2~3 字姓名，或 4 字且前两字为复姓（在姓氏字典中）；无数字、无公司/集团后缀。"""
+    """汉字姓名核（2~3 字，或 4 字且前两字为复姓）+ 可选末尾数字后缀；无公司/集团后缀。"""
     t = str(text).strip()
-    if len(t) < 2 or len(t) > 4:
+    if not t:
         return False
     if any(x in t for x in ("公司", "有限", "集团")):
         return False
-    if any(c.isdigit() for c in t):
+    core = _strip_trailing_ascii_digits(t)
+    if not core or len(core) < 2 or len(core) > 4:
         return False
-    if not _is_pure_han_text(t):
+    if not _is_pure_han_text(core):
         return False
-    if len(t) <= 3:
+    if len(core) <= 3:
         return True
-    return t[:2] in surname_dict
+    return core[:2] in surname_dict
 
 
 def _name_column_recognizable_name_row_ratio(text_list):
-    """列内符合姓名形态（2~3 字或复姓 4 字）的取值占比；用于后处理拦截/抬升，不影响 PMML 特征 f127。"""
+    """列内符合姓名形态（含可选数字后缀）的取值占比；用于后处理拦截/抬升，不影响 PMML 特征 f127。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return 0.0
@@ -3740,7 +3771,7 @@ def _name_column_recognizable_name_row_ratio(text_list):
 
 
 def _looks_like_chinese_name_column(text_list):
-    """整列均为姓名形态（2~3 字或复姓 4 字），且首字/复姓前两字在姓氏字典命中率达标。"""
+    """整列均为姓名形态（含可选数字后缀），且姓氏开头命中率达标。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
@@ -3755,14 +3786,20 @@ def _looks_like_chinese_name_column(text_list):
 
 
 def _name_column_han_char_ratio(text_list):
-    """列内所有字符中汉字占比（0~1）。"""
+    """列内姓名核汉字占比（0~1）：先去掉末尾数字再统计；仅后处理门控用。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return 0.0
-    total = sum(len(t) for t in cleaned)
+    total = 0
+    han = 0
+    for t in cleaned:
+        core = _strip_trailing_ascii_digits(t)
+        if not core:
+            continue
+        total += len(core)
+        han += sum(1 for c in core if '\u4e00' <= c <= '\u9fff')
     if total <= 0:
         return 0.0
-    han = sum(1 for t in cleaned for c in t if '\u4e00' <= c <= '\u9fff')
     return han / total
 
 
