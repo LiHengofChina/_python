@@ -138,14 +138,32 @@ def _normalize_phone_digits(text):
     return norm
 
 def _extract_last_11_digits(text):
-    """自字符串末尾向前取连续 11 位数字（忽略空格、横杠、+86 等）；不足 11 位返回 None。"""
+    """自字符串末尾向前取连续 11 位数字。
+
+    仅跳过空格/横杠/+ 等分隔符；遇字母立即停止（不跳过），
+    避免身份证末位 X 等被滤掉后误取末 11 位当手机号。
+    不足 11 位返回 None。
+    """
     s = str(text).strip()
     if not s:
         return None
-    digits = ''.join(c for c in s if c.isdigit())
-    if len(digits) < 11:
+    collected = []
+    for c in reversed(s):
+        if c.isdigit():
+            collected.append(c)
+            if len(collected) >= 11:
+                break
+        elif c in " \t\r\n-+":
+            continue
+        elif c.isalpha():
+            # 字母不排除、不跨越，截断扫描
+            break
+        else:
+            # 其它标点仍跳过（兼容 (138)1234-5678）
+            continue
+    if len(collected) < 11:
         return None
-    return digits[-11:]
+    return "".join(reversed(collected))
 
 def _is_mainland_mobile_phone_value(text):
     tail11 = _extract_last_11_digits(text)
@@ -244,7 +262,7 @@ CREDIT_CODE_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE
 CREDIT_CODE_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_DEFAULT_MIN_MARGIN", "0.01"))
 CREDIT_CODE_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_FORMAT_MIN_RATIO", "0.1"))
 CREDIT_CODE_REGION_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_REGION_PREFIX_MIN_RATIO", "0.1"))
-COLUMN_MIXED_OVERRIDE_ENABLED = os.environ.get("MASK_SDK_RECOGNIZE_COLUMN_MIXED_ENABLED", "false").strip().lower() in (
+COLUMN_MIXED_OVERRIDE_ENABLED = os.environ.get("MASK_SDK_RECOGNIZE_COLUMN_MIXED_ENABLED", "true").strip().lower() in (
     "1", "true", "yes", "on")
 OFFICER_CARD_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_CONFIDENCE_THRESHOLD", "0.4"))
 OFFICER_CARD_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_DEFAULT_MIN_MARGIN", "0.01"))
@@ -1216,6 +1234,15 @@ def _looks_like_strict_enterprise_keyword_column(text_list):
     return hit / len(cleaned) >= ENTERPRISE_KEYWORD_MIN_RATIO
 
 
+def _enterprise_keyword_row_ratio(text_list):
+    """列内含企业关键词的行占比（用于与姓名占比比较，避免抢判）。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned or not enterprise_keyword_dict:
+        return 0.0
+    hit = sum(1 for t in cleaned if _has_enterprise_keyword(t))
+    return hit / len(cleaned)
+
+
 def _looks_like_strict_enterprise_suffix_column(text_list):
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned or not enterprise_suffix_dict:
@@ -1947,24 +1974,126 @@ def _row_intra_cell_multi_embed_hit(text):
     return hits >= 2
 
 
+# ==============================
+# 姓名形态 / 排除（须在训练循环与 COLUMN_MIXED 特征之前定义）
+# ==============================
+
+def _is_pure_han_text(text):
+    return all("\u4e00" <= c <= "\u9fff" for c in text)
+
+
+def _is_name_shape_token(text):
+    """汉字姓名核（2~3 字，或 4 字且前两字为复姓）+ 可选末尾数字后缀；无公司/集团后缀。"""
+    t = str(text).strip()
+    if not t:
+        return False
+    if any(x in t for x in ("公司", "有限", "集团")):
+        return False
+    core = _strip_trailing_ascii_digits(t)
+    if not core or len(core) < 2 or len(core) > 4:
+        return False
+    if not _is_pure_han_text(core):
+        return False
+    if len(core) <= 3:
+        return True
+    return core[:2] in surname_dict
+
+
+# 非姓名排除：民族「X族」、性别/占位等 + country_dict 纯汉字国名
+EXCLUDED_NAME_MANUAL_EXACT_TOKENS = frozenset({
+    "男", "女", "未知", "不详", "其他", "无", "暂无", "成功", "法人", "法人股", "法官证",
+    "银丰", "海南", "金融", "在营", "行政区", "银行", "行业", "金额",
+    "年龄", "年度", "年月", "年份", "年薪", "年金", "年报", "年限",
+    "是", "是否", "是非", "是的", "是这样", "是对", "是对的", "是吗", "是有", "是在", "是不是", "同意",
+    "在用", "生效", "出售",
+    "可修改", "可覆盖", "可增加", "可删除",
+    "行程单", "出差", "经济舱",
+    "印刷费", "代偿", "银行卡",
+    "清晰", "以上",
+    "实际", "计划",
+    "水电费", "归档", "兰州", "查证", "国债", "国债券", "成都",
+    "白银", "黄金", "白银连", "黄金连",
+})
+# 「是」开头时第二字为下列字符则视为明显非人名（保留姓「是」+ 名如「是伟」）
+_SHI_PREFIX_NON_NAME_SECOND_CHARS = frozenset("否非对这吗有的不在因真还就也都只可被从要会能应该")
+EXCLUDED_NAME_EXACT_TOKENS = EXCLUDED_NAME_MANUAL_EXACT_TOKENS | COUNTRY_NAME_HAN_EXACT_TOKENS | ADMIN_PLACE_NAME_HAN_EXACT_TOKENS
+
+
+def _is_shi_prefix_excluded_non_name(text):
+    t = str(text).strip()
+    if t == "是":
+        return True
+    if len(t) >= 2 and t[0] == "是" and t[1] in _SHI_PREFIX_NON_NAME_SECOND_CHARS:
+        return True
+    return False
+
+
+def _is_excluded_name_like_value(text):
+    t = str(text).strip()
+    if not t:
+        return False
+    if t in EXCLUDED_NAME_EXACT_TOKENS:
+        return True
+    if len(t) >= 2 and t.endswith("族") and all("\u4e00" <= c <= "\u9fff" for c in t):
+        return True
+    if _is_shi_prefix_excluded_non_name(t):
+        return True
+    return False
+
+
+def _looks_like_officer_card_value(text):
+    """单行军官证形态（与 Java OfficerCardRecognizeHeuristics.looksLikeOfficerCardValue 一致）。"""
+    return (_has_allowed_officer_first_char(text)
+            and _has_zi_di_marker(text)
+            and _ends_with_hao(text))
+
+
+def _looks_like_enterprise_name_value(text):
+    """单行企业名称形态（关键词+后缀+长度）。"""
+    return (_has_enterprise_keyword(text)
+            and _has_enterprise_suffix(text)
+            and _is_enterprise_length_reasonable(text))
+
+
+def _is_recognizable_name_value(text):
+    """单行是否应按姓名处理（形态 + 非黑名单）。"""
+    s = str(text).strip()
+    if not s or _is_excluded_name_like_value(s):
+        return False
+    return _is_name_shape_token(s)
+
+
 def _row_single_sensitive_kind(text):
+    """行级单一敏感类型（与 Java ColumnMixedRecognizeHeuristics 8 类顺序一致，命中即停）。"""
     if _row_intra_cell_multi_embed_hit(text):
         return None
     s = str(text).strip()
     if not s:
         return None
-    if is_mobile_phone_value(s):
-        return "PHONE"
-    if is_landline_phone_value(s):
-        return "LANDLINE"
+    # （1）身份证
     if is_id_card_format_value(s) and id_card_check(s):
         return "ID_CARD"
-    if is_passport_value(s):
-        return "PASSPORT"
+    # （2）统一社会信用代码
     if len(s) == 18 and credit_code_check(s):
         return "CREDIT_CODE"
-    if EMAIL_REGEX.match(s):
-        return "EMAIL"
+    # （3）姓名
+    if _is_recognizable_name_value(s):
+        return "NAME"
+    # （4）企业名称
+    if _looks_like_enterprise_name_value(s):
+        return "ENTERPRISE_NAME"
+    # （5）手机
+    if is_mobile_phone_value(s):
+        return "PHONE"
+    # （6）固话
+    if is_landline_phone_value(s):
+        return "LANDLINE"
+    # （7）军官证
+    if _looks_like_officer_card_value(s):
+        return "OFFICER_CARD"
+    # （8）护照
+    if is_passport_value(s):
+        return "PASSPORT"
     return None
 
 
@@ -3767,28 +3896,8 @@ def _iter_test_column_groups(all_groups_dict):
 
 # ==============================
 # 推理后处理（与 Java RecognizeOverrideSupport.applyPythonAligned 对齐）
+# 姓名形态/排除见上方 COLUMN_MIXED 段前定义（须早于训练循环）
 # ==============================
-
-def _is_pure_han_text(text):
-    return all("\u4e00" <= c <= "\u9fff" for c in text)
-
-
-def _is_name_shape_token(text):
-    """汉字姓名核（2~3 字，或 4 字且前两字为复姓）+ 可选末尾数字后缀；无公司/集团后缀。"""
-    t = str(text).strip()
-    if not t:
-        return False
-    if any(x in t for x in ("公司", "有限", "集团")):
-        return False
-    core = _strip_trailing_ascii_digits(t)
-    if not core or len(core) < 2 or len(core) > 4:
-        return False
-    if not _is_pure_han_text(core):
-        return False
-    if len(core) <= 3:
-        return True
-    return core[:2] in surname_dict
-
 
 def _name_column_recognizable_name_row_ratio(text_list):
     """列内符合姓名形态（含可选数字后缀）的取值占比；用于后处理拦截/抬升，不影响 PMML 特征 f127。"""
@@ -3851,48 +3960,6 @@ def _name_column_surname_head_dict_ratio(text_list):
         return 0.0
     hit = sum(1 for t in cleaned if _surname_head_in_dict(t))
     return hit / len(cleaned)
-
-
-# 非姓名排除：民族「X族」、性别/占位等 + country_dict 纯汉字国名
-EXCLUDED_NAME_MANUAL_EXACT_TOKENS = frozenset({
-    "男", "女", "未知", "不详", "其他", "无", "暂无", "成功", "法人", "法人股", "法官证",
-    "银丰", "海南", "金融", "在营", "行政区", "银行", "行业", "金额",
-    "年龄", "年度", "年月", "年份", "年薪", "年金", "年报", "年限",
-    "是", "是否", "是非", "是的", "是这样", "是对", "是对的", "是吗", "是有", "是在", "是不是", "同意",
-    "在用", "生效", "出售",
-    "可修改", "可覆盖", "可增加", "可删除",
-    "行程单", "出差", "经济舱",
-    "印刷费", "代偿", "银行卡",
-    "清晰", "以上",
-    "实际", "计划",
-    "水电费", "归档", "兰州", "查证", "国债", "国债券", "成都",
-    "白银", "黄金", "白银连", "黄金连",
-})
-# 「是」开头时第二字为下列字符则视为明显非人名（保留姓「是」+ 名如「是伟」）
-_SHI_PREFIX_NON_NAME_SECOND_CHARS = frozenset("否非对这吗有的不在因真还就也都只可被从要会能应该")
-EXCLUDED_NAME_EXACT_TOKENS = EXCLUDED_NAME_MANUAL_EXACT_TOKENS | COUNTRY_NAME_HAN_EXACT_TOKENS | ADMIN_PLACE_NAME_HAN_EXACT_TOKENS
-
-
-def _is_shi_prefix_excluded_non_name(text):
-    t = str(text).strip()
-    if t == "是":
-        return True
-    if len(t) >= 2 and t[0] == "是" and t[1] in _SHI_PREFIX_NON_NAME_SECOND_CHARS:
-        return True
-    return False
-
-
-def _is_excluded_name_like_value(text):
-    t = str(text).strip()
-    if not t:
-        return False
-    if t in EXCLUDED_NAME_EXACT_TOKENS:
-        return True
-    if len(t) >= 2 and t.endswith("族") and all("\u4e00" <= c <= "\u9fff" for c in t):
-        return True
-    if _is_shi_prefix_excluded_non_name(t):
-        return True
-    return False
 
 
 def _looks_like_excluded_name_column(text_list):
@@ -4033,11 +4100,11 @@ def _load_deploy_confidence_config(model_dir=None):
 
 
 def apply_recognize_overrides(predicted, text_list):
-    """兰州 9 类后处理：仅对 KEEP_LABELS 拦截/抬升（先拦后抬）。"""
+    """兰州 9 类后处理 + 可选 COLUMN_MIXED 抬升（与 Java RecognizeOverrideSupport 对齐）。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     result = predicted
-    # 非兰州类型预测一律降为 DEFAULT（精简模型不应产出其它类）
-    if result not in KEEP_LABELS:
+    # 非兰州类型预测一律降为 DEFAULT（COLUMN_MIXED 仅由后处理抬升产出，允许保留）
+    if result not in KEEP_LABELS and result != "COLUMN_MIXED":
         result = "DEFAULT"
 
     # 拦截：预测为某类但列形态不合格 → DEFAULT
@@ -4087,6 +4154,8 @@ def apply_recognize_overrides(predicted, text_list):
         result = "DEFAULT"
     if result == "ENTERPRISE_NAME" and not _looks_like_strict_enterprise_length_column(text_list):
         result = "DEFAULT"
+    if result == "COLUMN_MIXED" and COLUMN_MIXED_OVERRIDE_ENABLED and not _looks_like_column_mixed_column(text_list):
+        result = "DEFAULT"
     if result == "NAME" and _looks_like_excluded_name_column(text_list):
         result = "DEFAULT"
     if result == "NAME" and _name_column_han_char_ratio(text_list) < NAME_HAN_CHAR_MIN_RATIO:
@@ -4114,11 +4183,25 @@ def apply_recognize_overrides(predicted, text_list):
             result = "PASSPORT"
         elif _qualifies_for_enterprise_recognize_override(text_list) and result in (
                 "DEFAULT", "NAME"):
-            result = "ENTERPRISE_NAME"
+            # 树已判 NAME，且姓名形态占比 ≥ 企业关键词占比时不抢抬（避免姓名列里夹少量公司名被改成企业）
+            if result == "NAME" and (
+                    _name_column_recognizable_name_row_ratio(text_list)
+                    >= _enterprise_keyword_row_ratio(text_list)):
+                pass
+            else:
+                result = "ENTERPRISE_NAME"
         elif (result == "DEFAULT"
               and _looks_like_chinese_name_column(text_list)
               and not _looks_like_excluded_name_column(text_list)):
             result = "NAME"
+
+    # COLUMN_MIXED 抬升放在单类抬升之后（8 类收敛后仍能从 NAME/手机等纠偏为混列）
+    if (cleaned and COLUMN_MIXED_OVERRIDE_ENABLED
+            and _looks_like_column_mixed_column(text_list)
+            and result in (
+                "DEFAULT", "ID_CARD", "CREDIT_CODE", "NAME", "ENTERPRISE_NAME",
+                "PHONE", "LANDLINE", "OFFICER_CARD", "PASSPORT")):
+        result = "COLUMN_MIXED"
     return result
 
 # ==============================

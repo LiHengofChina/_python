@@ -113,14 +113,32 @@ def _normalize_phone_digits(text):
     return norm
 
 def _extract_last_11_digits(text):
-    """自字符串末尾向前取连续 11 位数字（忽略空格、横杠、+86 等）；不足 11 位返回 None。"""
+    """自字符串末尾向前取连续 11 位数字。
+
+    仅跳过空格/横杠/+ 等分隔符；遇字母立即停止（不跳过），
+    避免身份证末位 X 等被滤掉后误取末 11 位当手机号。
+    不足 11 位返回 None。
+    """
     s = str(text).strip()
     if not s:
         return None
-    digits = ''.join(c for c in s if c.isdigit())
-    if len(digits) < 11:
+    collected = []
+    for c in reversed(s):
+        if c.isdigit():
+            collected.append(c)
+            if len(collected) >= 11:
+                break
+        elif c in " \t\r\n-+":
+            continue
+        elif c.isalpha():
+            # 字母不排除、不跨越，截断扫描
+            break
+        else:
+            # 其它标点仍跳过（兼容 (138)1234-5678）
+            continue
+    if len(collected) < 11:
         return None
-    return digits[-11:]
+    return "".join(reversed(collected))
 
 def _is_mainland_mobile_phone_value(text):
     tail11 = _extract_last_11_digits(text)
