@@ -186,22 +186,23 @@ YEAR_RANGE_REGEX = re.compile(r'^\d{4}-\d{4}$')
 # 流程：PMML 初选 → apply_confidence_gate（8 类门控）→ apply_recognize_overrides（拦截/抬升）
 # 文档：012.（最终、最新）每个规则的识别逻辑
 # ==============================
-PHONE_COLUMN_STRICT_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_STRICT_COLUMN_MIN_RATIO", "0.75"))
-PHONE_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_PREFIX_MIN_RATIO", "0.75"))
-LANDLINE_COLUMN_STRICT_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_STRICT_COLUMN_MIN_RATIO", "0.75"))
-LANDLINE_AREA_CODE_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_AREA_CODE_MIN_RATIO", "0.75"))
-LANDLINE_SERVICE_SHORT_COLUMN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_SERVICE_SHORT_COLUMN_MIN_RATIO", "0.75"))
-LANDLINE_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_FORMAT_MIN_RATIO", "0.75"))
+# 下列默认值与 Java MasksRuntimeConfig / RecognizeGateDefaults 一致（列占比 0.1、门控 0.4 / margin 0.01）
+PHONE_COLUMN_STRICT_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_STRICT_COLUMN_MIN_RATIO", "0.1"))
+PHONE_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_PREFIX_MIN_RATIO", "0.1"))
+LANDLINE_COLUMN_STRICT_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_STRICT_COLUMN_MIN_RATIO", "0.1"))
+LANDLINE_AREA_CODE_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_AREA_CODE_MIN_RATIO", "0.1"))
+LANDLINE_SERVICE_SHORT_COLUMN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_SERVICE_SHORT_COLUMN_MIN_RATIO", "0.1"))
+LANDLINE_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_FORMAT_MIN_RATIO", "0.1"))
 LANDLINE_ALLOW_SERVICE_SHORT = os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_ALLOW_SERVICE_SHORT", "true").strip().lower() in (
     "1", "true", "yes", "on")
 LANDLINE_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_CONFIDENCE_THRESHOLD", "0.4"))
-LANDLINE_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_DEFAULT_MIN_MARGIN", "0.1"))
-ID_CARD_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_CONFIDENCE_THRESHOLD", "0.55"))
-ID_CARD_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_DEFAULT_MIN_MARGIN", "0.1"))
-ID_CARD_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_FORMAT_MIN_RATIO", "0.95"))
-ID_CARD_BIRTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_BIRTH_MIN_RATIO", "0.85"))
-ID_CARD_CHECKSUM_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_CHECKSUM_MIN_RATIO", "1.0"))
-ID_CARD_REGION_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_REGION_PREFIX_MIN_RATIO", "0.75"))
+LANDLINE_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_DEFAULT_MIN_MARGIN", "0.01"))
+ID_CARD_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_CONFIDENCE_THRESHOLD", "0.4"))
+ID_CARD_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_DEFAULT_MIN_MARGIN", "0.01"))
+ID_CARD_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_FORMAT_MIN_RATIO", "0.1"))
+ID_CARD_BIRTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_BIRTH_MIN_RATIO", "0.1"))
+ID_CARD_CHECKSUM_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_CHECKSUM_MIN_RATIO", "0.1"))
+ID_CARD_REGION_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_REGION_PREFIX_MIN_RATIO", "0.1"))
 
 def _parse_id_card_min_birth_year():
     raw = os.environ.get("MASK_SDK_RECOGNIZE_ID_CARD_MIN_BIRTH_YEAR", "1900")
@@ -214,41 +215,41 @@ def _parse_id_card_min_birth_year():
     return 1900
 
 ID_CARD_MIN_BIRTH_YEAR = _parse_id_card_min_birth_year()
-CREDIT_CODE_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_CONFIDENCE_THRESHOLD", "0.55"))
-CREDIT_CODE_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_DEFAULT_MIN_MARGIN", "0.1"))
-CREDIT_CODE_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_FORMAT_MIN_RATIO", "0.95"))
-CREDIT_CODE_REGION_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_REGION_PREFIX_MIN_RATIO", "0.75"))
-COLUMN_MIXED_OVERRIDE_ENABLED = os.environ.get("MASK_SDK_RECOGNIZE_COLUMN_MIXED_ENABLED", "true").strip().lower() in (
+CREDIT_CODE_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_CONFIDENCE_THRESHOLD", "0.4"))
+CREDIT_CODE_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_DEFAULT_MIN_MARGIN", "0.01"))
+CREDIT_CODE_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_FORMAT_MIN_RATIO", "0.1"))
+CREDIT_CODE_REGION_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_CREDIT_CODE_REGION_PREFIX_MIN_RATIO", "0.1"))
+COLUMN_MIXED_OVERRIDE_ENABLED = os.environ.get("MASK_SDK_RECOGNIZE_COLUMN_MIXED_ENABLED", "false").strip().lower() in (
     "1", "true", "yes", "on")
-OFFICER_CARD_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_CONFIDENCE_THRESHOLD", "0.55"))
-OFFICER_CARD_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_DEFAULT_MIN_MARGIN", "0.1"))
-OFFICER_CARD_FIRST_CHAR_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_FIRST_CHAR_MIN_RATIO", "0.85"))
-OFFICER_CARD_ZI_DI_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_ZI_DI_MIN_RATIO", "0.85"))
-OFFICER_CARD_END_HAO_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_END_HAO_MIN_RATIO", "0.85"))
-PASSPORT_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_CONFIDENCE_THRESHOLD", "0.55"))
-PASSPORT_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_DEFAULT_MIN_MARGIN", "0.1"))
+OFFICER_CARD_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_CONFIDENCE_THRESHOLD", "0.4"))
+OFFICER_CARD_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_DEFAULT_MIN_MARGIN", "0.01"))
+OFFICER_CARD_FIRST_CHAR_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_FIRST_CHAR_MIN_RATIO", "0.1"))
+OFFICER_CARD_ZI_DI_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_ZI_DI_MIN_RATIO", "0.1"))
+OFFICER_CARD_END_HAO_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_OFFICER_CARD_END_HAO_MIN_RATIO", "0.1"))
+PASSPORT_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_CONFIDENCE_THRESHOLD", "0.4"))
+PASSPORT_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_DEFAULT_MIN_MARGIN", "0.01"))
 PASSPORT_MAX_DISTINCT_FOR_INTERCEPT = int(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_MAX_DISTINCT_FOR_INTERCEPT", "2"))
 PASSPORT_SYSTEM_CODE_INTERCEPT_ENABLED = os.environ.get(
     "MASK_SDK_RECOGNIZE_PASSPORT_SYSTEM_CODE_INTERCEPT_ENABLED", "true").strip().lower() in (
     "1", "true", "yes", "on")
-PASSPORT_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_FORMAT_MIN_RATIO", "0.75"))
-PASSPORT_PREFIX_LETTER_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_PREFIX_LETTER_MIN_RATIO", "0.75"))
-PASSPORT_LENGTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_LENGTH_MIN_RATIO", "0.75"))
-NAME_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_CONFIDENCE_THRESHOLD", "0.55"))
-NAME_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_DEFAULT_MIN_MARGIN", "0.1"))
-PHONE_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_CONFIDENCE_THRESHOLD", "0.55"))
-PHONE_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_DEFAULT_MIN_MARGIN", "0.1"))
+PASSPORT_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_FORMAT_MIN_RATIO", "0.1"))
+PASSPORT_PREFIX_LETTER_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_PREFIX_LETTER_MIN_RATIO", "0.1"))
+PASSPORT_LENGTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_LENGTH_MIN_RATIO", "0.1"))
+NAME_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_CONFIDENCE_THRESHOLD", "0.4"))
+NAME_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_DEFAULT_MIN_MARGIN", "0.01"))
+PHONE_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_CONFIDENCE_THRESHOLD", "0.4"))
+PHONE_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_DEFAULT_MIN_MARGIN", "0.01"))
 ENTERPRISE_NAME_GATE_CONFIDENCE_THRESHOLD = float(
-    os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_CONFIDENCE_THRESHOLD", "0.55"))
+    os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_CONFIDENCE_THRESHOLD", "0.4"))
 ENTERPRISE_NAME_GATE_DEFAULT_MIN_MARGIN = float(
-    os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_DEFAULT_MIN_MARGIN", "0.1"))
-ENTERPRISE_KEYWORD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_KEYWORD_MIN_RATIO", "0.75"))
-ENTERPRISE_SUFFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_SUFFIX_MIN_RATIO", "0.75"))
-ENTERPRISE_LENGTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_LENGTH_MIN_RATIO", "0.75"))
-# NAME 后处理（masks.recognize-name-han-char-min-ratio 等；默认与 Java NameRecognizeHeuristics 一致）
-NAME_HAN_CHAR_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_HAN_CHAR_MIN_RATIO", "1.0"))
-NAME_2_OR_3_HAN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_2_OR_3_HAN_MIN_RATIO", "1.0"))
-NAME_SURNAME_HEAD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_SURNAME_HEAD_MIN_RATIO", "1.0"))
+    os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_DEFAULT_MIN_MARGIN", "0.01"))
+ENTERPRISE_KEYWORD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_KEYWORD_MIN_RATIO", "0.1"))
+ENTERPRISE_SUFFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_SUFFIX_MIN_RATIO", "0.1"))
+ENTERPRISE_LENGTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_ENTERPRISE_NAME_LENGTH_MIN_RATIO", "0.1"))
+# NAME 后处理（masks.recognize-name-han-char-min-ratio 等；默认与 Java NameRecognizeHeuristics / MasksRuntimeConfig 一致）
+NAME_HAN_CHAR_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_HAN_CHAR_MIN_RATIO", "0.1"))
+NAME_2_OR_3_HAN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_2_OR_3_HAN_MIN_RATIO", "0.1"))
+NAME_SURNAME_HEAD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_SURNAME_HEAD_MIN_RATIO", "0.1"))
 EXCLUDED_NAME_COLUMN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_EXCLUDE_COLUMN_MIN_RATIO", "0.5"))
 SYSTEM_CODE_C_PATTERN = re.compile(r'^C\d{8,}$')
 # 护照/出入境证件（与 Java PassportRecognizeHeuristics 一致）
@@ -445,7 +446,7 @@ def _looks_like_strict_id_card_birth_column(text_list):
 
 
 def _looks_like_strict_id_card_checksum_column(text_list):
-    """身份证形态行中校验位合法占比 ≥ ID_CARD_CHECKSUM_MIN_RATIO（默认 1.0，必须全部通过）。"""
+    """身份证形态行中校验位合法占比 ≥ ID_CARD_CHECKSUM_MIN_RATIO（默认 0.1，与 Java 一致）。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     format_rows = [t for t in cleaned if is_id_card_format_value(t)]
     if not format_rows:
@@ -3562,30 +3563,26 @@ model_classes = model.classes_
 _default_idx = np.where(model_classes == "DEFAULT")[0]
 default_idx = int(_default_idx[0]) if len(_default_idx) > 0 else -1
 
-# 部署按类阈值：默认 0.55，ADDRESS / LANDLINE 单独 0.4（与 Java confidence_thresholds.json 一致）
-DEPLOY_GLOBAL_CONFIDENCE_THRESHOLD = 0.55
-DEPLOY_CLASS_CONFIDENCE_THRESHOLD = 0.55
-DEPLOY_RELAXED_CLASS_THRESHOLDS = {"ADDRESS": 0.4, "LANDLINE": 0.4}
-DEPLOY_DEFAULT_MIN_MARGIN = 0.08
+# 部署按类阈值：与 Java confidence_thresholds.json / RecognizeGateDefaults 一致（全局 0.4 / margin 0.01）
+DEPLOY_GLOBAL_CONFIDENCE_THRESHOLD = 0.4
+DEPLOY_CLASS_CONFIDENCE_THRESHOLD = 0.4
+DEPLOY_RELAXED_CLASS_THRESHOLDS = {}
+DEPLOY_DEFAULT_MIN_MARGIN = 0.01
 
-# 全局 margin 仍用验证集搜索；按类阈值固定部署值，不再用 P10 压每类
-best_global_margin = 0.08
-best_acc_err = 1.0
-for _margin in [0.10, 0.08, 0.05]:
-    pred_label = model_classes[np.argmax(_proba, axis=1)]
-    max_prob = np.max(_proba, axis=1)
-    default_prob = _proba[:, default_idx] if default_idx >= 0 else 0.0
-    reject = (max_prob < DEPLOY_GLOBAL_CONFIDENCE_THRESHOLD) | ((max_prob - default_prob) < _margin)
-    accept = ~reject
-    if accept.sum() == 0:
-        continue
+# 固定写入与 Java 一致的 margin，不再用验证集搜索覆盖
+best_global_margin = DEPLOY_DEFAULT_MIN_MARGIN
+pred_label = model_classes[np.argmax(_proba, axis=1)]
+max_prob = np.max(_proba, axis=1)
+default_prob = _proba[:, default_idx] if default_idx >= 0 else 0.0
+reject = (max_prob < DEPLOY_GLOBAL_CONFIDENCE_THRESHOLD) | ((max_prob - default_prob) < best_global_margin)
+accept = ~reject
+if accept.sum() > 0:
     accepted_correct = (pred_label[accept] == y_test[accept]).sum()
-    accepted_err = 1.0 - accepted_correct / accept.sum()
-    if accepted_err < best_acc_err:
-        best_acc_err = accepted_err
-        best_global_margin = _margin
+    best_acc_err = 1.0 - accepted_correct / accept.sum()
+else:
+    best_acc_err = 1.0
 
-print("（7.6）验证集 margin 搜索：default_min_margin=%.2f（接受后错误率≈%.2f%%）"
+print("（7.6）部署 margin（与 Java 一致）：default_min_margin=%.2f（接受后错误率≈%.2f%%）"
       % (best_global_margin, best_acc_err * 100))
 print("（7.6）部署全局阈值：confidence_threshold=%.2f" % DEPLOY_GLOBAL_CONFIDENCE_THRESHOLD)
 
@@ -3877,19 +3874,19 @@ def _looks_like_excluded_name_column(text_list):
 
 # 部署置信度阈值（非 8 类门控类使用；与 Java confidence_thresholds.json 一致）
 # 训练后会写入 confidence_thresholds.json；测试推理优先读该文件，可用环境变量覆盖
-DEFAULT_DEPLOY_CONFIDENCE_THRESHOLD = 0.55
-DEFAULT_DEPLOY_MIN_MARGIN = 0.08
+DEFAULT_DEPLOY_CONFIDENCE_THRESHOLD = 0.4
+DEFAULT_DEPLOY_MIN_MARGIN = 0.01
 
 # 与 Java RecognizeGateDefaults.BY_CLASS 一致（SDK 内置默认，Nacos/环境变量可覆盖）
 GATED_CLASS_GATE_DEFAULTS = {
-    "NAME": (0.55, 0.1),
-    "PHONE": (0.55, 0.1),
-    "LANDLINE": (0.4, 0.1),
-    "ID_CARD": (0.55, 0.1),
-    "CREDIT_CODE": (0.55, 0.1),
-    "OFFICER_CARD": (0.55, 0.1),
-    "PASSPORT": (0.55, 0.1),
-    "ENTERPRISE_NAME": (0.55, 0.1),
+    "NAME": (0.4, 0.01),
+    "PHONE": (0.4, 0.01),
+    "LANDLINE": (0.4, 0.01),
+    "ID_CARD": (0.4, 0.01),
+    "CREDIT_CODE": (0.4, 0.01),
+    "OFFICER_CARD": (0.4, 0.01),
+    "PASSPORT": (0.4, 0.01),
+    "ENTERPRISE_NAME": (0.4, 0.01),
 }
 
 
@@ -3948,7 +3945,7 @@ def _resolve_gate_threshold_and_margin(predicted, confidence_threshold, default_
     return thresh, margin
 
 
-def apply_confidence_gate(predicted, probability, classes, confidence_threshold=0.55, default_min_margin=0.08,
+def apply_confidence_gate(predicted, probability, classes, confidence_threshold=0.4, default_min_margin=0.01,
                           per_class_threshold=None):
     """
     置信度门控：与 Java RKLinkMaskSdkImpl + RecognizeGateConfigProvider 一致。
