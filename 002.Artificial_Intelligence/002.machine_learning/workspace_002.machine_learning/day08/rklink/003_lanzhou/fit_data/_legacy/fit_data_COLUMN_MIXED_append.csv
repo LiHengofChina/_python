@@ -1,0 +1,16 @@
+column_id,text,label
+cm_phone_landline_1,6555345,COLUMN_MIXED
+cm_phone_landline_1,13898523648,COLUMN_MIXED
+cm_phone_landline_1,0931-6525836,COLUMN_MIXED
+cm_phone_id_landline_1,13800001234,COLUMN_MIXED
+cm_phone_id_landline_1,110101199001010007,COLUMN_MIXED
+cm_phone_id_landline_1,021-12345678,COLUMN_MIXED
+cm_short_mobile_landline_1,95588,COLUMN_MIXED
+cm_short_mobile_landline_1,13912345678,COLUMN_MIXED
+cm_short_mobile_landline_1,400-100-5678,COLUMN_MIXED
+cm_email_phone_passport_1,alice@test.com,COLUMN_MIXED
+cm_email_phone_passport_1,13698765432,COLUMN_MIXED
+cm_email_phone_passport_1,E12345678,COLUMN_MIXED
+cm_phone_passport_credit_1,15800001111,COLUMN_MIXED
+cm_phone_passport_credit_1,G23456789,COLUMN_MIXED
+cm_phone_passport_credit_1,91110000MA00123456,COLUMN_MIXED

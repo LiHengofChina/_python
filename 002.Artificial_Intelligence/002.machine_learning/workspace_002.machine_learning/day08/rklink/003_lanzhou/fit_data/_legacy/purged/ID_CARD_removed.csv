@@ -1,0 +1,13 @@
+column_id,text,label,reason
+id_col_1,91440300MA5D12345T,ID_CARD,not_18_id_format
+drive_col_7,9144030071526726X,ID_CARD,not_18_id_format
+drive_col_7,510000,ID_CARD,not_18_id_format
+driving_col_1,11010119900101123,ID_CARD,not_18_id_format
+driving_col_1,31010119900A011234,ID_CARD,not_18_id_format
+driving_col_2,11010219910201111,ID_CARD,not_18_id_format
+driving_col_2,31010219890B021222,ID_CARD,not_18_id_format
+driving_col_3,11010319920301200,ID_CARD,not_18_id_format
+driving_col_3,31010319880302X002,ID_CARD,not_18_id_format
+driving_col_4,11010419930401900,ID_CARD,not_18_id_format
+driving_col_4,31010419890402900A,ID_CARD,not_18_id_format
+driving_col_5,11010519940501500,ID_CARD,not_18_id_format

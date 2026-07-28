@@ -3371,7 +3371,7 @@ def run_tree_visualizations(rf_model, X_matrix, y_vector, feat_names):
     except Exception as exc:
         err = str(exc)
         if "can't multiply sequence by non-int of type 'float'" in err:
-            print("[tree_viz] dtreeviz 失败: y_train 须为数值标签（0..n-1），请升级 rklink_002.py 或检查 _tree_viz_numeric_y_train")
+            print("[tree_viz] dtreeviz 失败: y_train 须为数值标签（0..n-1），请升级 rklink_003.py 或检查 _tree_viz_numeric_y_train")
         elif "dot" in err.lower() and ("not found" in err.lower() or "executable" in err.lower()):
             print("[tree_viz] dtreeviz 失败: 未找到 Graphviz 的 dot")
             print("[tree_viz]  CMD 里 dot -V 能通但 PyCharm 不行时：完全退出并重启 PyCharm，或从 CMD 运行脚本")
@@ -3606,7 +3606,7 @@ with open(_readme_path, "w", encoding="utf-8") as _rf:
     _rf.write(
         "recognize_model — mask-sdk 列类型识别模型包（RandomForest + PMML）\n"
         "============================================================\n"
-        "本目录由 E 盘 rklink_002.py 训练输出，供 Java mask-sdk JPMML 本地推理。\n"
+        "本目录由 E 盘 rklink_003.py 训练输出，供 Java mask-sdk JPMML 本地推理。\n"
         "Python 侧主输出在 002/output/recognize_model/；训练结束会整包覆盖同步到本目录。\n"
         "主要文件：\n"
         "  recognize_rf_model.pmml      — Java 推理（必需）\n"
@@ -3623,7 +3623,7 @@ with open(_readme_path, "w", encoding="utf-8") as _rf:
         "  1) PMML 初选\n"
         "  2) 8 类门控（NAME/PHONE/LANDLINE/ID_CARD/CREDIT_CODE/OFFICER_CARD/PASSPORT/ENTERPRISE_NAME）\n"
         "     Java: masks.recognize-*-confidence-threshold / *-default-min-margin\n"
-        "     Python 测试: 环境变量 MASK_SDK_RECOGNIZE_*（见 rklink_002.py 顶部配置区）\n"
+        "     Python 测试: 环境变量 MASK_SDK_RECOGNIZE_*（见 rklink_003.py 顶部配置区）\n"
         "  3) apply_recognize_overrides 拦截/抬升（与 RecognizeOverrideSupport 对齐）\n"
     )
 print(f"已写入说明: {_readme_path}")

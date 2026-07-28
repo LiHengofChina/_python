@@ -1,0 +1,15 @@
+{
+  "global_confidence_threshold": 0.4,
+  "global_default_min_margin": 0.01,
+  "per_class_confidence_threshold": {
+    "CREDIT_CODE": 0.4,
+    "DEFAULT": 0.4,
+    "ENTERPRISE_NAME": 0.4,
+    "ID_CARD": 0.4,
+    "LANDLINE": 0.4,
+    "NAME": 0.4,
+    "OFFICER_CARD": 0.4,
+    "PASSPORT": 0.4,
+    "PHONE": 0.4
+  }
+}
