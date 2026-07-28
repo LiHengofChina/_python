@@ -1,12 +1,15 @@
 """
-将 fit_data 兰州 9 类正例补齐到 TARGET_ROWS（默认 540），且每文件内 text 全局唯一。
-仅生成新样本；每列约 ROWS_PER_COL 行。
+兰州 fit_data 扩充：
+1) 每列固定 ROWS_PER_COL=20（对齐现场 recognize-sample-rows）
+2) 正类至少 TARGET_COLS 列（默认 100 列 → 2000 行/类）
+3) DEFAULT：现有列全部扩到 20，并保证至少 TARGET_COLS_DEFAULT 列
+
+文件内 text 尽量全局唯一；仅追加/截断列内行，不删列。
 """
 import json
 import os
 import random
 import re
-from datetime import date, timedelta
 
 import pandas as pd
 
@@ -28,23 +31,29 @@ KEEP_LABELS = [
     "ENTERPRISE_NAME",
 ]
 
-TARGET_ROWS = 540
-ROWS_PER_COL = 20  # 对齐现场 recognize-sample-rows=20
-GEN_MAX_TRIES = 500
+ROWS_PER_COL = 20  # 对齐现场采样行数
+TARGET_COLS = 100  # 正类目标列数 → 约 2000 行/类
+TARGET_COLS_DEFAULT = 1500  # DEFAULT 目标列数 → 约 30000 行
+GEN_MAX_TRIES = 2000
 RNG = random.Random(42)
 
-PHONE_REGEX = re.compile(r"^1[3-9]\d{9}$")
 GIVEN_CHARS = "伟芳娜敏静丽强磊洋勇军杰明华建国国强志强秀英玉兰桂英丽娟秀兰"
 ENT_SUFFIX = ["有限公司", "股份有限公司", "集团有限公司", "科技有限公司", "实业有限公司"]
 ENT_CORE = ["华夏", "恒远", "博瑞", "智汇", "云联", "信达", "鸿泰", "博雅", "英迪", "瑞达", "腾迅", "中科"]
 OFFICER_HEAD = list("职文广军兵士武")
+ID_AREAS = [
+    "110101", "110105", "310101", "310115", "440106", "440305",
+    "330106", "330102", "510104", "510107", "320102", "320104",
+    "420102", "420106", "610102", "610103",
+]
 _SEQ = 0
 SURNAME_LIST = []
 
 
 def _load_dicts():
     global SURNAME_LIST
-    with open(os.path.join(_DICT_ROOT, "chinesename", "surname_dict.json"), encoding="utf-8") as f:
+    path = os.path.join(_DICT_ROOT, "chinesename", "surname_dict.json")
+    with open(path, encoding="utf-8") as f:
         SURNAME_LIST = json.load(f)
     if not isinstance(SURNAME_LIST, list):
         SURNAME_LIST = list(SURNAME_LIST)
@@ -66,14 +75,20 @@ def _rand_phone():
 
 
 def _rand_name():
+    # 生成 2~4 个汉字姓名（复姓优先短名）
     sur = RNG.choice(SURNAME_LIST) if SURNAME_LIST else "张"
-    n = RNG.choice([1, 2, 2, 3])
-    return sur + "".join(RNG.choice(GIVEN_CHARS) for _ in range(n))[: 4 - min(len(sur), 2)]
+    if len(sur) >= 2:
+        given_n = RNG.choice([1, 1, 2])
+    else:
+        given_n = RNG.choice([1, 2, 2, 3])
+    given = "".join(RNG.choice(GIVEN_CHARS) for _ in range(given_n))
+    name = sur + given
+    return name[:4] if len(name) > 4 else name
 
 
 def _rand_id():
-    area = RNG.choice(["110101", "310101", "440106", "330106", "510104"])
-    y = RNG.randint(1965, 2005)
+    area = RNG.choice(ID_AREAS)
+    y = RNG.randint(1960, 2008)
     m = RNG.randint(1, 12)
     d = RNG.randint(1, 28)
     birth = f"{y:04d}{m:02d}{d:02d}"
@@ -86,24 +101,28 @@ def _rand_id():
 
 
 def _rand_credit():
-    chars = CREDIT_CODE_CHARS
-    return "91" + "".join(RNG.choice(chars) for _ in range(16))
+    return "91" + "".join(RNG.choice(CREDIT_CODE_CHARS) for _ in range(16))
 
 
 def _rand_passport():
-    return "E" + RNG.choice("123456789ABCDEFGHJKLMNPQRSTUVWXYZ") + "".join(
-        str(RNG.randint(0, 9)) for _ in range(7)
-    )
+    head = RNG.choice("GE")
+    second = RNG.choice("123456789ABCDEFGHJKLMNPQRSTUVWXY")
+    return head + second + "".join(str(RNG.randint(0, 9)) for _ in range(7))
 
 
 def _rand_landline():
-    if RNG.random() < 0.5:
+    r = RNG.random()
+    if r < 0.4:
         return f"0{RNG.randint(10, 29)}-{RNG.randint(10000000, 99999999)}"
-    return f"0{RNG.randint(310, 999)}-{RNG.randint(1000000, 9999999)}"
+    if r < 0.75:
+        return f"0{RNG.randint(310, 999)}-{RNG.randint(1000000, 9999999)}"
+    if r < 0.9:
+        return f"400-{RNG.randint(100, 999)}-{RNG.randint(1000, 9999)}"
+    return f"{RNG.randint(2, 8)}{RNG.randint(1000000, 9999999)}"
 
 
 def _rand_enterprise():
-    return RNG.choice(ENT_CORE) + str(_next_seq() % 1000) + RNG.choice(ENT_SUFFIX)
+    return RNG.choice(ENT_CORE) + str(_next_seq() % 10000) + RNG.choice(ENT_SUFFIX)
 
 
 def _rand_officer():
@@ -113,18 +132,22 @@ def _rand_officer():
 
 
 def _rand_default():
-    kind = RNG.randint(0, 5)
+    kind = RNG.randint(0, 7)
     if kind == 0:
         return f"cfg_{_next_seq()}"
     if kind == 1:
-        return f"N/A-{_next_seq() % 10000}"
+        return f"N/A-{_next_seq() % 100000}"
     if kind == 2:
-        return str(RNG.randint(100000, 999999))
+        return str(RNG.randint(100000, 99999999))
     if kind == 3:
         return f"test_value_{_next_seq()}"
     if kind == 4:
-        return f"{RNG.randint(2020, 2025)}-{RNG.randint(1, 12):02d}-{RNG.randint(1, 28):02d}"
-    return f"IDX{_next_seq():08d}"
+        return f"{RNG.randint(2018, 2026)}-{RNG.randint(1, 12):02d}-{RNG.randint(1, 28):02d}"
+    if kind == 5:
+        return f"IDX{_next_seq():08d}"
+    if kind == 6:
+        return f"unknown_{_next_seq()}"
+    return f"param_{_next_seq()}_{RNG.randint(1, 99)}"
 
 
 def _gen_candidate(label):
@@ -143,9 +166,7 @@ def _gen_candidate(label):
     if not gen:
         return None
     t = gen()
-    if label == "CREDIT_CODE":
-        t = t.upper()
-    elif label == "PASSPORT":
+    if label in ("CREDIT_CODE", "PASSPORT"):
         t = t.upper()
     return t
 
@@ -156,7 +177,7 @@ def _gen_unique(label, used):
         if t is None:
             continue
         t = str(t).strip()
-        if t in used:
+        if not t or t in used:
             continue
         if not is_positive(label, t):
             continue
@@ -186,27 +207,64 @@ def _max_col_index(df, prefix):
     return mx
 
 
-def augment_label(label, target=TARGET_ROWS):
+def _normalize_column_rows(label, col_id, texts, used):
+    """列内去重后截断/补齐到 ROWS_PER_COL。"""
+    kept = []
+    for t in texts:
+        t = str(t).strip()
+        if not t:
+            continue
+        if t in kept:
+            continue
+        kept.append(t)
+        used.add(t)
+    if len(kept) > ROWS_PER_COL:
+        kept = kept[:ROWS_PER_COL]
+    while len(kept) < ROWS_PER_COL:
+        t = _gen_unique(label, used)
+        if t is None:
+            break
+        kept.append(t)
+    return [{"column_id": col_id, "text": t, "label": label} for t in kept]
+
+
+def expand_label(label):
     path = os.path.join(_FIT_DIR, f"{label}.csv")
     if not os.path.isfile(path):
         return None
+
     df = pd.read_csv(path, dtype={"text": str, "column_id": str})
     df["text"] = df["text"].astype(str).str.strip()
-    before = len(df)
-    used = set(df["text"].tolist())
-    if before >= target and len(used) == before:
-        return before, before, 0
+    df["column_id"] = df["column_id"].astype(str).str.strip()
+    before_rows = len(df)
+    before_cols = df["column_id"].nunique()
 
-    prefix = _infer_col_prefix(df)
-    col_idx = _max_col_index(df, prefix)
-    new_rows = list(df.to_dict("records"))
+    used = set()
+    new_rows = []
+    # 保持原列顺序
+    for col_id, group in df.groupby("column_id", sort=False):
+        texts = group["text"].tolist()
+        new_rows.extend(_normalize_column_rows(label, col_id, texts, used))
 
-    while len(new_rows) < target:
+    out = pd.DataFrame(new_rows)
+    prefix = _infer_col_prefix(out if not out.empty else df)
+    col_idx = _max_col_index(out if not out.empty else df, prefix)
+
+    target_cols = TARGET_COLS_DEFAULT if label == "DEFAULT" else TARGET_COLS
+    while out["column_id"].nunique() < target_cols:
         col_idx += 1
         col_id = f"{prefix}{col_idx}"
-        need = min(ROWS_PER_COL, target - len(new_rows))
         col_texts = []
-        for _ in range(need):
+        for _ in range(ROWS_PER_COL):
+            t = _gen_unique(label, used)
+            if t is None:
+                break
+            col_texts.append(t)
+        if len(col_texts) < max(5, ROWS_PER_COL // 2):
+            # 生成失败过多则停止加列
+            break
+        # 不足 20 也尽量补满
+        while len(col_texts) < ROWS_PER_COL:
             t = _gen_unique(label, used)
             if t is None:
                 break
@@ -215,31 +273,43 @@ def augment_label(label, target=TARGET_ROWS):
             break
         for t in col_texts:
             new_rows.append({"column_id": col_id, "text": t, "label": label})
+        out = pd.DataFrame(new_rows)
 
-    out = pd.DataFrame(new_rows)
     out.to_csv(path, index=False, encoding="utf-8")
-    after = len(out)
-    return before, after, after - before
+    after_rows = len(out)
+    after_cols = out["column_id"].nunique()
+    sizes = out.groupby("column_id").size()
+    return {
+        "before_rows": before_rows,
+        "after_rows": after_rows,
+        "before_cols": before_cols,
+        "after_cols": after_cols,
+        "min_per_col": int(sizes.min()) if len(sizes) else 0,
+        "max_per_col": int(sizes.max()) if len(sizes) else 0,
+        "mean_per_col": float(sizes.mean()) if len(sizes) else 0.0,
+        "unique_text": int(out["text"].nunique()),
+    }
 
 
 def main():
     global _SEQ
     _SEQ = 0
     _load_dicts()
-    print(f"目标: {TARGET_ROWS} 行/类（兰州9类）, 每列约 {ROWS_PER_COL} 行")
+    print(f"每列固定 {ROWS_PER_COL} 行；正类目标列数={TARGET_COLS}；DEFAULT 目标列数={TARGET_COLS_DEFAULT}")
     print(f"目录: {_FIT_DIR}\n")
-    total_added = 0
     for label in KEEP_LABELS:
-        r = augment_label(label)
+        r = expand_label(label)
         if r is None:
             print(f"  {label}: 文件不存在，跳过")
             continue
-        b, a, add = r
-        total_added += max(0, add)
-        uniq = pd.read_csv(os.path.join(_FIT_DIR, f"{label}.csv"), dtype={"text": str})["text"].nunique()
-        flag = " OK" if a == TARGET_ROWS and uniq == a else " WARN"
-        print(f"  {label}: {b} -> {a} (+{add}), unique={uniq}{flag}")
-    print(f"\n合计净增: {total_added} 行")
+        ok = (r["min_per_col"] == ROWS_PER_COL and r["max_per_col"] == ROWS_PER_COL)
+        flag = " OK" if ok else " WARN"
+        print(
+            f"  {label}: rows {r['before_rows']}->{r['after_rows']}, "
+            f"cols {r['before_cols']}->{r['after_cols']}, "
+            f"per_col min/mean/max={r['min_per_col']}/{r['mean_per_col']:.1f}/{r['max_per_col']}, "
+            f"unique={r['unique_text']}{flag}"
+        )
 
 
 if __name__ == "__main__":

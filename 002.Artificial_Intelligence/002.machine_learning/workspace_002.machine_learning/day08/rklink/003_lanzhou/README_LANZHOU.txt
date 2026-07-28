@@ -14,4 +14,14 @@
    D:\___workspace\workspace_2025_18_w_java_\datasharingplatform\mask-sdk\src\main\resources\recognize_model
    可用环境变量 MASK_SDK_RECOGNIZE_MODEL_DIR 覆盖；设为空字符串则跳过同步
 
-后续可继续做：每列 20 样本、噪音 10%~50%。
+后续：重新运行 rklink_003.py 训练（会同步 PMML 到 mask-sdk）。
+
+当前 fit_data：
+- 每列固定 20 行（对齐现场）
+- 正类约 100 列 × 20 = 2000 行/类
+- DEFAULT 约 1500 列 × 20 = 30000 行
+- 正类已按列注入噪音 Uniform(10%,50%)（脚本 inject_noise_fit_data.py）
+  · 其余行均为该类型正确样本（purify 通过）
+  · 整文件 text 不重复（dup=0）
+  · 干净备份在 fit_data/_legacy/before_noise/；重复跑会先恢复再重建
+- DEFAULT 未掺脏（本身已是负样本）
