@@ -270,11 +270,11 @@ NAME_2_OR_3_HAN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_2_OR_3
 NAME_SURNAME_HEAD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_SURNAME_HEAD_MIN_RATIO", "0.1"))
 EXCLUDED_NAME_COLUMN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_EXCLUDE_COLUMN_MIN_RATIO", "0.5"))
 SYSTEM_CODE_C_PATTERN = re.compile(r'^C\d{8,}$')
-# 护照/出入境证件（与 Java PassportRecognizeHeuristics 一致）
-MAINLAND_PASSPORT_PREFIXES = frozenset('EGDSP')
+# 护照/出入境证件（与 Java PassportRecognizeHeuristics 一致）：大陆 D/S/P/G/E/K/M/F/3
+MAINLAND_PASSPORT_PREFIXES = frozenset('EGDSPKMF3')
 HMT_TRAVEL_PERMIT_PREFIXES = frozenset('HMTL')
 MAINLAND_PASSPORT_REGEX = re.compile(
-    r'^(G\d{8}|E(\d{8}|[A-HJ-NP-Z]\d{7})|[DSP]\d{7,8})$', re.IGNORECASE)
+    r'^(G\d{8}|E(\d{8}|[A-HJ-NP-Z]\d{7})|[DSPKMF]\d{7,8}|3\d{7,8})$', re.IGNORECASE)
 HMT_MO_PASSPORT_REGEX = re.compile(r'^[A-Z]{1,2}\d{7}$', re.IGNORECASE)
 HMT_TRAVEL_PERMIT_REGEX = re.compile(r'^[HMTL]\d{8}$', re.IGNORECASE)
 HMT_TW_PASSPORT_DIGITS_REGEX = re.compile(r'^\d{9}$')
@@ -329,6 +329,14 @@ def is_passport_value(text):
     if not s or _is_passport_system_code_value(s):
         return False
     return _is_mainland_passport_value(s) or _is_hmt_passport_value(s)
+
+
+def _is_letter_prefixed_passport_value(text):
+    """字母开头护照（嵌入检测用）；排除纯数字/数字前缀 3，避免误伤手机号。"""
+    if not is_passport_value(text):
+        return False
+    s = str(text).strip()
+    return bool(s) and s[0].isalpha()
 
 
 def _has_allowed_passport_prefix_or_morph(text):
@@ -1568,10 +1576,10 @@ def _mixed_embedded_phone_or_landline_hit(text):
 def _mixed_embedded_passport_hit(text):
     u = text.upper()
     for m in _EMBEDDED_PASSPORT_BLOCK.finditer(u):
-        if is_passport_value(m.group(0)):
+        if _is_letter_prefixed_passport_value(m.group(0)):
             return True
     for length in (8, 9):
-        if _mixed_sliding_any(length, text, is_passport_value):
+        if _mixed_sliding_any(length, text, _is_letter_prefixed_passport_value):
             return True
     return False
 
@@ -1928,6 +1936,13 @@ COLUMN_MIXED_MAX_INTRA_CELL_MULTI_RATIO = 0.25
 
 def _row_intra_cell_multi_embed_hit(text):
     """单格内嵌 ≥2 类敏感形态 → MIXED 单行，非 COLUMN_MIXED。"""
+    s = str(text).strip()
+    # 整格已是完整手机/固话/信用代码：不算格内多类型（避免子串误判导致漏脱）
+    if s and (is_mobile_phone_value(s) or is_landline_phone_value(s)):
+        return False
+    if s and len(s) == 18 and any(c.isalpha() for c in s) and all(
+            c.upper() in "0123456789ABCDEFGHJKLMNPQRTUWXY" for c in s):
+        return False
     hits = 0
     if _mixed_embedded_phone_or_landline_hit(text):
         hits += 1
