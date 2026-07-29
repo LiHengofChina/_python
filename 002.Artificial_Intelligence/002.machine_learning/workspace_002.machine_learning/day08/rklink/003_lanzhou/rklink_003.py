@@ -1963,9 +1963,7 @@ def _looks_like_strict_datetime_column(text_list):
 # COLUMN_MIXED：多行混合（每格单一敏感形态，不同行类型不同）
 # ==============================
 
-COLUMN_MIXED_MIN_SINGLE_ROW_RATIO = 0.67
-COLUMN_MIXED_MAX_DOMINANT_KIND_RATIO = 0.75
-COLUMN_MIXED_MAX_INTRA_CELL_MULTI_RATIO = 0.25
+COLUMN_MIXED_MIN_SINGLE_ROW_RATIO = 0.2
 
 
 def _row_intra_cell_multi_embed_hit(text):
@@ -1987,6 +1985,96 @@ def _row_intra_cell_multi_embed_hit(text):
     if _mixed_embedded_credit_valid_hit(text):
         hits += 1
     return hits >= 2
+
+
+# MIXED 后处理抬升（与 Java MixedRecognizeHeuristics 默认对齐）：同格 ≥2 类、列占比 >0.1
+MIXED_MIN_MULTI_KIND_ROW_RATIO = 0.1
+MIXED_MIN_KINDS = 2
+_ENTERPRISE_SPAN_CAP = 48
+
+
+def _mixed_sliding_range_any(text, min_len, max_len, pred):
+    n = len(text)
+    hi = min(max_len, n)
+    for length in range(min_len, hi + 1):
+        for i in range(0, n - length + 1):
+            if pred(text[i:i + length]):
+                return True
+    return False
+
+
+def _mixed_count_distinct_kinds(text):
+    """按 8 类形态启发式统计种数（与 Java MixedRecognizeHeuristics.countDistinctKinds 一致）。"""
+    t = str(text).strip()
+    if not t:
+        return 0
+    kinds = 0
+    if _mixed_sliding_range_any(t, 15, 18, is_id_card_format_value):
+        kinds += 1
+        if kinds >= MIXED_MIN_KINDS:
+            return kinds
+    if _mixed_sliding_range_any(t, 18, 18, _is_credit_code_format_value):
+        kinds += 1
+        if kinds >= MIXED_MIN_KINDS:
+            return kinds
+    if _mixed_sliding_range_any(t, 2, 4, _is_recognizable_name_value):
+        kinds += 1
+        if kinds >= MIXED_MIN_KINDS:
+            return kinds
+    if _mixed_sliding_range_any(t, 4, _ENTERPRISE_SPAN_CAP, _looks_like_enterprise_name_value):
+        kinds += 1
+        if kinds >= MIXED_MIN_KINDS:
+            return kinds
+    if _mixed_sliding_range_any(t, 7, 20, is_mobile_phone_value):
+        kinds += 1
+        if kinds >= MIXED_MIN_KINDS:
+            return kinds
+    if _mixed_sliding_range_any(t, 7, 20, is_landline_phone_value):
+        kinds += 1
+        if kinds >= MIXED_MIN_KINDS:
+            return kinds
+    if any(_mixed_sliding_any(length, t, _is_letter_prefixed_passport_value) for length in (8, 9, 10)):
+        kinds += 1
+        if kinds >= MIXED_MIN_KINDS:
+            return kinds
+    if _mixed_sliding_range_any(t, 7, 22, _looks_like_officer_card_value):
+        kinds += 1
+    return kinds
+
+
+def _cell_looks_like_mixed(text):
+    s = str(text).strip()
+    if len(s) <= 2:
+        return False
+    if _is_non_text_binary_like(s):
+        return False
+    return _mixed_count_distinct_kinds(s) >= MIXED_MIN_KINDS
+
+
+def _is_non_text_binary_like(text):
+    """与 Java MixedRecognizeHeuristics.isNonTextBinaryLike 对齐：BLOB 串 / 长纯 hex 不参与 MIXED。"""
+    t = str(text).strip()
+    if not t:
+        return True
+    u = t.upper()
+    if "BLOB@" in u or "RAW@" in u or ("BLOB" in u and "@" in u):
+        return True
+    hex_cand = re.sub(r"\s+", "", t)
+    if hex_cand.lower().startswith("0x"):
+        hex_cand = hex_cand[2:]
+    if len(hex_cand) >= 32 and all(c in "0123456789abcdefABCDEF" for c in hex_cand):
+        return True
+    return False
+
+
+def _looks_like_mixed_column(text_list):
+    """列级是否像 MIXED：非空文本行中同格多类型占比 > MIXED_MIN_MULTI_KIND_ROW_RATIO。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    text_rows = [t for t in cleaned if not _is_non_text_binary_like(t)]
+    if not text_rows:
+        return False
+    hit = sum(1 for t in text_rows if _cell_looks_like_mixed(t))
+    return (hit / len(text_rows)) > MIXED_MIN_MULTI_KIND_ROW_RATIO
 
 
 # ==============================
@@ -2125,12 +2213,8 @@ def _looks_like_column_mixed_column(text_list):
     c = Counter(labeled)
     if len(c) < 2:
         return False
+    # 列级仅保留：可标注种类≥2、可标注行占比≥阈值（已去掉同格多嵌入占比、主导类型占比门控）
     if len(labeled) / n < COLUMN_MIXED_MIN_SINGLE_ROW_RATIO:
-        return False
-    intra_multi = sum(1 for t in cleaned if _row_intra_cell_multi_embed_hit(t)) / n
-    if intra_multi > COLUMN_MIXED_MAX_INTRA_CELL_MULTI_RATIO:
-        return False
-    if max(c.values()) / n >= COLUMN_MIXED_MAX_DOMINANT_KIND_RATIO:
         return False
     return True
 
@@ -4115,11 +4199,11 @@ def _load_deploy_confidence_config(model_dir=None):
 
 
 def apply_recognize_overrides(predicted, text_list):
-    """兰州 9 类后处理 + 可选 COLUMN_MIXED 抬升（与 Java RecognizeOverrideSupport 对齐）。"""
+    """兰州 9 类后处理 + 可选 MIXED / COLUMN_MIXED 抬升（与 Java RecognizeOverrideSupport 对齐）。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     result = predicted
-    # 非兰州类型预测一律降为 DEFAULT（COLUMN_MIXED 仅由后处理抬升产出，允许保留）
-    if result not in KEEP_LABELS and result != "COLUMN_MIXED":
+    # 非兰州类型预测一律降为 DEFAULT（MIXED/COLUMN_MIXED 仅由后处理抬升产出，允许保留）
+    if result not in KEEP_LABELS and result not in ("MIXED", "COLUMN_MIXED"):
         result = "DEFAULT"
 
     # 拦截：预测为某类但列形态不合格 → DEFAULT
@@ -4169,6 +4253,8 @@ def apply_recognize_overrides(predicted, text_list):
         result = "DEFAULT"
     if result == "ENTERPRISE_NAME" and not _looks_like_strict_enterprise_length_column(text_list):
         result = "DEFAULT"
+    if result == "MIXED" and not _looks_like_mixed_column(text_list):
+        result = "DEFAULT"
     if result == "COLUMN_MIXED" and COLUMN_MIXED_OVERRIDE_ENABLED and not _looks_like_column_mixed_column(text_list):
         result = "DEFAULT"
     if result == "NAME" and _looks_like_excluded_name_column(text_list):
@@ -4210,12 +4296,17 @@ def apply_recognize_overrides(predicted, text_list):
               and not _looks_like_excluded_name_column(text_list)):
             result = "NAME"
 
-    # COLUMN_MIXED 抬升放在单类抬升之后（8 类收敛后仍能从 NAME/手机等纠偏为混列）
+    # MIXED 抬升：仅当决策树原始预测为 DEFAULT，且列为同格多类型文本
+    if (cleaned and predicted == "DEFAULT"
+            and _looks_like_mixed_column(text_list)):
+        result = "MIXED"
+
+    # COLUMN_MIXED 抬升放在单类抬升之后（8 类收敛后仍能从 NAME/手机等纠偏为混列；不含 MIXED）
     if (cleaned and COLUMN_MIXED_OVERRIDE_ENABLED
             and _looks_like_column_mixed_column(text_list)
             and result in (
                 "DEFAULT", "ID_CARD", "CREDIT_CODE", "NAME", "ENTERPRISE_NAME",
-                "PHONE", "LANDLINE", "OFFICER_CARD", "PASSPORT")):
+                "PHONE", "LANDLINE", "OFFICER_CARD", "PASSPORT", "EMAIL")):
         result = "COLUMN_MIXED"
     return result
 
