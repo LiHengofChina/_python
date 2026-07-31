@@ -67,11 +67,13 @@ df = _load_fit_data()
 # 手机号、身份证 正则规则
 # ==============================
 PHONE_REGEX = re.compile(r"^1[3-9]\d{9}$")
+# 手机号分隔符：自右向左抽数字时跳过（含全角/半角括号）
+_PHONE_SEPARATOR_CHARS = set(" \t\r\n-+()（）【】[]{}·.")
 # 大陆固话形态（与 Java PhoneRecognizeHeuristics.LANDLINE_PHONE_REGEX 一致）：
 # 主格式（0+区号+本地，共 11 位）：0XX+8 位本地（如 01012345678 / 010-12345678）；
 # 0XXX+7 位本地（如 07551234567 / 0755-1234567）；部分城市 0XXX+8 位本地（如 0755-83301199）。
 # 另含：本市无区号仅 8 位本地号、400/800、95·12·100 短号、+86/86 国际写法。
-# 裸 7 位全数字归手机短号（PHONE），不归 LANDLINE。
+# 手机 PHONE 仅识别合法 11 位大陆号，不再把裸 7 位算作手机。
 LANDLINE_PHONE_REGEX = re.compile(
     r'^('
     r'(\+?86[- ]?)?0\d{2}[- ]?\d{8}|'
@@ -112,55 +114,59 @@ def _normalize_phone_digits(text):
         norm = norm[2:]
     return norm
 
-def _extract_last_11_digits(text):
-    """自字符串末尾向前取连续 11 位数字。
+def _digits_only(text):
+    """抽取串中全部半角数字。"""
+    return "".join(c for c in str(text) if c.isdigit())
 
-    仅跳过空格/横杠/+ 等分隔符；遇字母立即停止（不跳过），
-    避免身份证末位 X 等被滤掉后误取末 11 位当手机号。
-    不足 11 位返回 None。
+
+def _extract_mainland_mobile_11_digits(text):
+    """自右向左取 11 位数字，再校验大陆手机正则 1[3-9]\\d{9}。
+
+    跳过空格/横杠/+/括号等分隔符；遇字母立即停止（避免身份证末位 X 等被滤后误取）。
+    合法示例：13688007165、136-88007165、+8613688007165、（+86）13688007165、(+86)13688007165。
+    不识别 7 位短号；也不因「去分隔后总长恰好 11」才算（以右端 11 位为准）。
     """
     s = str(text).strip()
     if not s:
         return None
     collected = []
-    for c in reversed(s):
-        if c.isdigit():
-            collected.append(c)
+    for ch in reversed(s):
+        if ch.isdigit():
+            collected.append(ch)
             if len(collected) >= 11:
                 break
-        elif c in " \t\r\n-+":
+        elif ch in _PHONE_SEPARATOR_CHARS or ch.isspace():
             continue
-        elif c.isalpha():
-            # 字母不排除、不跨越，截断扫描
+        elif ("A" <= ch <= "Z") or ("a" <= ch <= "z"):
             break
         else:
-            # 其它标点仍跳过（兼容 (138)1234-5678）
             continue
     if len(collected) < 11:
         return None
-    return "".join(reversed(collected))
+    tail11 = "".join(reversed(collected[:11]))
+    if PHONE_REGEX.match(tail11):
+        return tail11
+    return None
+
+
+def _extract_last_11_digits(text):
+    """兼容旧名；等价于 _extract_mainland_mobile_11_digits。"""
+    return _extract_mainland_mobile_11_digits(text)
+
 
 def _is_mainland_mobile_phone_value(text):
-    tail11 = _extract_last_11_digits(text)
-    return bool(tail11 and PHONE_REGEX.match(tail11))
+    return _extract_mainland_mobile_11_digits(text) is not None
 
 
 def is_mobile_short_number_value(text):
-    """手机短号：整段恰为 7 位数字（如 7552011）；无区号裸 7 位不归固话，统一归 PHONE。"""
-    s = str(text).strip()
-    if not s or _is_date_like_phone_exclusion(s):
-        return False
-    norm = _normalize_phone_digits(s)
-    if len(norm) != 7 or not norm.isdigit():
-        return False
-    if all(c == '0' for c in norm):
-        return False
-    return len(set(norm)) > 1
+    """历史 7 位短号接口已删除识别：始终 False（勿再启用）。"""
+    return False
 
 
 def is_mobile_phone_value(text):
-    """中国大陆手机号（含 11 位手机与 7 位短号）。"""
-    return _is_mainland_mobile_phone_value(text) or is_mobile_short_number_value(text)
+    """中国大陆合法 11 位手机号（自右向左取 11 位再校验；不含 7 位短号）。"""
+    return _is_mainland_mobile_phone_value(text)
+
 
 def _is_invalid_landline_digits(norm):
     """占位/脏数据：全 0、本地段全 0、或无区号的同数字占位（如 999999999）。"""
@@ -664,36 +670,33 @@ def _qualifies_for_passport_recognize_override(text_list):
 
 
 def _extract_mobile_prefix_from_last_11(text):
-    tail11 = _extract_last_11_digits(text)
-    if not tail11 or len(tail11) != 11:
+    mobile11 = _extract_mainland_mobile_11_digits(text)
+    if not mobile11:
         return None
-    return tail11[:3]
+    return mobile11[:3]
 
 
 def _has_allowed_mobile_prefix(text):
-    """11 位号段命中字典，或 7 位短号视为前缀达标。"""
-    if is_mobile_short_number_value(text):
-        return True
+    """11 位号段命中字典。"""
     if not _is_mainland_mobile_phone_value(text):
         return False
     prefix = _extract_mobile_prefix_from_last_11(text)
     return bool(prefix and prefix in _load_mobile_prefixes())
 
 
+
 def _looks_like_strict_mobile_prefix_column(text_list):
-    """严格号段前缀列：11 位号段命中字典或 7 位短号占比 ≥ PHONE_PREFIX_MIN_RATIO。"""
+    """严格号段前缀列：11 位号段命中字典占比 >= PHONE_PREFIX_MIN_RATIO。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
     n = len(cleaned)
-    short_hit = sum(1 for t in cleaned if is_mobile_short_number_value(t)) / n
-    if short_hit >= PHONE_PREFIX_MIN_RATIO:
-        return True
     prefixes = _load_mobile_prefixes()
     if not prefixes:
         return False
     hit = sum(1 for t in cleaned if _has_allowed_mobile_prefix(t)) / n
     return hit >= PHONE_PREFIX_MIN_RATIO
+
 
 
 def _load_area_codes():
@@ -871,7 +874,7 @@ def _landline_column_noise_excluded(text_list):
 
 
 def _looks_like_strict_mobile_column(text_list):
-    """严格手机列：非空行中手机号（11 位或 7 位短号）占比 ≥ PHONE_COLUMN_STRICT_RATIO。"""
+    """严格手机列：非空行中 11 位大陆手机占比 ≥ PHONE_COLUMN_STRICT_RATIO。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
@@ -905,9 +908,15 @@ def _digit_only_length(text):
     return sum(1 for c in str(text) if c.isdigit())
 
 def _phone_digit_len_13_11_8_hit(text):
-    """电话常见纯数字长度：8 本地 / 11 手机或区号+座机 / 13 86+手机。"""
+    """电话列长度特征：8/11；13 仅当为 86+合法 11 位手机（避免任意 13 位抬升 PHONE）。"""
     n = _digit_only_length(text)
-    return n in (8, 11, 13)
+    if n in (8, 11):
+        return True
+    if n != 13:
+        return False
+    digits = _digits_only(text)
+    return digits.startswith("86") and bool(PHONE_REGEX.match(digits[2:]))
+
 
 ID_REGEX = re.compile(r"^\d{17}[\dXx]$")
 ID_CARD_18_REGEX = ID_REGEX
@@ -1548,12 +1557,20 @@ def _looks_like_strict_id_card_column(text_list):
 # MIXED：行内嵌入型 5 维特征（121 基础 + 5 = 126，与 mask-sdk ColumnFeatureExtractor 一致）
 # mixed_embed_phone_ratio：行内嵌手机或固话命中比例（与 Java MixedMaskHandler.containsEmbeddedPhone 一致）
 # ==============================
-_EMBEDDED_PHONE = re.compile(r"1[3-9]\d{9}")
 _EMBEDDED_PASSPORT_BLOCK = re.compile(r"[A-Za-z]{1,2}\d{7,8}")
 
 
 def _mixed_embedded_phone_hit(text):
-    return bool(_EMBEDDED_PHONE.search(text))
+    """行内嵌手机：仅对 11~20 子串做 is_mobile_phone_value（恰好 11 位/86+11），避免超长数字 search 误中。"""
+    n = len(text)
+    if n < 11:
+        return False
+    max_len = min(20, n)
+    for length in range(11, max_len + 1):
+        for i in range(0, n - length + 1):
+            if is_mobile_phone_value(text[i:i + length]):
+                return True
+    return False
 
 
 def _mixed_embedded_landline_hit(text):

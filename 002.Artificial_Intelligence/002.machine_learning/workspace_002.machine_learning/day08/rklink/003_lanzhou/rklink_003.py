@@ -92,26 +92,14 @@ df = _load_fit_data()
 # 手机号、身份证 正则规则
 # ==============================
 PHONE_REGEX = re.compile(r"^1[3-9]\d{9}$")
-# 大陆固话形态（与 Java PhoneRecognizeHeuristics.LANDLINE_PHONE_REGEX 一致）：
-# 主格式（0+区号+本地，共 11 位）：0XX+8 位本地（如 01012345678 / 010-12345678）；
-# 0XXX+7 位本地（如 07551234567 / 0755-1234567）；部分城市 0XXX+8 位本地（如 0755-83301199）。
-# 另含：本市无区号仅 8 位本地号、400/800、95·12·100 短号、+86/86 国际写法。
-# 裸 7 位全数字归手机短号（PHONE），不归 LANDLINE。
-LANDLINE_PHONE_REGEX = re.compile(
-    r'^('
-    r'(\+?86[- ]?)?0\d{2}[- ]?\d{8}|'
-    r'(\+?86[- ]?)?0\d{3}[- ]?\d{7}|'
-    r'(\+?86[- ]?)?0\d{3}[- ]?\d{8}|'
-    r'\+?86[- ]?\d{2,3}[- ]?\d{7,8}|'
-    r'400[- ]?\d{3}[- ]?\d{4}|'
-    r'800[- ]?\d{7,8}|'
-    r'9[56]\d{3,6}|'
-    r'12\d{3}|'
-    r'100\d{2,4}|'
-    r'[2-8]\d{3}[- ]?\d{4}|'
-    r'[2-8]\d{7}'
-    r')$'
-)
+# 手机号分隔符：自右向左抽数字时跳过（含全角/半角括号）
+_PHONE_SEPARATOR_CHARS = set(" \t\r\n-+()（）【】[]{}·.")
+# 大陆固话：仅「区号 + 可选横杠 + 本地号」。
+# 例：0931-96799、093196799、0893-7827288、08937827288、010-12345678。
+# 必须带 0 开头区号（校验 dict/area_code/area_codes.json）；去掉 400/800/95·12·100/无区号本地/+86。
+# 手机 PHONE 仅识别合法 11 位大陆号，不再把裸 7 位算作手机。
+LANDLINE_PHONE_REGEX = re.compile(r'^0\d{2,3}-\d{5,8}$|^0\d{7,12}$')
+LANDLINE_AREA_LOCAL_HYPHEN_REGEX = re.compile(r'^(0\d{2,3})-(\d{5,8})$')
 ISO_DATE_REGEX = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 ISO_DATE_TIME_REGEX = re.compile(r'^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$')
 
@@ -137,78 +125,125 @@ def _normalize_phone_digits(text):
         norm = norm[2:]
     return norm
 
-def _extract_last_11_digits(text):
-    """自字符串末尾向前取连续 11 位数字。
+def _digits_only(text):
+    """抽取串中全部半角数字。"""
+    return "".join(c for c in str(text) if c.isdigit())
 
-    仅跳过空格/横杠/+ 等分隔符；遇字母立即停止（不跳过），
-    避免身份证末位 X 等被滤掉后误取末 11 位当手机号。
-    不足 11 位返回 None。
+
+def _extract_mainland_mobile_11_digits(text):
+    """自右向左取 11 位数字，再校验大陆手机正则 1[3-9]\\d{9}。
+
+    跳过空格/横杠/+/括号等分隔符；遇字母立即停止（避免身份证末位 X 等被滤后误取）。
+    合法示例：13688007165、136-88007165、+8613688007165、（+86）13688007165、(+86)13688007165。
+    不识别 7 位短号；也不因「去分隔后总长恰好 11」才算（以右端 11 位为准）。
     """
     s = str(text).strip()
     if not s:
         return None
     collected = []
-    for c in reversed(s):
-        if c.isdigit():
-            collected.append(c)
+    for ch in reversed(s):
+        if ch.isdigit():
+            collected.append(ch)
             if len(collected) >= 11:
                 break
-        elif c in " \t\r\n-+":
+        elif ch in _PHONE_SEPARATOR_CHARS or ch.isspace():
             continue
-        elif c.isalpha():
-            # 字母不排除、不跨越，截断扫描
+        elif ("A" <= ch <= "Z") or ("a" <= ch <= "z"):
             break
         else:
-            # 其它标点仍跳过（兼容 (138)1234-5678）
+            # 其它标点跳过
             continue
     if len(collected) < 11:
         return None
-    return "".join(reversed(collected))
+    tail11 = "".join(reversed(collected[:11]))
+    if PHONE_REGEX.match(tail11):
+        return tail11
+    return None
+
+
+def _extract_last_11_digits(text):
+    """兼容旧名；等价于 _extract_mainland_mobile_11_digits。"""
+    return _extract_mainland_mobile_11_digits(text)
+
 
 def _is_mainland_mobile_phone_value(text):
-    tail11 = _extract_last_11_digits(text)
-    return bool(tail11 and PHONE_REGEX.match(tail11))
+    return _extract_mainland_mobile_11_digits(text) is not None
 
 
 def is_mobile_short_number_value(text):
-    """手机短号：整段恰为 7 位数字（如 7552011）；无区号裸 7 位不归固话，统一归 PHONE。"""
-    s = str(text).strip()
-    if not s or _is_date_like_phone_exclusion(s):
-        return False
-    norm = _normalize_phone_digits(s)
-    if len(norm) != 7 or not norm.isdigit():
-        return False
-    if all(c == '0' for c in norm):
-        return False
-    return len(set(norm)) > 1
+    """历史 7 位短号接口已删除识别：始终 False（勿再启用）。"""
+    return False
 
 
 def is_mobile_phone_value(text):
-    """中国大陆手机号（含 11 位手机与 7 位短号）。"""
-    return _is_mainland_mobile_phone_value(text) or is_mobile_short_number_value(text)
+    """中国大陆合法 11 位手机号（自右向左取 11 位再校验；不含 7 位短号）。"""
+    return _is_mainland_mobile_phone_value(text)
 
-def _is_invalid_landline_digits(norm):
-    """占位/脏数据：全 0、本地段全 0、或无区号的同数字占位（如 999999999）。"""
+
+def _guess_landline_area_code_from_digits(norm):
+    """无横杠时按国标习惯切区号：第二位 1/2 → 3 位区号，否则 4 位；本地号须 5~8 位。"""
+    if not norm or not norm.isdigit() or not norm.startswith('0'):
+        return None
+    if norm[1] in ('1', '2'):
+        if not (8 <= len(norm) <= 11):
+            return None
+        return norm[:3]
+    if not (9 <= len(norm) <= 12):
+        return None
+    return norm[:4]
+
+
+def _parse_landline_area_and_local(text):
+    """解析座机为 (区号, 本地号)；仅允许区号与本地之间一个可选 '-'。"""
+    s = str(text).strip()
+    if not s or not LANDLINE_PHONE_REGEX.match(s):
+        return None
+    m = LANDLINE_AREA_LOCAL_HYPHEN_REGEX.match(s)
+    if m:
+        return m.group(1), m.group(2)
+    if '-' in s:
+        return None
+    if not s.isdigit() or not s.startswith('0'):
+        return None
+    area = _guess_landline_area_code_from_digits(s)
+    if not area:
+        return None
+    local = s[len(area):]
+    if not (5 <= len(local) <= 8):
+        return None
+    return area, local
+
+
+def _is_invalid_landline_digits(norm, local=None):
+    """占位/脏数据：全 0、本地段全 0。"""
     if not norm or not norm.isdigit():
         return False
     if all(c == '0' for c in norm):
         return True
-    if norm.startswith('0') and len(norm) >= 10:
-        return all(c == '0' for c in norm[-8:])
-    if not norm.startswith('0') and len(norm) == 9 and len(set(norm)) == 1:
-        return True
+    if local is not None:
+        return bool(local) and all(c == '0' for c in local)
+    if norm.startswith('0') and len(norm) >= 8:
+        area = _guess_landline_area_code_from_digits(norm)
+        if area:
+            return all(c == '0' for c in norm[len(area):])
     return False
 
+
 def _is_mainland_landline_phone_value(text):
-    s = str(text).strip()
-    if not s:
+    """大陆座机：区号(+可选-)本地号，且区号命中 area_codes 字典（字典为空时仅形态）。"""
+    parsed = _parse_landline_area_and_local(text)
+    if not parsed:
         return False
-    if LANDLINE_PHONE_REGEX.match(s):
-        return not _is_invalid_landline_digits(_normalize_phone_digits(s))
-    norm = _normalize_phone_digits(s)
-    if _looks_like_iso_date_digits(norm):
+    area, local = parsed
+    norm = area + local
+    if _is_invalid_landline_digits(norm, local=local):
         return False
-    return bool(LANDLINE_PHONE_REGEX.match(norm)) and not _is_invalid_landline_digits(norm)
+    if is_mobile_phone_value(norm):
+        return False
+    codes = _load_area_codes()
+    if codes and area not in codes:
+        return False
+    return True
 
 
 def is_landline_phone_value(text):
@@ -295,15 +330,15 @@ NAME_2_OR_3_HAN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_2_OR_3
 NAME_SURNAME_HEAD_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_SURNAME_HEAD_MIN_RATIO", "0.1"))
 EXCLUDED_NAME_COLUMN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_EXCLUDE_COLUMN_MIN_RATIO", "0.5"))
 SYSTEM_CODE_C_PATTERN = re.compile(r'^C\d{8,}$')
-# 护照/出入境证件（与 Java PassportRecognizeHeuristics 一致）：大陆 D/S/P/G/E/K/M/F/3
+# 护照/出入境证件（与 Java PassportRecognizeHeuristics 一致）：
+# 仅中国大陆 + 港澳；取消台湾护照/台胞证/往来台湾通行证；不保留纯数字证件。
 MAINLAND_PASSPORT_PREFIXES = frozenset('EGDSPKMF3')
-HMT_TRAVEL_PERMIT_PREFIXES = frozenset('HMTL')
+# 港澳回乡证前缀 H/M（不再含往来台湾通行证 T/L）
+HMT_TRAVEL_PERMIT_PREFIXES = frozenset('HM')
 MAINLAND_PASSPORT_REGEX = re.compile(
     r'^(G\d{8}|E(\d{8}|[A-HJ-NP-Z]\d{7})|[DSPKMF]\d{7,8}|3\d{7,8})$', re.IGNORECASE)
 HMT_MO_PASSPORT_REGEX = re.compile(r'^[A-Z]{1,2}\d{7}$', re.IGNORECASE)
-HMT_TRAVEL_PERMIT_REGEX = re.compile(r'^[HMTL]\d{8}$', re.IGNORECASE)
-HMT_TW_PASSPORT_DIGITS_REGEX = re.compile(r'^\d{9}$')
-HMT_TW_PERMIT_8_DIGITS_REGEX = re.compile(r'^\d{8}$')
+HMT_TRAVEL_PERMIT_REGEX = re.compile(r'^[HM]\d{8}$', re.IGNORECASE)
 HMT_HK_PASSPORT_REGEX = re.compile(r'^[A-Z]\d{7,8}$', re.IGNORECASE)
 # 兼容旧引用
 PASSPORT_REGEX = re.compile(r'^[A-Z]{1,2}\d{7,8}$')
@@ -315,6 +350,7 @@ def _is_mainland_passport_value(text):
 
 
 def _is_hmt_travel_permit_value(text):
+    """港澳回乡证：H/M + 8 位数字。"""
     s = str(text).strip().upper()
     return bool(s and HMT_TRAVEL_PERMIT_REGEX.match(s))
 
@@ -325,31 +361,32 @@ def _is_hmt_mo_passport_value(text):
 
 
 def _is_hmt_tw_passport_digits_value(text):
-    s = str(text).strip()
-    return bool(s and HMT_TW_PASSPORT_DIGITS_REGEX.match(s))
+    """历史台湾护照（9 位纯数字）已删除识别：始终 False。"""
+    return False
 
 
 def _is_hmt_tw_permit_8_digit_value(text):
-    s = str(text).strip()
-    return bool(s and HMT_TW_PERMIT_8_DIGITS_REGEX.match(s))
+    """历史台胞证（8 位纯数字）已删除识别：始终 False。"""
+    return False
 
 
 def _is_hmt_hk_passport_value(text):
     s = str(text).strip().upper()
     if not s or not HMT_HK_PASSPORT_REGEX.match(s):
         return False
-    return s[0] not in MAINLAND_PASSPORT_PREFIXES and s[0] not in HMT_TRAVEL_PERMIT_PREFIXES
+    # 排除大陆前缀、回乡证 H/M，以及已取消的往来台湾通行证 T/L
+    return s[0] not in MAINLAND_PASSPORT_PREFIXES and s[0] not in frozenset('HMTL')
 
 
 def _is_hmt_passport_value(text):
+    """港澳证件：回乡证 / 澳门护照 / 香港护照（不含台湾纯数字与 T/L）。"""
     return (_is_hmt_travel_permit_value(text)
             or _is_hmt_mo_passport_value(text)
-            or _is_hmt_tw_passport_digits_value(text)
-            or _is_hmt_tw_permit_8_digit_value(text)
             or _is_hmt_hk_passport_value(text))
 
 
 def is_passport_value(text):
+    """中国大陆护照 + 港澳证件（不含台湾、不含纯数字证件）。"""
     s = str(text).strip()
     if not s or _is_passport_system_code_value(s):
         return False
@@ -357,7 +394,7 @@ def is_passport_value(text):
 
 
 def _is_letter_prefixed_passport_value(text):
-    """字母开头护照（嵌入检测用）；排除纯数字/数字前缀 3，避免误伤手机号。"""
+    """字母开头护照（嵌入检测用）；排除数字前缀 3，避免误伤手机号。"""
     if not is_passport_value(text):
         return False
     s = str(text).strip()
@@ -370,8 +407,6 @@ def _has_allowed_passport_prefix_or_morph(text):
     if (_is_mainland_passport_value(text) or _is_hmt_travel_permit_value(text)
             or _is_hmt_mo_passport_value(text)):
         return True
-    if _is_hmt_tw_passport_digits_value(text) or _is_hmt_tw_permit_8_digit_value(text):
-        return True
     return _is_hmt_hk_passport_value(text)
 
 
@@ -381,8 +416,8 @@ def _is_passport_length_value(text):
 
 SERVICE_SHORT_95_REGEX = re.compile(r'^9[56]\d{3,6}$')
 SERVICE_SHORT_12_REGEX = re.compile(r'^12\d{3}$')
-LANDLINE_FORMAT_CHARS_REGEX = re.compile(r'^[0-9+\s\-()]+$')
-LOCAL_LANDLINE_NO_AREA_REGEX = re.compile(r'^[2-8]\d{3}[- ]?\d{4}$|^[2-8]\d{7}$')
+LANDLINE_FORMAT_CHARS_REGEX = re.compile(r'^[0-9\-]+$')
+LOCAL_LANDLINE_NO_AREA_REGEX = re.compile(r'^[2-8]\d{3}[- ]?\d{4}$|^[2-8]\d{7}$')  # 历史保留；座机识别已不再使用
 # 规则字典仅在 Python dict/ 维护；训练结束时随 recognize_model 一并覆盖同步到 Java SDK。
 _MOBILE_PREFIXES_CACHE = None
 _AREA_CODES_CACHE = None
@@ -689,36 +724,33 @@ def _qualifies_for_passport_recognize_override(text_list):
 
 
 def _extract_mobile_prefix_from_last_11(text):
-    tail11 = _extract_last_11_digits(text)
-    if not tail11 or len(tail11) != 11:
+    mobile11 = _extract_mainland_mobile_11_digits(text)
+    if not mobile11:
         return None
-    return tail11[:3]
+    return mobile11[:3]
 
 
 def _has_allowed_mobile_prefix(text):
-    """11 位号段命中字典，或 7 位短号视为前缀达标。"""
-    if is_mobile_short_number_value(text):
-        return True
+    """11 位号段命中字典。"""
     if not _is_mainland_mobile_phone_value(text):
         return False
     prefix = _extract_mobile_prefix_from_last_11(text)
     return bool(prefix and prefix in _load_mobile_prefixes())
 
 
+
 def _looks_like_strict_mobile_prefix_column(text_list):
-    """严格号段前缀列：11 位号段命中字典或 7 位短号占比 ≥ PHONE_PREFIX_MIN_RATIO。"""
+    """严格号段前缀列：11 位号段命中字典占比 >= PHONE_PREFIX_MIN_RATIO。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
     n = len(cleaned)
-    short_hit = sum(1 for t in cleaned if is_mobile_short_number_value(t)) / n
-    if short_hit >= PHONE_PREFIX_MIN_RATIO:
-        return True
     prefixes = _load_mobile_prefixes()
     if not prefixes:
         return False
     hit = sum(1 for t in cleaned if _has_allowed_mobile_prefix(t)) / n
     return hit >= PHONE_PREFIX_MIN_RATIO
+
 
 
 def _load_area_codes():
@@ -743,67 +775,53 @@ def _is_service_short_code_value(text):
 
 
 def _extract_landline_area_code(text):
-    if not is_landline_phone_value(text) or _is_service_short_code_value(text):
-        return None
-    norm = _normalize_phone_digits(text)
-    if not norm.startswith('0') or len(norm) < 10:
-        return None
-    d1 = norm[1]
-    if d1 in ('1', '2'):
-        return norm[:3] if len(norm) >= 3 else None
-    return norm[:4] if len(norm) >= 4 else None
+    """提取座机区号；非「区号(+可选-)本地号」形态返回 None。"""
+    parsed = _parse_landline_area_and_local(text)
+    return parsed[0] if parsed else None
 
 
 def _is_400_or_800_landline_value(text):
-    norm = _normalize_phone_digits(str(text).strip())
-    if norm.startswith('400') and len(norm) == 10:
-        return True
-    return norm.startswith('800') and len(norm) in (10, 11)
+    """历史 400/800 接口：座机已不再识别此类号码，始终 False。"""
+    return False
 
 
 def _is_local_landline_without_area_code(text):
-    if is_mobile_phone_value(text) or _is_service_short_code_value(text):
-        return False
-    s = str(text).strip()
-    if LOCAL_LANDLINE_NO_AREA_REGEX.match(s):
-        return is_landline_phone_value(s)
-    norm = _normalize_phone_digits(s)
-    return (not norm.startswith('0') and norm.isdigit() and len(norm) in (7, 8)
-            and '2' <= norm[0] <= '8' and is_landline_phone_value(s))
+    """历史无区号本地固话接口：座机必须带区号，始终 False。"""
+    return False
 
 
 def _has_allowed_landline_area_or_morph(text):
+    """区号达标：合法座机且区号命中 area_codes 字典。"""
     if not is_landline_phone_value(text):
         return False
-    if _is_service_short_code_value(text):
-        return LANDLINE_ALLOW_SERVICE_SHORT
     area = _extract_landline_area_code(text)
-    if area and area in _load_area_codes():
+    codes = _load_area_codes()
+    if not codes:
         return True
-    return _is_400_or_800_landline_value(text) or _is_local_landline_without_area_code(text)
+    return bool(area and area in codes)
 
 
 def _is_formatted_landline_phone_row(text):
+    """带区号横杠的格式化座机行（如 0931-96799）。"""
     if not is_landline_phone_value(text):
-        return False
-    if _is_service_short_code_value(text):
         return False
     s = str(text).strip()
     if not LANDLINE_FORMAT_CHARS_REGEX.match(s):
         return False
-    return ('-' in s) or (' ' in s)
+    return '-' in s
 
 
 def _is_pure_digit_landline_phone_row(text):
+    """无横杠纯数字座机行（如 093196799）。"""
     if not is_landline_phone_value(text):
         return False
-    norm = _normalize_phone_digits(str(text).strip())
-    return norm.isdigit() and 5 <= len(norm) <= 13
+    s = str(text).strip()
+    return s.isdigit() and 8 <= len(s) <= 12
 
 
 def _looks_like_strict_landline_area_or_morph_column(text_list):
     codes = _load_area_codes()
-    if not codes and not LANDLINE_ALLOW_SERVICE_SHORT:
+    if not codes:
         return False
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
@@ -896,7 +914,7 @@ def _landline_column_noise_excluded(text_list):
 
 
 def _looks_like_strict_mobile_column(text_list):
-    """严格手机列：非空行中手机号（11 位或 7 位短号）占比 ≥ PHONE_COLUMN_STRICT_RATIO。"""
+    """严格手机列：非空行中 11 位大陆手机占比 ≥ PHONE_COLUMN_STRICT_RATIO。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return False
@@ -930,9 +948,15 @@ def _digit_only_length(text):
     return sum(1 for c in str(text) if c.isdigit())
 
 def _phone_digit_len_13_11_8_hit(text):
-    """电话常见纯数字长度：8 本地 / 11 手机或区号+座机 / 13 86+手机。"""
+    """电话列长度特征：8/11；13 仅当为 86+合法 11 位手机（避免任意 13 位抬升 PHONE）。"""
     n = _digit_only_length(text)
-    return n in (8, 11, 13)
+    if n in (8, 11):
+        return True
+    if n != 13:
+        return False
+    digits = _digits_only(text)
+    return digits.startswith("86") and bool(PHONE_REGEX.match(digits[2:]))
+
 
 ID_REGEX = re.compile(r"^\d{17}[\dXx]$")
 ID_CARD_18_REGEX = ID_REGEX
@@ -967,6 +991,9 @@ def _parse_id_card_15_birth_yymmdd(birth: str):
 
 def is_id_card_format_value(value):
     s = str(value).strip()
+    # 日期前缀流水号等日期样整串不计入身份证形态（与 Java IdCardRecognizeHeuristics 一致）
+    if _is_date_like_for_mixed_exclusion(s):
+        return False
     return is_id_card_18_format_value(s) or is_id_card_15_format_value(s)
 
 
@@ -1582,23 +1609,43 @@ def _looks_like_strict_id_card_column(text_list):
 # MIXED：行内嵌入型 5 维特征（121 基础 + 5 = 126，与 mask-sdk ColumnFeatureExtractor 一致）
 # mixed_embed_phone_ratio：行内嵌手机或固话命中比例（与 Java MixedMaskHandler.containsEmbeddedPhone 一致）
 # ==============================
-_EMBEDDED_PHONE = re.compile(r"1[3-9]\d{9}")
 _EMBEDDED_PASSPORT_BLOCK = re.compile(r"[A-Za-z]{1,2}\d{7,8}")
 
 
 def _mixed_embedded_phone_hit(text):
-    return bool(_EMBEDDED_PHONE.search(text))
+    """行内嵌手机：仅对 11~20 子串做 is_mobile_phone_value，避免超长数字 search 误中。"""
+    s = str(text).strip()
+    if _is_date_like_for_mixed_exclusion(s):
+        return False
+    n = len(text)
+    if n < 11:
+        return False
+    max_len = min(20, n)
+    for length in range(11, max_len + 1):
+        for i in range(0, n - length + 1):
+            frag = text[i:i + length]
+            if _is_date_like_for_mixed_exclusion(frag):
+                continue
+            if is_mobile_phone_value(frag):
+                return True
+    return False
 
 
 def _mixed_embedded_landline_hit(text):
     """行内滑动 7~20 位子串检测固话（与 Java MixedMaskHandler + LandlineMaskHandler 一致）。"""
+    s = str(text).strip()
+    if _is_date_like_for_mixed_exclusion(s):
+        return False
     n = len(text)
     if n < 7:
         return False
     max_len = min(20, n)
     for length in range(7, max_len + 1):
         for i in range(0, n - length + 1):
-            if is_landline_phone_value(text[i : i + length]):
+            frag = text[i : i + length]
+            if _is_date_like_for_mixed_exclusion(frag):
+                continue
+            if is_landline_phone_value(frag):
                 return True
     return False
 
@@ -1622,7 +1669,11 @@ def _mixed_sliding_any(length, text, pred):
     if len(text) < length:
         return False
     for i in range(0, len(text) - length + 1):
-        if pred(text[i : i + length]):
+        frag = text[i : i + length]
+        # 日期样片段不计入混合嵌入命中（函数在模块后部定义，运行时已可用）
+        if _is_date_like_for_mixed_exclusion(frag):
+            continue
+        if pred(frag):
             return True
     return False
 
@@ -1960,6 +2011,78 @@ def _looks_like_strict_datetime_column(text_list):
 
 
 # ==============================
+# MIXED / COLUMN_MIXED：日期样形态排除（不纳入混合敏感判定）
+# ==============================
+_CN_DATE_REGEX = re.compile(r'^(\d{4})年(\d{1,2})月(\d{1,2})日$')
+_DATETIME_WITH_FRACTION_REGEX = re.compile(
+    r'^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}[ T]\d{1,2}:\d{1,2}(?::\d{1,2})?)\.\d+$'
+)
+
+
+def _is_chinese_date_value(text):
+    """中文日期：如 2025年3月17日 / 2025年03月17日。"""
+    m = _CN_DATE_REGEX.match(str(text).strip())
+    if not m:
+        return False
+    y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    if not (1900 <= y <= 2100 and 1 <= mo <= 12 and 1 <= d <= 31):
+        return False
+    try:
+        datetime(y, mo, d)
+        return True
+    except ValueError:
+        return False
+
+
+def _is_date_prefixed_serial_value(text):
+    """日期前缀流水号：YYYYMMDD + 后续数字，如 202609180000001。"""
+    s = str(text).strip()
+    if not s.isdigit() or len(s) <= 8 or len(s) > 32:
+        return False
+    head = s[:8]
+    if not valid_date(head):
+        return False
+    year = int(head[:4])
+    return 1900 <= year <= 2100
+
+
+def _is_datetime_with_fraction_value(text):
+    """带小数秒的日期时间：如 2025-12-22 09:11:11.3。"""
+    m = _DATETIME_WITH_FRACTION_REGEX.match(str(text).strip())
+    if not m:
+        return False
+    base = m.group(1).replace('T', ' ')
+    # 统一分隔符后再走既有 datetime 校验
+    base_norm = base
+    if '/' in base_norm or '.' in base_norm.split(' ')[0]:
+        date_part, _, time_part = base_norm.partition(' ')
+        date_part = date_part.replace('/', '-').replace('.', '-')
+        base_norm = f'{date_part} {time_part}' if time_part else date_part
+    return _is_plausible_datetime_value(base_norm) or bool(valid_datetime(base_norm))
+
+
+def _is_date_like_for_mixed_exclusion(text):
+    """MIXED/COLUMN_MIXED 兜底：日期/时间/中文日期/日期流水号整格排除。
+
+    例：2025-12-22 09:11:11.3、20250617、2026-09-12、202609180000001、2024/04/14、2025年3月17日。
+    """
+    s = str(text).strip()
+    if not s:
+        return False
+    if _is_plausible_date_value(s):
+        return True
+    if _is_plausible_datetime_value(s):
+        return True
+    if _is_datetime_with_fraction_value(s):
+        return True
+    if _is_chinese_date_value(s):
+        return True
+    if _is_date_prefixed_serial_value(s):
+        return True
+    return False
+
+
+# ==============================
 # COLUMN_MIXED：多行混合（每格单一敏感形态，不同行类型不同）
 # ==============================
 
@@ -1969,6 +2092,8 @@ COLUMN_MIXED_MIN_SINGLE_ROW_RATIO = 0.2
 def _row_intra_cell_multi_embed_hit(text):
     """单格内嵌 ≥2 类敏感形态 → MIXED 单行，非 COLUMN_MIXED。"""
     s = str(text).strip()
+    if _is_date_like_for_mixed_exclusion(s):
+        return False
     # 整格已是完整手机/固话/信用代码：不算格内多类型（避免子串误判导致漏脱）
     if s and (is_mobile_phone_value(s) or is_landline_phone_value(s)):
         return False
@@ -1998,7 +2123,11 @@ def _mixed_sliding_range_any(text, min_len, max_len, pred):
     hi = min(max_len, n)
     for length in range(min_len, hi + 1):
         for i in range(0, n - length + 1):
-            if pred(text[i:i + length]):
+            frag = text[i:i + length]
+            # 日期样片段不计入混合敏感种数
+            if _is_date_like_for_mixed_exclusion(frag):
+                continue
+            if pred(frag):
                 return True
     return False
 
@@ -2006,7 +2135,7 @@ def _mixed_sliding_range_any(text, min_len, max_len, pred):
 def _mixed_count_distinct_kinds(text):
     """按 8 类形态启发式统计种数（与 Java MixedRecognizeHeuristics.countDistinctKinds 一致）。"""
     t = str(text).strip()
-    if not t:
+    if not t or _is_date_like_for_mixed_exclusion(t):
         return 0
     kinds = 0
     if _mixed_sliding_range_any(t, 15, 18, is_id_card_format_value):
@@ -2047,6 +2176,8 @@ def _cell_looks_like_mixed(text):
     if len(s) <= 2:
         return False
     if _is_non_text_binary_like(s):
+        return False
+    if _is_date_like_for_mixed_exclusion(s):
         return False
     return _mixed_count_distinct_kinds(s) >= MIXED_MIN_KINDS
 
@@ -2168,10 +2299,10 @@ def _is_recognizable_name_value(text):
 
 def _row_single_sensitive_kind(text):
     """行级单一敏感类型（与 Java ColumnMixedRecognizeHeuristics 8 类顺序一致，命中即停）。"""
-    if _row_intra_cell_multi_embed_hit(text):
-        return None
     s = str(text).strip()
-    if not s:
+    if not s or _is_date_like_for_mixed_exclusion(s):
+        return None
+    if _row_intra_cell_multi_embed_hit(text):
         return None
     # （1）身份证
     if is_id_card_format_value(s) and id_card_check(s):
