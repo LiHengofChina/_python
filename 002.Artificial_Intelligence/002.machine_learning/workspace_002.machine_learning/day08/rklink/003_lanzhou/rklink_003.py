@@ -2,7 +2,7 @@
 脱敏识别 —— 兰州精简版（003_lanzhou）
 仅训练 / 门控 / 后处理以下 9 类：
   DEFAULT, NAME, PHONE, LANDLINE, CREDIT_CODE, ID_CARD, OFFICER_CARD, PASSPORT, ENTERPRISE_NAME
-列级特征维数仍保持 136（与 Java ColumnFeatureExtractor 对齐，避免 PMML 特征错位）。
+列级特征维数 138（与 Java ColumnFeatureExtractor 对齐，避免 PMML 特征错位）。
 其它原类型训练数据已并入 DEFAULT（见 fit_data/_legacy/unused_labels）。
 """
 
@@ -94,6 +94,12 @@ df = _load_fit_data()
 PHONE_REGEX = re.compile(r"^1[3-9]\d{9}$")
 # 手机号分隔符：自右向左抽数字时跳过（含全角/半角括号）
 _PHONE_SEPARATOR_CHARS = set(" \t\r\n-+()（）【】[]{}·.")
+# 手机排除：点分 IPv4（与特征 IPV4_REGEX 一致）及宽松四段点分，避免点号当分隔符后误取 11 位
+_PHONE_IPV4_EXCLUSION_REGEX = re.compile(
+    r'^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}'
+    r'(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$'
+)
+_PHONE_DOTTED_QUAD_LOOSE_REGEX = re.compile(r'^\d{1,3}(\.\d{1,3}){3}$')
 # 大陆固话：仅「区号 + 可选横杠 + 本地号」。
 # 例：0931-96799、093196799、0893-7827288、08937827288、010-12345678。
 # 必须带 0 开头区号（校验 dict/area_code/area_codes.json）；去掉 400/800/95·12·100/无区号本地/+86。
@@ -119,6 +125,14 @@ def _is_date_like_phone_exclusion(text):
         return True
     return _looks_like_iso_date_digits(_normalize_phone_digits(s))
 
+
+def _is_ip_like_phone_exclusion(text):
+    """点分 IPv4 / 宽松四段点分不当作手机号（如 164.108.160.88 → 16410816088）。"""
+    s = str(text).strip()
+    if not s:
+        return False
+    return bool(_PHONE_IPV4_EXCLUSION_REGEX.match(s) or _PHONE_DOTTED_QUAD_LOOSE_REGEX.match(s))
+
 def _normalize_phone_digits(text):
     norm = re.sub(r'[\s\-+]', '', str(text).strip())
     if norm.startswith('86') and len(norm) > 11:
@@ -130,34 +144,30 @@ def _digits_only(text):
     return "".join(c for c in str(text) if c.isdigit())
 
 
-def _extract_mainland_mobile_11_digits(text):
-    """自右向左取 11 位数字，再校验大陆手机正则 1[3-9]\\d{9}。
+# 手机号仅三种整格格式（strip 后精确匹配，其它一律不算）
+# 1) 13688007165
+# 2) 8613688007165
+# 3) +8613688007165
+_MOBILE_EXACT_11 = re.compile(r"^1[3-9]\d{9}$")
+_MOBILE_EXACT_86 = re.compile(r"^861[3-9]\d{9}$")
+_MOBILE_EXACT_PLUS86 = re.compile(r"^\+861[3-9]\d{9}$")
 
-    跳过空格/横杠/+/括号等分隔符；遇字母立即停止（避免身份证末位 X 等被滤后误取）。
-    合法示例：13688007165、136-88007165、+8613688007165、（+86）13688007165、(+86)13688007165。
-    不识别 7 位短号；也不因「去分隔后总长恰好 11」才算（以右端 11 位为准）。
+
+def _extract_mainland_mobile_11_digits(text):
+    """仅三种格式取出末 11 位手机号；其它返回 None。
+
+    合法：13688007165 / 8613688007165 / +8613688007165。
+    不认空格、横杠、括号等变体。
     """
     s = str(text).strip()
     if not s:
         return None
-    collected = []
-    for ch in reversed(s):
-        if ch.isdigit():
-            collected.append(ch)
-            if len(collected) >= 11:
-                break
-        elif ch in _PHONE_SEPARATOR_CHARS or ch.isspace():
-            continue
-        elif ("A" <= ch <= "Z") or ("a" <= ch <= "z"):
-            break
-        else:
-            # 其它标点跳过
-            continue
-    if len(collected) < 11:
-        return None
-    tail11 = "".join(reversed(collected[:11]))
-    if PHONE_REGEX.match(tail11):
-        return tail11
+    if _MOBILE_EXACT_11.match(s):
+        return s
+    if _MOBILE_EXACT_86.match(s):
+        return s[2:]
+    if _MOBILE_EXACT_PLUS86.match(s):
+        return s[3:]
     return None
 
 
@@ -176,7 +186,7 @@ def is_mobile_short_number_value(text):
 
 
 def is_mobile_phone_value(text):
-    """中国大陆合法 11 位手机号（自右向左取 11 位再校验；不含 7 位短号）。"""
+    """中国大陆手机：仅 11 位 / 86+11 位 / +86+11 位三种整格格式。"""
     return _is_mainland_mobile_phone_value(text)
 
 
@@ -265,8 +275,8 @@ YEAR_RANGE_REGEX = re.compile(r'^\d{4}-\d{4}$')
 # 文档：012.（最终、最新）每个规则的识别逻辑
 # ==============================
 # 下列默认值与 Java MasksRuntimeConfig / RecognizeGateDefaults 一致（列占比 0.1、门控 0.4 / margin 0.01）
-PHONE_COLUMN_STRICT_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_STRICT_COLUMN_MIN_RATIO", "0.1"))
-PHONE_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_PREFIX_MIN_RATIO", "0.1"))
+PHONE_COLUMN_STRICT_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_STRICT_COLUMN_MIN_RATIO", "0.5"))
+PHONE_PREFIX_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PHONE_PREFIX_MIN_RATIO", "0.5"))
 LANDLINE_COLUMN_STRICT_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_STRICT_COLUMN_MIN_RATIO", "0.1"))
 LANDLINE_AREA_CODE_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_AREA_CODE_MIN_RATIO", "0.1"))
 LANDLINE_SERVICE_SHORT_COLUMN_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_LANDLINE_SERVICE_SHORT_COLUMN_MIN_RATIO", "0.1"))
@@ -311,7 +321,7 @@ PASSPORT_SYSTEM_CODE_INTERCEPT_ENABLED = os.environ.get(
     "MASK_SDK_RECOGNIZE_PASSPORT_SYSTEM_CODE_INTERCEPT_ENABLED", "true").strip().lower() in (
     "1", "true", "yes", "on")
 PASSPORT_FORMAT_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_FORMAT_MIN_RATIO", "0.1"))
-PASSPORT_PREFIX_LETTER_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_PREFIX_LETTER_MIN_RATIO", "0.1"))
+PASSPORT_PREFIX_LETTER_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_PREFIX_LETTER_MIN_RATIO", "0.7"))
 PASSPORT_LENGTH_MIN_RATIO = float(os.environ.get("MASK_SDK_RECOGNIZE_PASSPORT_LENGTH_MIN_RATIO", "0.1"))
 NAME_GATE_CONFIDENCE_THRESHOLD = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_CONFIDENCE_THRESHOLD", "0.4"))
 NAME_GATE_DEFAULT_MIN_MARGIN = float(os.environ.get("MASK_SDK_RECOGNIZE_NAME_DEFAULT_MIN_MARGIN", "0.01"))
@@ -923,6 +933,15 @@ def _looks_like_strict_mobile_column(text_list):
     return mobile_hit >= PHONE_COLUMN_STRICT_RATIO
 
 
+def _should_intercept_phone_ip_column(text_list):
+    """后处理：点分 IP 列占比达标时拦截 PHONE（与严格手机占比阈值一致）。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    if not cleaned:
+        return False
+    hit = sum(1 for t in cleaned if _is_ip_like_phone_exclusion(t)) / len(cleaned)
+    return hit >= PHONE_COLUMN_STRICT_RATIO
+
+
 def _looks_like_strict_landline_column(text_list):
     """严格固话列：≥75% 为固话形态，且非手机主导列、非典型噪声列。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
@@ -948,14 +967,33 @@ def _digit_only_length(text):
     return sum(1 for c in str(text) if c.isdigit())
 
 def _phone_digit_len_13_11_8_hit(text):
-    """电话列长度特征：8/11；13 仅当为 86+合法 11 位手机（避免任意 13 位抬升 PHONE）。"""
-    n = _digit_only_length(text)
-    if n in (8, 11):
+    """电话列长度特征：仅三种合法手机整格格式（11 / 86+11 / +86+11）。"""
+    return is_mobile_phone_value(text)
+
+
+def _phone_right_11th_digit_is_1(text):
+    """从右往左数第 11 个数字是否为 '1'（不足 11 位数字则 False）。"""
+    collected = []
+    for ch in reversed(str(text)):
+        if ch.isdigit():
+            collected.append(ch)
+            if len(collected) >= 11:
+                break
+    return len(collected) >= 11 and collected[10] == "1"
+
+
+def _phone_right_12_13_digits_are_86_or_absent(text):
+    """从右往左：若存在第12、第13位数字，则这两位合起来须为 86（第13位='8'、第12位='6'）；
+    不足 13 位数字时视为满足（约束不适用）。与 Java isPhoneRight12And13Digits86OrAbsent 一致。"""
+    collected = []
+    for ch in reversed(str(text)):
+        if ch.isdigit():
+            collected.append(ch)
+            if len(collected) >= 13:
+                break
+    if len(collected) < 13:
         return True
-    if n != 13:
-        return False
-    digits = _digits_only(text)
-    return digits.startswith("86") and bool(PHONE_REGEX.match(digits[2:]))
+    return collected[12] == "8" and collected[11] == "6"
 
 
 ID_REGEX = re.compile(r"^\d{17}[\dXx]$")
@@ -1613,15 +1651,17 @@ _EMBEDDED_PASSPORT_BLOCK = re.compile(r"[A-Za-z]{1,2}\d{7,8}")
 
 
 def _mixed_embedded_phone_hit(text):
-    """行内嵌手机：仅对 11~20 子串做 is_mobile_phone_value，避免超长数字 search 误中。"""
+    """行内嵌手机：滑动子串精确匹配三种手机格式（11 / 86+11 / +86+11）。"""
     s = str(text).strip()
     if _is_date_like_for_mixed_exclusion(s):
         return False
     n = len(text)
     if n < 11:
         return False
-    max_len = min(20, n)
-    for length in range(11, max_len + 1):
+    # 三种格式长度分别为 11 / 13 / 14
+    for length in (11, 13, 14):
+        if n < length:
+            continue
         for i in range(0, n - length + 1):
             frag = text[i:i + length]
             if _is_date_like_for_mixed_exclusion(frag):
@@ -2086,11 +2126,11 @@ def _is_date_like_for_mixed_exclusion(text):
 # COLUMN_MIXED：多行混合（每格单一敏感形态，不同行类型不同）
 # ==============================
 
-COLUMN_MIXED_MIN_SINGLE_ROW_RATIO = 0.2
+COLUMN_MIXED_MIN_SINGLE_ROW_RATIO = 0.3
 
 
 def _row_intra_cell_multi_embed_hit(text):
-    """单格内嵌 ≥2 类敏感形态 → MIXED 单行，非 COLUMN_MIXED。"""
+    """单格内嵌 ≥2 类（仅供树特征 column_mixed_intra_cell_multi_row_ratio；不参与 COLUMN_MIXED 行分类/判定）。"""
     s = str(text).strip()
     if _is_date_like_for_mixed_exclusion(s):
         return False
@@ -2113,7 +2153,7 @@ def _row_intra_cell_multi_embed_hit(text):
 
 
 # MIXED 后处理抬升（与 Java MixedRecognizeHeuristics 默认对齐）：同格 ≥2 类、列占比 >0.1
-MIXED_MIN_MULTI_KIND_ROW_RATIO = 0.1
+MIXED_MIN_MULTI_KIND_ROW_RATIO = 0.2
 MIXED_MIN_KINDS = 2
 _ENTERPRISE_SPAN_CAP = 48
 
@@ -2198,14 +2238,44 @@ def _is_non_text_binary_like(text):
     return False
 
 
+def _mixed_column_kind_union(text_list):
+    """整列文本行命中的敏感形态种类并集（8 类；DEFAULT 不计）。"""
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    kinds = set()
+    for t in cleaned:
+        if _is_non_text_binary_like(t) or _is_date_like_for_mixed_exclusion(t):
+            continue
+        # 与 _mixed_count_distinct_kinds 同源，收集种类名
+        if _mixed_sliding_range_any(t, 15, 18, is_id_card_format_value):
+            kinds.add("ID_CARD")
+        if _mixed_sliding_range_any(t, 18, 18, _is_credit_code_format_value):
+            kinds.add("CREDIT_CODE")
+        if _mixed_sliding_range_any(t, 2, 4, _is_recognizable_name_value):
+            kinds.add("NAME")
+        if _mixed_sliding_range_any(t, 4, _ENTERPRISE_SPAN_CAP, _looks_like_enterprise_name_value):
+            kinds.add("ENTERPRISE_NAME")
+        if _mixed_sliding_range_any(t, 7, 20, is_mobile_phone_value):
+            kinds.add("PHONE")
+        if _mixed_sliding_range_any(t, 7, 20, is_landline_phone_value):
+            kinds.add("LANDLINE")
+        if any(_mixed_sliding_any(length, t, _is_letter_prefixed_passport_value) for length in (8, 9, 10)):
+            kinds.add("PASSPORT")
+        if _mixed_sliding_range_any(t, 7, 22, _looks_like_officer_card_value):
+            kinds.add("OFFICER_CARD")
+    return kinds
+
+
 def _looks_like_mixed_column(text_list):
-    """列级是否像 MIXED：非空文本行中同格多类型占比 > MIXED_MIN_MULTI_KIND_ROW_RATIO。"""
+    """列级是否像 MIXED：同格多类型行占比达标，且整列命中种类并集 ≥2（仅一种不算 MIXED）。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     text_rows = [t for t in cleaned if not _is_non_text_binary_like(t)]
     if not text_rows:
         return False
     hit = sum(1 for t in text_rows if _cell_looks_like_mixed(t))
-    return (hit / len(text_rows)) > MIXED_MIN_MULTI_KIND_ROW_RATIO
+    if (hit / len(text_rows)) <= MIXED_MIN_MULTI_KIND_ROW_RATIO:
+        return False
+    # 兜底：整列仅一种敏感形态时不得判 MIXED（DEFAULT/杂质不计种类）
+    return len(_mixed_column_kind_union(text_list)) >= MIXED_MIN_KINDS
 
 
 # ==============================
@@ -2298,11 +2368,12 @@ def _is_recognizable_name_value(text):
 
 
 def _row_single_sensitive_kind(text):
-    """行级单一敏感类型（与 Java ColumnMixedRecognizeHeuristics 8 类顺序一致，命中即停）。"""
+    """行级单一敏感类型（与 Java ColumnMixedRecognizeHeuristics 8 类顺序一致，命中即停）。
+
+    不嵌套格内 MIXED 判定（与 MIXED 内部逻辑独立）；日期样整格排除。
+    """
     s = str(text).strip()
     if not s or _is_date_like_for_mixed_exclusion(s):
-        return None
-    if _row_intra_cell_multi_embed_hit(text):
         return None
     # （1）身份证
     if is_id_card_format_value(s) and id_card_check(s):
@@ -2331,21 +2402,35 @@ def _row_single_sensitive_kind(text):
     return None
 
 
-def _looks_like_column_mixed_column(text_list):
-    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
-    if len(cleaned) < 2:
-        return False
-    n = len(cleaned)
-    kinds = [_row_single_sensitive_kind(t) for t in cleaned]
-    labeled = [k for k in kinds if k]
-    if len(labeled) < 2:
-        return False
+def _column_labeled_kind_counter(text_list):
+    """列内可标注敏感类型计数（8 类；DEFAULT/杂质不计）。"""
     from collections import Counter
-    c = Counter(labeled)
+    cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
+    labeled = [k for t in cleaned if (k := _row_single_sensitive_kind(t))]
+    return Counter(labeled), len(cleaned)
+
+
+def _labeled_kind_share(text_list, kind):
+    """某敏感类型占可标注行的比例；无可标注行时为 0。"""
+    c, _ = _column_labeled_kind_counter(text_list)
+    total = sum(c.values())
+    if total <= 0 or not kind:
+        return 0.0
+    return c.get(kind, 0) / total
+
+
+def _looks_like_column_mixed_column(text_list):
+    """多行混列：可标注种类≥2，且可标注行占比达标（仅一种敏感类型不算 COLUMN_MIXED）。"""
+    c, n = _column_labeled_kind_counter(text_list)
+    if n < 2:
+        return False
+    labeled_n = sum(c.values())
+    if labeled_n < 2:
+        return False
+    # 兜底：可标注种类不足 2 → 单类型列（夹杂质也不算混列）
     if len(c) < 2:
         return False
-    # 列级仅保留：可标注种类≥2、可标注行占比≥阈值（已去掉同格多嵌入占比、主导类型占比门控）
-    if len(labeled) / n < COLUMN_MIXED_MIN_SINGLE_ROW_RATIO:
+    if labeled_n / n < COLUMN_MIXED_MIN_SINGLE_ROW_RATIO:
         return False
     return True
 
@@ -2376,7 +2461,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 136  # 121 基础 + 5 MIXED + 3 姓名 + 1 电话 + 3 紧凑日期 + 3 COLUMN_MIXED（与 mask-sdk Java 一致）
+        return [0] * 138  # 121 基础 + 5 MIXED + 3 姓名 + 1 电话长度 + 3 紧凑日期 + 3 COLUMN_MIXED + 1 右起第11位为1 + 1 右起12/13位为86（与 mask-sdk Java 一致）
 
     lengths = [len(t) for t in cleaned]
 
@@ -2401,9 +2486,19 @@ def extract_column_features(text_list):
     landline_phone_ratio = sum(1 for t in cleaned if is_landline_phone_value(t)) / len(cleaned)
     phone_regex_ratio = min(1.0, mobile_phone_ratio + landline_phone_ratio)
 
-    # 3b → phone_digit_len_13_11_8_ratio 纯数字长度为 8/11/13 的占比（86+手机/11位手机座机/8位本地号）
+    # 3b → phone_digit_len_13_11_8_ratio 三种合法手机整格格式占比（11 / 86+11 / +86+11；特征名沿用）
     phone_digit_len_13_11_8_ratio = sum(
         1 for t in cleaned if _phone_digit_len_13_11_8_hit(t)
+    ) / len(cleaned)
+
+    # 3c → phone_right_11th_digit_1_ratio 从右往左第 11 个数字为 1 的行占比
+    phone_right_11th_digit_1_ratio = sum(
+        1 for t in cleaned if _phone_right_11th_digit_is_1(t)
+    ) / len(cleaned)
+
+    # 3d → phone_right_12_13_digits_86_ratio：有第12+13位数字时须为86，否则（不足13位）视为满足
+    phone_right_12_13_digits_86_ratio = sum(
+        1 for t in cleaned if _phone_right_12_13_digits_are_86_or_absent(t)
     ) / len(cleaned)
 
     # ==============================
@@ -3463,6 +3558,9 @@ def extract_column_features(text_list):
         column_mixed_kind_diversity_ratio,
         column_mixed_single_type_row_ratio,
         column_mixed_intra_cell_multi_row_ratio,
+
+        phone_right_11th_digit_1_ratio,
+        phone_right_12_13_digits_86_ratio,
     ]
 
 # ==============================
@@ -3498,7 +3596,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 136, f"特征维数应为 136（121 基础 + 5 MIXED + 3 姓名 + 1 电话数字长度 + 3 紧凑日期 + 3 COLUMN_MIXED，与 mask-sdk Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 138, f"特征维数应为 138（121 基础 + 5 MIXED + 3 姓名 + 1 电话数字长度 + 3 紧凑日期 + 3 COLUMN_MIXED + 1 右起第11位为1 + 1 右起12/13位为86，与 mask-sdk Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
@@ -4004,7 +4102,7 @@ with open(_readme_path, "w", encoding="utf-8") as _rf:
         "  dicts/area_codes.json       — 固话区号（规则后处理，由 dict/ 同步）\n"
         "  dicts/id_card_region_prefixes.json — 身份证区划（由 zip_code.txt 派生）\n"
         "  dicts/officer_card_first_chars.json — 军官证首字（由 dict/ 同步）\n"
-        "  feature_names.json           — f0..f135（136 维）\n"
+        "  feature_names.json           — f0..f137（138 维）\n"
         "  confidence_thresholds.json   — 非 8 类门控类的 JSON 阈值\n"
         "\n"
         "识别流程（与 Java mask-sdk 一致）：\n"
@@ -4342,6 +4440,8 @@ def apply_recognize_overrides(predicted, text_list):
         result = "DEFAULT"
     if result == "PHONE" and not _looks_like_strict_mobile_prefix_column(text_list):
         result = "DEFAULT"
+    if result == "PHONE" and _should_intercept_phone_ip_column(text_list):
+        result = "DEFAULT"
     if result == "LANDLINE" and not _looks_like_strict_landline_column(text_list):
         result = "DEFAULT"
     if result == "LANDLINE" and not _looks_like_strict_landline_area_or_morph_column(text_list):
@@ -4401,6 +4501,7 @@ def apply_recognize_overrides(predicted, text_list):
     if cleaned:
         if (_looks_like_strict_mobile_column(text_list)
                 and _looks_like_strict_mobile_prefix_column(text_list)
+                and not _should_intercept_phone_ip_column(text_list)
                 and result in ("DEFAULT", "LANDLINE")):
             result = "PHONE"
         elif _qualifies_for_landline_recognize_override(text_list) and result in ("DEFAULT", "PHONE"):
@@ -4427,18 +4528,32 @@ def apply_recognize_overrides(predicted, text_list):
               and not _looks_like_excluded_name_column(text_list)):
             result = "NAME"
 
-    # MIXED 抬升：仅当决策树原始预测为 DEFAULT，且列为同格多类型文本
+    # MIXED 抬升：仅当决策树原始预测为 DEFAULT，且列为同格多类型文本（仅一种敏感形态不算）
     if (cleaned and predicted == "DEFAULT"
             and _looks_like_mixed_column(text_list)):
         result = "MIXED"
 
-    # COLUMN_MIXED 抬升放在单类抬升之后（8 类收敛后仍能从 NAME/手机等纠偏为混列；不含 MIXED）
+    # COLUMN_MIXED 抬升放在 MIXED/单类之后：可从 NAME/手机/MIXED 等纠偏为混列（允许 MIXED→COLUMN_MIXED）
+    # 单类型主导（可标注行中当前类型占比≥0.8）时不抢抬，避免军官证列夹杂质被抬成混列
     if (cleaned and COLUMN_MIXED_OVERRIDE_ENABLED
             and _looks_like_column_mixed_column(text_list)
             and result in (
                 "DEFAULT", "ID_CARD", "CREDIT_CODE", "NAME", "ENTERPRISE_NAME",
-                "PHONE", "LANDLINE", "OFFICER_CARD", "PASSPORT", "EMAIL")):
-        result = "COLUMN_MIXED"
+                "PHONE", "LANDLINE", "OFFICER_CARD", "PASSPORT", "EMAIL", "MIXED")):
+        # MIXED 非单行类型码，不参与「单类型主导」判定
+        if (result not in ("DEFAULT", "EMAIL", "MIXED")
+                and _labeled_kind_share(text_list, result) >= 0.8):
+            pass
+        else:
+            result = "COLUMN_MIXED"
+
+    # 最终兜底：MIXED / COLUMN_MIXED 仅一种敏感类型时打回（DEFAULT 杂质不计）
+    if result == "MIXED" and len(_mixed_column_kind_union(text_list)) < MIXED_MIN_KINDS:
+        result = "DEFAULT"
+    if result == "COLUMN_MIXED":
+        c, _ = _column_labeled_kind_counter(text_list)
+        if len(c) < 2:
+            result = "DEFAULT"
     return result
 
 # ==============================
@@ -4503,7 +4618,23 @@ for label_name, group_idx, group_total, test_column in _iter_test_column_groups(
           % _looks_like_strict_date_column(test_column))
     print("多行混合严格校验 looks_like_column_mixed_column: %s"
           % _looks_like_column_mixed_column(test_column))
-    if len(feature) >= 136:
+    if len(feature) >= 138:
+        print("紧凑日期 f130/f131/f132: %.4f / %.4f / %.4f"
+              % (feature[130], feature[131], feature[132]))
+        print("多行混合 f133/f134/f135: %.4f / %.4f / %.4f"
+              % (feature[133], feature[134], feature[135]))
+        print("手机右起第11位为1 f136 phone_right_11th_digit_1_ratio: %.4f"
+              % feature[136])
+        print("手机右起12/13位为86 f137 phone_right_12_13_digits_86_ratio: %.4f"
+              % feature[137])
+    elif len(feature) >= 137:
+        print("紧凑日期 f130/f131/f132: %.4f / %.4f / %.4f"
+              % (feature[130], feature[131], feature[132]))
+        print("多行混合 f133/f134/f135: %.4f / %.4f / %.4f"
+              % (feature[133], feature[134], feature[135]))
+        print("手机右起第11位为1 f136 phone_right_11th_digit_1_ratio: %.4f"
+              % feature[136])
+    elif len(feature) >= 136:
         print("紧凑日期 f130/f131/f132: %.4f / %.4f / %.4f"
               % (feature[130], feature[131], feature[132]))
         print("多行混合 f133/f134/f135: %.4f / %.4f / %.4f"
