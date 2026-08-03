@@ -2,7 +2,7 @@
 脱敏识别 —— 兰州精简版（003_lanzhou）
 仅训练 / 门控 / 后处理以下 9 类：
   DEFAULT, NAME, PHONE, LANDLINE, CREDIT_CODE, ID_CARD, OFFICER_CARD, PASSPORT, ENTERPRISE_NAME
-列级特征维数 138（与 Java ColumnFeatureExtractor 对齐，避免 PMML 特征错位）。
+列级特征维数 134（与 Java ColumnFeatureExtractor 对齐，避免 PMML 特征错位）。
 其它原类型训练数据已并入 DEFAULT（见 fit_data/_legacy/unused_labels）。
 """
 
@@ -1222,6 +1222,30 @@ def _strip_trailing_ascii_digits(text):
     return t[:end]
 
 
+def _strip_trailing_name_suffix(text):
+    """去掉姓名后可保留后缀（与 Java NameRecognizeHeuristics.stripTrailingNameSuffix 一致）。
+
+    支持：末尾纯数字；{@code -}/{@code _}/{@code /}+数字；末尾 ASCII 字母。
+    """
+    t = str(text) if text is not None else ""
+    if not t:
+        return t
+    end = len(t)
+    i = end
+    while i > 0 and "0" <= t[i - 1] <= "9":
+        i -= 1
+    if i < end:
+        if i > 0 and t[i - 1] in "-_/":
+            return t[: i - 1]
+        return t[:i]
+    i = end
+    while i > 0 and (("A" <= t[i - 1] <= "Z") or ("a" <= t[i - 1] <= "z")):
+        i -= 1
+    if i < end:
+        return t[:i]
+    return t
+
+
 def _surname_head_in_dict(text):
     """姓名首字或复姓前两字是否在姓氏字典（百家姓）中；先去掉末尾数字后缀。"""
     t = _strip_trailing_ascii_digits(str(text).strip())
@@ -1230,6 +1254,26 @@ def _surname_head_in_dict(text):
     if len(t) >= 2 and t[:2] in surname_dict:
         return True
     return t[0] in surname_dict
+
+
+def _is_name_core_2_to_3_or_compound4_han(text):
+    """剥后缀后（特征 name_2_or_3_han_ratio）：
+    - 2 字：全汉字且首字在姓氏字典
+    - 3 字：全汉字，且前两字为复姓或首字为单姓（先复姓后单姓）
+    - 4 字：全汉字且前两字为复姓
+    """
+    core = _strip_trailing_name_suffix(str(text).strip())
+    if not (2 <= len(core) <= 4):
+        return False
+    if not all("\u4e00" <= c <= "\u9fff" for c in core):
+        return False
+    if len(core) == 2:
+        return core[0] in surname_dict
+    if len(core) == 3:
+        if core[:2] in surname_dict:
+            return True
+        return core[0] in surname_dict
+    return core[:2] in surname_dict
 
 
 # ==============================
@@ -2461,7 +2505,7 @@ def extract_column_features(text_list):
     cleaned = [str(t).strip() for t in text_list if pd.notnull(t)]
 
     if len(cleaned) == 0:
-        return [0] * 138  # 121 基础 + 5 MIXED + 3 姓名 + 1 电话长度 + 3 紧凑日期 + 3 COLUMN_MIXED + 1 右起第11位为1 + 1 右起12/13位为86（与 mask-sdk Java 一致）
+        return [0] * 134  # 117 基础 + 5 MIXED + 3 姓名 + 1 电话长度 + 3 紧凑日期 + 3 COLUMN_MIXED + 1 右起第11位为1 + 1 右起12/13位为86（与 mask-sdk Java 一致）
 
     lengths = [len(t) for t in cleaned]
 
@@ -3268,53 +3312,31 @@ def extract_column_features(text_list):
     # ==============================
     # （28）NAME 中文姓名
     # ==============================
-    # 111 → name_length_reasonable_ratio 合理长度比例（2~3）
-    name_length_reasonable_ratio = sum(
+    # 111 → name_short_length_stability 剥后缀后姓名核长度为 2 或 3 的行占比
+    short_core_hit = sum(
         1 for t in cleaned
-        if 2 <= len(t.strip()) <= 3
-    ) / len(cleaned)
+        if len(_strip_trailing_name_suffix(t)) in (2, 3)
+    )
+    name_short_length_stability = short_core_hit / len(cleaned)
 
-
-    # 112 → name_all_chinese_ratio 全为中文比例
-    name_all_chinese_ratio = sum(
-        1 for t in cleaned
-        if len(t) >= 2 and all('\u4e00' <= c <= '\u9fff' for c in t)
-    ) / len(cleaned)
-
-
-    # 113 → name_surname_dict_ratio 首字或复姓前两字在姓氏字典中的比例
-    name_surname_dict_ratio = sum(
-        1 for t in cleaned
-        if len(t) >= 2 and _surname_head_in_dict(t)
-    ) / len(cleaned)
-
-
-    # 114 → name_no_digit_ratio 不含数字比例
-    name_no_digit_ratio = sum(
-        1 for t in cleaned
-        if not any(c.isdigit() for c in t)
-    ) / len(cleaned)
-
-
-    # 115 → name_short_length_stability 列内长度稳定性（2或3居多）
-    short_lengths = [len(t) for t in cleaned if len(t) in (2, 3)]
-    if short_lengths:
-        name_short_length_stability = len(short_lengths) / len(cleaned)
-    else:
-        name_short_length_stability = 0
-
-    # 116 → name_han_char_ratio 列内字符全为汉字占比（100% 才适合判 NAME，与 CNY 等区分）
-    total_name_chars = sum(len(t) for t in cleaned)
-    han_name_chars = sum(1 for t in cleaned for c in t if '\u4e00' <= c <= '\u9fff')
+    # 114 → name_han_char_ratio 剥后缀后姓名核内汉字占比（区分纯中文姓名列 vs CNY 等）
+    total_name_chars = 0
+    han_name_chars = 0
+    for t in cleaned:
+        core = _strip_trailing_name_suffix(t)
+        if not core:
+            continue
+        total_name_chars += len(core)
+        han_name_chars += sum(1 for c in core if '\u4e00' <= c <= '\u9fff')
     name_han_char_ratio = han_name_chars / total_name_chars if total_name_chars > 0 else 0.0
 
-    # 117 → name_2_or_3_han_ratio 每行取值恰为 2 或 3 个汉字的比例（区分姓名 vs 永昌路支行等）
+    # 115 → name_2_or_3_han_ratio 剥后缀后：2字首字姓 / 3字先复姓后单姓 / 4字前两字复姓
     name_2_or_3_han_ratio = sum(
         1 for t in cleaned
-        if 2 <= len(t) <= 3 and all('\u4e00' <= c <= '\u9fff' for c in t)
+        if _is_name_core_2_to_3_or_compound4_han(t)
     ) / len(cleaned)
 
-    # 118 → name_surname_head_dict_ratio 首字或复姓前两字在姓氏字典中的比例（f129，与 f109 规则一致、强化姓名列信号）
+    # 115 → name_surname_head_dict_ratio 首字或复姓前两字在姓氏字典中的比例（与后处理一致；原 name_surname_dict_ratio 已并入）
     name_surname_head_dict_ratio = sum(
         1 for t in cleaned if _surname_head_in_dict(t)
     ) / len(cleaned)
@@ -3522,10 +3544,6 @@ def extract_column_features(text_list):
         address_typical_end_ratio,
 
 
-        name_length_reasonable_ratio,
-        name_all_chinese_ratio,
-        name_surname_dict_ratio,
-        name_no_digit_ratio,
         name_short_length_stability,
 
         money_numeric_ratio,
@@ -3596,7 +3614,7 @@ y = np.array(y)
 
 # 特征维数必须与 extract_column_features 返回值长度一致（与 Java ColumnFeatureExtractor 同步）
 N_FEATURES = X.shape[1]
-assert N_FEATURES == 138, f"特征维数应为 138（121 基础 + 5 MIXED + 3 姓名 + 1 电话数字长度 + 3 紧凑日期 + 3 COLUMN_MIXED + 1 右起第11位为1 + 1 右起12/13位为86，与 mask-sdk Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
+assert N_FEATURES == 134, f"特征维数应为 134（117 基础 + 5 MIXED + 3 姓名 + 1 电话数字长度 + 3 紧凑日期 + 3 COLUMN_MIXED + 1 右起第11位为1 + 1 右起12/13位为86，与 mask-sdk Java 一致），当前为 {N_FEATURES}，请检查 extract_column_features 的 return 长度"
 feature_names = [f"f{i}" for i in range(N_FEATURES)]
 
 # print("=" * 60)
@@ -4102,7 +4120,7 @@ with open(_readme_path, "w", encoding="utf-8") as _rf:
         "  dicts/area_codes.json       — 固话区号（规则后处理，由 dict/ 同步）\n"
         "  dicts/id_card_region_prefixes.json — 身份证区划（由 zip_code.txt 派生）\n"
         "  dicts/officer_card_first_chars.json — 军官证首字（由 dict/ 同步）\n"
-        "  feature_names.json           — f0..f137（138 维）\n"
+        "  feature_names.json           — f0..f133（134 维）\n"
         "  confidence_thresholds.json   — 非 8 类门控类的 JSON 阈值\n"
         "\n"
         "识别流程（与 Java mask-sdk 一致）：\n"
@@ -4252,14 +4270,14 @@ def _looks_like_chinese_name_column(text_list):
 
 
 def _name_column_han_char_ratio(text_list):
-    """列内姓名核汉字占比（0~1）：先去掉末尾数字再统计；仅后处理门控用。"""
+    """列内姓名核汉字占比（0~1）：先剥可保留后缀再统计（与特征 name_han_char_ratio / Java 一致）。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return 0.0
     total = 0
     han = 0
     for t in cleaned:
-        core = _strip_trailing_ascii_digits(t)
+        core = _strip_trailing_name_suffix(t)
         if not core:
             continue
         total += len(core)
@@ -4270,14 +4288,11 @@ def _name_column_han_char_ratio(text_list):
 
 
 def _name_column_2_or_3_han_row_ratio(text_list):
-    """列内「恰为 2 或 3 个汉字」的取值占比（0~1）。"""
+    """列内 name_2_or_3_han_ratio 同款统计（2字首字姓 / 3字先复姓后单姓 / 4字复姓）。"""
     cleaned = [str(t).strip() for t in text_list if t is not None and str(t).strip()]
     if not cleaned:
         return 0.0
-    hit = sum(
-        1 for t in cleaned
-        if 2 <= len(t) <= 3 and all('\u4e00' <= c <= '\u9fff' for c in t)
-    )
+    hit = sum(1 for t in cleaned if _is_name_core_2_to_3_or_compound4_han(t))
     return hit / len(cleaned)
 
 
@@ -4604,8 +4619,8 @@ for label_name, group_idx, group_total, test_column in _iter_test_column_groups(
     print("预测类别(最终):", prediction)
     print("姓名后处理 recognizable_name_row_ratio: %.4f（须≥%.2f 才保留 NAME）"
           % (_name_column_recognizable_name_row_ratio(test_column), NAME_2_OR_3_HAN_MIN_RATIO))
-    print("姓名特征 f129 name_surname_head_dict_ratio: %.4f（须≥%.2f 才保留 NAME）"
-          % (feature[129], NAME_SURNAME_HEAD_MIN_RATIO))
+    print("姓名特征 f125 name_surname_head_dict_ratio: %.4f（须≥%.2f 才保留 NAME）"
+          % (feature[125], NAME_SURNAME_HEAD_MIN_RATIO))
     print("手机严格校验 looks_like_strict_mobile_column: %s"
           % _looks_like_strict_mobile_column(test_column))
     print("手机号段前缀校验 looks_like_strict_mobile_prefix_column: %s"
@@ -4618,30 +4633,23 @@ for label_name, group_idx, group_total, test_column in _iter_test_column_groups(
           % _looks_like_strict_date_column(test_column))
     print("多行混合严格校验 looks_like_column_mixed_column: %s"
           % _looks_like_column_mixed_column(test_column))
-    if len(feature) >= 138:
-        print("紧凑日期 f130/f131/f132: %.4f / %.4f / %.4f"
-              % (feature[130], feature[131], feature[132]))
-        print("多行混合 f133/f134/f135: %.4f / %.4f / %.4f"
-              % (feature[133], feature[134], feature[135]))
-        print("手机右起第11位为1 f136 phone_right_11th_digit_1_ratio: %.4f"
-              % feature[136])
-        print("手机右起12/13位为86 f137 phone_right_12_13_digits_86_ratio: %.4f"
-              % feature[137])
-    elif len(feature) >= 137:
-        print("紧凑日期 f130/f131/f132: %.4f / %.4f / %.4f"
-              % (feature[130], feature[131], feature[132]))
-        print("多行混合 f133/f134/f135: %.4f / %.4f / %.4f"
-              % (feature[133], feature[134], feature[135]))
-        print("手机右起第11位为1 f136 phone_right_11th_digit_1_ratio: %.4f"
-              % feature[136])
-    elif len(feature) >= 136:
-        print("紧凑日期 f130/f131/f132: %.4f / %.4f / %.4f"
-              % (feature[130], feature[131], feature[132]))
-        print("多行混合 f133/f134/f135: %.4f / %.4f / %.4f"
-              % (feature[133], feature[134], feature[135]))
-    elif len(feature) >= 133:
-        print("紧凑日期 f130/f131/f132: %.4f / %.4f / %.4f"
-              % (feature[130], feature[131], feature[132]))
+    if len(feature) >= 134:
+        print("紧凑日期 f126/f127/f128: %.4f / %.4f / %.4f"
+              % (feature[126], feature[127], feature[128]))
+        print("多行混合 f129/f130/f131: %.4f / %.4f / %.4f"
+              % (feature[129], feature[130], feature[131]))
+        print("手机右起第11位为1 f132 phone_right_11th_digit_1_ratio: %.4f"
+              % feature[132])
+        print("手机右起12/13位为86 f133 phone_right_12_13_digits_86_ratio: %.4f"
+              % feature[133])
+    elif len(feature) >= 132:
+        print("紧凑日期 f126/f127/f128: %.4f / %.4f / %.4f"
+              % (feature[126], feature[127], feature[128]))
+        print("多行混合 f129/f130/f131: %.4f / %.4f / %.4f"
+              % (feature[129], feature[130], feature[131]))
+    elif len(feature) >= 129:
+        print("紧凑日期 f126/f127/f128: %.4f / %.4f / %.4f"
+              % (feature[126], feature[127], feature[128]))
 
     # 打印概率排序（从高到低）—— 仍为模型原始 predict_proba，不随后处理改变
     sorted_probs = sorted(

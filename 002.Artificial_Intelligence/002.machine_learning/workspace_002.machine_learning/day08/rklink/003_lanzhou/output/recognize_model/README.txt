@@ -10,7 +10,7 @@ Python 侧主输出在 002/output/recognize_model/；训练结束会整包覆盖
   dicts/area_codes.json       — 固话区号（规则后处理，由 dict/ 同步）
   dicts/id_card_region_prefixes.json — 身份证区划（由 zip_code.txt 派生）
   dicts/officer_card_first_chars.json — 军官证首字（由 dict/ 同步）
-  feature_names.json           — f0..f137（138 维）
+  feature_names.json           — f0..f133（134 维）
   confidence_thresholds.json   — 非 8 类门控类的 JSON 阈值
 
 识别流程（与 Java mask-sdk 一致）：
