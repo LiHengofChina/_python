@@ -1,5 +1,5 @@
 
-基于PaddlePaddle框架 和 ERNIE预训练模型的 "令牌分类模型（Token Classification Model）"。
+基于PaddlePaddle框架 和 ERNIE 预训练模型的 "令牌分类模型（Token Classification Model）"。
 
 "令牌分类" 是自然语言处理（NLP）中的一个常见任务
 
