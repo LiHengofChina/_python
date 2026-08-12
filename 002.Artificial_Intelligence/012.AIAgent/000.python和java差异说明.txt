@@ -1,4 +1,16 @@
 
+（15）java 通过 jvm跨平台，python也是吗
+
+	Python 也跨平台。
+	但和 Java 不完全一样：
+
+
+	  java: 靠 JVM 统一运行时与内存模型 
+		    //有规范的 JMM，跨平台行为更明确
+	python: 靠解释器（CPython 等）屏蔽多数 OS 差异 
+			//有 GIL（CPython）等实现细节，并发模型不如 Java 那么“统一规范”
+
+
 （14）python这里修改了代码，需要重新启动吗
 
 	要。 现在 main.py 里 reload=False，
