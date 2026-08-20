@@ -7,7 +7,7 @@ Transformer 是架构/框架（像 CNN、RNN）
 不是某一个 "具体已训好的模型" 。
 
 具体实现/产品是：
-	BERT、GPT、ERNIE、Qwen 等——它们都是
+	BERT、GPT、ERNIE、Qwen 等。
 
 「用 "Transformer（或其变体）" 搭起来并训练」的 "模型"。
 
