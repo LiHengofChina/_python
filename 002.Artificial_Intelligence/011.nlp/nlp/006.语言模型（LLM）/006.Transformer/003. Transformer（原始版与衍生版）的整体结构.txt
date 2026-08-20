@@ -33,3 +33,17 @@ Decoder（解码器）
 
 一句话：原版是「两半一起」；后来常拆开，只用其中一半。
 
+
+
+//========================== 例如：
+//========================== 例如：
+
+
+（GPT 类模型通常没有 Encoder，只有 Decoder）（ GPT 和 ChatGPT 都是这样）
+
+
+GPT = Decoder-only 的基础大模型
+ChatGPT = 在 GPT 上做了对话微调/对齐（更好聊天、更安全）
+
+「只有 Decoder、没有 Encoder」→ GPT 和 ChatGPT 都是这样
+
