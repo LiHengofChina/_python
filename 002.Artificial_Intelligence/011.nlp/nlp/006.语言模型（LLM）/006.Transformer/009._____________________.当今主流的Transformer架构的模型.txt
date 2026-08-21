@@ -10,7 +10,7 @@
 
 （2）ERNIE		//百度出品、偏 Encoder（类 BERT）
 				//中文理解为主，也常做 NER 等
- 
+
 //============================================== 生成类（解码器）（Decoder）：写出来、聊起来
 //============================================== 生成类（解码器）（Decoder）：写出来、聊起来
 
@@ -27,21 +27,25 @@
 （2）Grok		 //马斯克 出品 xAI 的对话大模型
 
 （3）Composer	 //Cursor 里的编程助手模型 //Anysphere（美国）。Cursor 是他们出的 AI 编程 IDE。
+				 //偏 Cursor 内的编程助手模型，和 GPT/Claude 那种通用公开大模型略不同档
 
-（4）Gemini		 //Google出品
+（4）Gemini		 //Google出品//Google 云端生成式产品
 
-（5）Claude		 //Anthropic出品
+（5）Gemma		 //Google 出的 开源（开放权重） 大模型系列 
+				 //和 Gemini 同源技术路线，但 Gemma 可本地下载跑；Gemini 更偏 Google 的云端产品
+				 //偏 Decoder 生成类；Ollama 上也能见到
 
-（6）Phi 	     //微软自研的 
+（6）Claude		 //Anthropic出品
 
-（7）Llama		 //Meta（脸书）出品、开源 Decoder 大模型系列
+（7）Phi 	     //微软自研的 
+
+（8）Llama		 //Meta（脸书）出品、开源 Decoder 大模型系列
 				 //主要干什么：对话、续写、本地部署常用底座
 				 //Ollama 上很常拉取（如 Llama 3 / 3.1 等）
 
-（8）Mistral	 //法国 Mistral AI 出品、开源 Decoder 大模型系列
+（9）Mistral	 //法国 Mistral AI 出品、开源 Decoder 大模型系列
 				 //主要干什么：对话、生成；也有 MoE 变体（如 Mixtral）
 				 //同样常在 Ollama / 本地环境里跑
-
 
 //===以下是【国产】
 //===以下是【国产】
@@ -59,6 +63,12 @@
 				 //DeepSeek-Coder（代码）
 
 （5）Doubao / Seed 		//字节出器，产品名"豆包"；背后是 Doubao / Seed 等自研大模型
+
+（6）MiniMax	 //海螺 / 稀宇科技
+				 //国产 公司出的大模型系列（对话、多模态、Agent 等都有）
+				 //产品侧常见 海螺 AI 等；也有开源/开放权重版本（如 MiniMax-M 系列）
+
+
 
 //==================================================================
 //==================================================================
