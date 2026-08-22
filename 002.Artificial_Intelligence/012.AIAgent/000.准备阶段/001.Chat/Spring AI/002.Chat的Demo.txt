@@ -2,20 +2,21 @@
 //======================================================   代码位置 
 //======================================================   代码位置 
 
-E:\_python\002.Artificial_Intelligence\012.AIAgent\workspace_012\day_01_spring_ai_chat\
+E:\_python\002.Artificial_Intelligence\012.AIAgent\000.准备阶段\001.Chat\Spring AI\demo01_spring_ai_chat\
 
 //======================================================   部分文件说明
 //======================================================   部分文件说明
 
 pom.xml					// Spring Boot 3.4 + Spring AI 1.0 + Ollama
-application.yml			// Ollama 地址、模型名
+application.yml			// Ollama 地址、模型名（端口 8102）
+static/index.html		// 浏览器聊天页（对标 LangChain demo01_langchain_chat）
 
 //======================================================
 //======================================================
 
-ChatService.java		//核心：Chat 调用
-ChatController.java		//REST 测试接口
-StartupChatRunner.java	//REST 测试接口
+ChatApplicationService	// 应用层：编排对话
+ChatController.java		// REST：GET/POST /api/chat
+StartupChatRunner.java	// 启动时可选打一条示例问答
 
 //====================================================== 配置说明
 //====================================================== 配置说明
@@ -32,12 +33,15 @@ spring.ai.ollama.chat.options.model: qwen2.5:7b      # 模型名
 //====================================================== 启动运行
 
 （1）IDEA 运行
-Open → 选 day_01_spring_ai_chat 目录
+Open → 选 Spring AI/demo01_spring_ai_chat 目录
 等 Maven 导入完成
 运行 SpringAiChatApplication
 控制台应看到启动示例问答
 
-（2）浏览器测试：
-http://localhost:8099/api/chat?q=磁盘满了怎么办
-http://localhost:8099/api/chat/ops?q=Nginx502怎么排查
+（2）浏览器页面：
+http://localhost:8102/
 
+（3）也可直接测 API：
+http://localhost:8102/api/chat?q=磁盘满了怎么办
+http://localhost:8102/api/chat/ops?q=Nginx502怎么排查
+POST /api/chat  {"question":"你好"}

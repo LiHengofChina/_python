@@ -1,0 +1,23 @@
+server:
+  port: 8102
+
+spring:
+  application:
+    name: demo02-spring-ai-chat-session
+  datasource:
+    url: jdbc:sqlite:./data/chat.db
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      maximum-pool-size: 1
+  ai:
+    ollama:
+      base-url: http://127.0.0.1:11434
+      chat:
+        options:
+          model: qwen2.5:7b
+          temperature: 0.3
+
+demo:
+  chat:
+    startup-enabled: false
+    fixed-user-id: 1

@@ -11,30 +11,31 @@
 （1）会话管理：
 	会话分开存、列表、切换、消息落库 【只负责存/取消息】
 
-（2）同会话再问时，把历史拼进 invoke 【Memory：决定调用模型时带哪些历史（最近 N 条、摘要等）】
-	短期记忆 / 对话上下文 //同会话多轮会把历史带给模型
+（2）同会话再问时，把历史拼进模型调用 【短期记忆 / 对话上下文】
 
 （3）固定 user_id=1
 
-//===========================
-//===========================
+//=========================== 代码位置
+//=========================== 代码位置
 
-（1）代码位置 
+Python：
+E:\_python\002.Artificial_Intelligence\012.AIAgent\000.准备阶段\002.聊天管理\LangChain\demo_002_langchain_chat_session
+  → http://127.0.0.1:8101/
 
-（2）安装依赖
-	pip install -r requirements.txt
+Java：
+E:\_python\002.Artificial_Intelligence\012.AIAgent\000.准备阶段\002.聊天管理\Spring AI\demo_002_spring_ai_chat_session
+  → http://localhost:8102/
 
-（3）启动服务
-	python main.py
+//=========================== Python 启动
+//=========================== Python 启动
 
-（4）访问
-	http://127.0.0.1:8101/
+pip install -r requirements.txt
+python main.py
 
+//=========================== Java 启动
+//=========================== Java 启动
 
+IDEA Open → demo_002_spring_ai_chat_session
+运行 SpringAiChatSessionApplication
 
-
-核心就是 按会话（session）管理聊天：
-每个会话的消息落到 SQLite 里，方便列表、切换、再打开时取历史。
-
-再补半句：同会话多轮时，还会把历史拼进模型调用（Memory），不只是单纯存档。
-
+核心：按会话（session）管理聊天；消息落 SQLite；多轮把历史带给模型。
